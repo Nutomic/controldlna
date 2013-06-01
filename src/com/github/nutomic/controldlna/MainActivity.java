@@ -27,12 +27,14 @@ public class MainActivity extends SherlockFragmentActivity implements
 	 * intensive, it may be best to switch to a
 	 * {@link android.support.v4.app.FragmentStatePagerAdapter}.
 	 */
-	SectionsPagerAdapter mSectionsPagerAdapter;
+	private SectionsPagerAdapter mSectionsPagerAdapter;
 
 	/**
 	 * The {@link ViewPager} that will host the section contents.
 	 */
-	ViewPager mViewPager;
+	private ViewPager mViewPager;
+	
+	private ServerFragment mServerFragment = new ServerFragment();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -105,14 +107,18 @@ public class MainActivity extends SherlockFragmentActivity implements
 
 		@Override
 		public Fragment getItem(int position) {
-			// getItem is called to instantiate the fragment for the given page.
-			// Return a DummySectionFragment (defined as a static inner class
-			// below) with the page number as its lone argument.
-			Fragment fragment = new DummySectionFragment();
-			Bundle args = new Bundle();
-			args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, position + 1);
-			fragment.setArguments(args);
-			return fragment;
+			switch (position) {
+			case 0:
+				Fragment fragment = new DummySectionFragment();
+				Bundle args = new Bundle();
+				args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, position + 1);
+				fragment.setArguments(args);
+				return fragment;
+			case 1:
+				return mServerFragment;
+			default:
+				return null;
+			}
 		}
 
 		@Override
@@ -159,6 +165,16 @@ public class MainActivity extends SherlockFragmentActivity implements
 					ARG_SECTION_NUMBER)));
 			return rootView;
 		}
+	}
+	
+	/**
+	 * Forwards to ServerFragment if it is active.
+	 */
+	@Override
+	public void onBackPressed() {
+		if ((getSupportActionBar().getSelectedTab().getPosition() == 1) && 
+				!mServerFragment.onBackPressed())
+			super.onBackPressed();
 	}
 
 }
