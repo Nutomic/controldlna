@@ -112,13 +112,30 @@ public class MainActivity extends SherlockFragmentActivity implements
 	}
 	
 	/**
-	 * Forwards to ServerFragment if it is active.
+	 * Listener for the 'back' key.
+	 */
+	public interface OnBackPressedListener {
+		
+		/**
+		 * Returns true if the press was consumed, false otherwise.
+		 */
+		public boolean onBackPressed();
+	}
+	
+	/**
+	 * Forwards back press to active Fragment.
 	 */
 	@Override
 	public void onBackPressed() {
-		if ((getSupportActionBar().getSelectedTab().getPosition() == 1) && 
-				!mServerFragment.onBackPressed())
+		OnBackPressedListener currentFragment = (OnBackPressedListener) 
+				mSectionsPagerAdapter.getItem(mViewPager.getCurrentItem());
+		if (!currentFragment.onBackPressed())
 			super.onBackPressed();
+	}
+	
+	public void play(String uri) {
+		getSupportActionBar().selectTab(getSupportActionBar().getTabAt(0));
+		mRendererFragment.play(uri);
 	}
 
 }

@@ -9,9 +9,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-public class ServerArrayAdapter extends ArrayAdapter<Device<?, ?, ?>> {
+public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>> {
 
-	public ServerArrayAdapter(Context context) {
+	public DeviceArrayAdapter(Context context) {
 		super(context, android.R.layout.simple_list_item_1);
 	}
 	

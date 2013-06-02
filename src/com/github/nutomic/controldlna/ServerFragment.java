@@ -30,51 +30,60 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
-public class ServerFragment extends ListFragment {
+import com.github.nutomic.controldlna.MainActivity.OnBackPressedListener;
+
+/**
+ * Shows a list of media servers, upon selecting one, allows browsing theur
+ * directories.
+ * 
+ * @author Felix
+ *
+ */
+public class ServerFragment extends ListFragment implements OnBackPressedListener {
 	
 	private String TAG = "ServerFragment";
 	
 	/**
 	 * ListView adapter for showing a list of DLNA media servers.
 	 */
-	private ServerArrayAdapter serverAdapter;
+	private DeviceArrayAdapter mServerAdapter;
 	
 	/**
 	 * Reference to the media server of which folders are currently shown. 
 	 * Null if media servers are shown.
 	 */
-	private Device<?, ?, ?> currentServer;
+	private Device<?, ?, ?> mCurrentServer;
 	
 	/**
 	 * ListView adapter for showing a list of files/folders.
 	 */
-	private FileArrayAdapter fileAdapter;
+	private FileArrayAdapter mFileAdapter;
 
 	/**
 	 * Holds path to current directory on top, paths for higher directories 
 	 * behind that.
 	 */
-	private Stack<String> currentPath = new Stack<String>();
+	private Stack<String> mCurrentPath = new Stack<String>();
 	
 	/**
 	 * Cling UPNP service. 
 	 */
-    private AndroidUpnpService upnpService;
+    private AndroidUpnpService mUpnpService;
 
     /**
      * Connection Cling to UPNP service.
      */
-    private ServiceConnection serviceConnection= new ServiceConnection() {
+    private ServiceConnection mServiceConnection= new ServiceConnection() {
 
         public void onServiceConnected(ComponentName className, IBinder service) {
-            upnpService = (AndroidUpnpService) service;
+            mUpnpService = (AndroidUpnpService) service;
             Log.i(TAG, "Starting device search");
-            upnpService.getRegistry().addListener(registryListener);
-            upnpService.getControlPoint().search();
+            mUpnpService.getRegistry().addListener(registryListener);
+            mUpnpService.getControlPoint().search();
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            upnpService = null;
+            mUpnpService = null;
         }
     };
 
@@ -85,7 +94,7 @@ public class ServerFragment extends ListFragment {
 		
 		@Override
 		public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-			if (device == currentServer)
+			if (device == mCurrentServer)
 				getFiles();
 		}
 		
@@ -102,7 +111,7 @@ public class ServerFragment extends ListFragment {
 		@Override
 		public void remoteDeviceDiscoveryFailed(Registry registry, 
 				RemoteDevice device, Exception exception) {
-			Log.w(TAG, "Device discovery failed");
+			Log.w(TAG, "Device discovery failed" + exception.getMessage());
 		}
 		
 		@Override
@@ -137,7 +146,7 @@ public class ServerFragment extends ListFragment {
 				@Override
 				public void run() {
 					if (device.getType().getType().equals("MediaServer"))
-						serverAdapter.add(device);	
+						mServerAdapter.add(device);	
 				}
 			});			
 		}
@@ -150,7 +159,7 @@ public class ServerFragment extends ListFragment {
 				
 				@Override
 				public void run() {
-					serverAdapter.remove(device);	
+					mServerAdapter.remove(device);	
 				}
 			});			
 		}
@@ -162,14 +171,14 @@ public class ServerFragment extends ListFragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
     	super.onActivityCreated(savedInstanceState);
-    	serverAdapter = new ServerArrayAdapter(getActivity());
-    	fileAdapter = new FileArrayAdapter(getActivity());
+    	mServerAdapter = new DeviceArrayAdapter(getActivity());
+    	mFileAdapter = new FileArrayAdapter(getActivity());
     	
-        setListAdapter(serverAdapter);  
+        setListAdapter(mServerAdapter);  
 
         getActivity().getApplicationContext().bindService(
             new Intent(getActivity(), AndroidUpnpServiceImpl.class),
-            serviceConnection,
+            mServiceConnection,
             Context.BIND_AUTO_CREATE
         );     
     }
@@ -180,9 +189,9 @@ public class ServerFragment extends ListFragment {
     @Override
 	public void onDestroy() {
         super.onDestroy();
-        if (upnpService != null)
-            upnpService.getRegistry().removeListener(registryListener);
-        getActivity().getApplicationContext().unbindService(serviceConnection);
+        if (mUpnpService != null)
+            mUpnpService.getRegistry().removeListener(registryListener);
+        getActivity().getApplicationContext().unbindService(mServiceConnection);
     }
     
     /**
@@ -190,15 +199,20 @@ public class ServerFragment extends ListFragment {
      */
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-    	if (getListAdapter() == serverAdapter) {
-    		setListAdapter(fileAdapter);
-    		currentServer = serverAdapter.getItem(position);
+    	if (getListAdapter() == mServerAdapter) {
+    		setListAdapter(mFileAdapter);
+    		mCurrentServer = mServerAdapter.getItem(position);
     		// Root directory.
     		getFiles("0");
     	}
-    	else if (getListAdapter() == fileAdapter) {
-    		if (fileAdapter.getItem(position) instanceof Container) {
-    			getFiles(((Container) fileAdapter.getItem(position)).getId());    			
+    	else if (getListAdapter() == mFileAdapter) {
+    		if (mFileAdapter.getItem(position) instanceof Container) {
+    			getFiles(((Container) mFileAdapter.getItem(position)).getId());    			
+    		}
+    		else {
+    			MainActivity activity = (MainActivity) getActivity();
+    			activity.play(mFileAdapter.getItem(position)
+    					.getFirstResource().getValue());
     		}
     	}
     }
@@ -207,7 +221,7 @@ public class ServerFragment extends ListFragment {
      * Opens a new directory and displays it.
      */
     private void getFiles(String directory) {
-		currentPath.push(directory);    	
+		mCurrentPath.push(directory);    	
     	getFiles();
     }
     
@@ -215,10 +229,10 @@ public class ServerFragment extends ListFragment {
      * Displays the current directory on the ListView.
      */
     private void getFiles() {
-    	Service<?, ?> service = currentServer.findService(
+    	Service<?, ?> service = mCurrentServer.findService(
     			new ServiceType("schemas-upnp-org", "ContentDirectory"));
-		upnpService.getControlPoint().execute(new Browse(service, 
-				currentPath.peek(), BrowseFlag.DIRECT_CHILDREN) {
+		mUpnpService.getControlPoint().execute(new Browse(service, 
+				mCurrentPath.peek(), BrowseFlag.DIRECT_CHILDREN) {
 		
 					@SuppressWarnings("rawtypes")
 					@Override
@@ -228,11 +242,11 @@ public class ServerFragment extends ListFragment {
 							
 							@Override
 							public void run() {
-								fileAdapter.clear();
+								mFileAdapter.clear();
 								for (Container c : didl.getContainers()) 
-									fileAdapter.add(c);
+									mFileAdapter.add(c);
 								for (Item i : didl.getItems())
-									fileAdapter.add(i);
+									mFileAdapter.add(i);
 							}
 						});	
 					}
@@ -255,16 +269,14 @@ public class ServerFragment extends ListFragment {
     /**
      * Handles back button press to traverse directories (while in directory 
      * browsing mode).
-     * 
-     * @return True if button press was handled.
      */
 	public boolean onBackPressed() {
-    	if (getListAdapter() == serverAdapter)
+    	if (getListAdapter() == mServerAdapter)
     		return false;
-		currentPath.pop();
-		if (currentPath.empty()) {
-    		setListAdapter(serverAdapter);
-    		currentServer = null;
+		mCurrentPath.pop();
+		if (mCurrentPath.empty()) {
+    		setListAdapter(mServerAdapter);
+    		mCurrentServer = null;
 		}
 		else {
 			getFiles();
