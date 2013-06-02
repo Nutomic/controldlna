@@ -13,6 +13,7 @@ import org.teleal.cling.registry.Registry;
 import org.teleal.cling.registry.RegistryListener;
 import org.teleal.cling.support.avtransport.callback.Play;
 import org.teleal.cling.support.avtransport.callback.SetAVTransportURI;
+import org.teleal.cling.support.avtransport.callback.Stop;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -20,9 +21,15 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v4.app.ListFragment;
+import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -34,9 +41,16 @@ import com.github.nutomic.controldlna.MainActivity.OnBackPressedListener;
  * @author Felix
  *
  */
-public class RendererFragment extends ListFragment implements OnBackPressedListener {
+public class RendererFragment extends Fragment implements 
+		OnBackPressedListener, OnItemClickListener, OnClickListener {
 	
 	private final String TAG = "RendererFragment";
+	
+	private ListView mListView;
+	
+	private Button mPlayPause;
+	
+	private boolean mPlaying = false;
 	
 	/**
 	 * ListView adapter of media renderers.
@@ -152,6 +166,12 @@ public class RendererFragment extends ListFragment implements OnBackPressedListe
 		}
 	};
     
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
+			Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.renderer_fragment, null);
+	};
+	
 	/**
 	 * Initializes ListView adapters, launches Cling UPNP service.
 	 */
@@ -159,8 +179,12 @@ public class RendererFragment extends ListFragment implements OnBackPressedListe
     public void onActivityCreated(Bundle savedInstanceState) {
     	super.onActivityCreated(savedInstanceState);
     	mRendererAdapter = new DeviceArrayAdapter(getActivity());
-    	
-        setListAdapter(mRendererAdapter);  
+    	mListView = (ListView) getView().findViewById(R.id.listview);
+        mListView.setAdapter(mRendererAdapter);
+        mListView.setOnItemClickListener(this);
+        mPlayPause = (Button) getView().findViewById(R.id.playpause);
+        mPlayPause.setOnClickListener(this);
+    	mPlayPause.setText(R.string.play);
 
         getActivity().getApplicationContext().bindService(
             new Intent(getActivity(), AndroidUpnpServiceImpl.class),
@@ -216,6 +240,10 @@ public class RendererFragment extends ListFragment implements OnBackPressedListe
 	    	            		UpnpResponse operation, String defaultMsg) {
 	    	                Log.w(TAG, "Playback failed: " + defaultMsg);
 	    	            }
+	    	            @Override
+	    	            public void success(ActionInvocation invocation) {
+	    	            	playbackStarted();
+	    	            }
 	    	        });
         		}
 	        });
@@ -231,10 +259,11 @@ public class RendererFragment extends ListFragment implements OnBackPressedListe
 	 * Selects a media renderer.
 	 */
 	@Override
-	public void onListItemClick(ListView l, View v, int position, long id) {
+	public void onItemClick(AdapterView<?> a, View v, int position, long id) {
 		if (mCurrentRenderer == null) {
 			mCurrentRenderer = mRendererAdapter.getItem(position);
-			setListAdapter(null);
+			mListView.setAdapter(null);
+			mPlayPause.setVisibility(View.VISIBLE);
 			if (!mCachedPlayUri.equals("")) {
 				play(mCachedPlayUri);
 				mCachedPlayUri = "";
@@ -248,11 +277,98 @@ public class RendererFragment extends ListFragment implements OnBackPressedListe
 	@Override
 	public boolean onBackPressed() {
 		if (mCurrentRenderer != null) {
-	        setListAdapter(mRendererAdapter);  
+	        mListView.setAdapter(mRendererAdapter);  
 	        mCurrentRenderer = null;
+	        mPlayPause.setVisibility(View.GONE);
 	        return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Plays/pauses playback on button click.
+	 */
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()) {
+		case R.id.playpause:
+	    	final Service<?, ?> service = mCurrentRenderer.findService(
+	    			new ServiceType("schemas-upnp-org", "AVTransport"));
+			if (mPlaying) {
+				mUpnpService.getControlPoint().execute(new Stop(service) {
+					
+					@SuppressWarnings("rawtypes")
+					@Override
+					public void failure(ActionInvocation invocation, 
+							UpnpResponse operation, String defaultMessage) {
+						Log.w(TAG, "Pause failed, trying stop: " + defaultMessage);
+						// Sometimes stop works even though pause does not.
+						mUpnpService.getControlPoint().execute(new Stop(service) {
+							
+							@Override
+							public void failure(ActionInvocation invocation, 
+									UpnpResponse operation, String defaultMessage) {
+								Log.w(TAG, "Stop failed: " + defaultMessage);
+							}
+							@Override
+							public void success(ActionInvocation invocation) {
+								playbackPaused();
+							};
+						});		
+					}
+					@SuppressWarnings("rawtypes")
+					@Override
+					public void success(ActionInvocation invocation) {
+						playbackPaused();
+					};
+				});			
+			} else {
+				mUpnpService.getControlPoint().execute(new Play(service) {
+					
+					@SuppressWarnings("rawtypes")
+					@Override
+					public void failure(ActionInvocation invocation, 
+							UpnpResponse operation, String defaultMessage) {
+						Log.w(TAG, "Play failed: " + defaultMessage);
+					}
+					@SuppressWarnings("rawtypes")
+					@Override
+					public void success(ActionInvocation invocation) {
+						playbackStarted();
+					};
+				});
+			}
+		}		
+	}
+	
+	/**
+	 * Sets button text and playing attribute. 
+	 * Call this after pausing/stopping playback.
+	 */
+	private void playbackPaused() {
+		getActivity().runOnUiThread(new Runnable() {
+			
+			@Override
+			public void run() {
+				mPlaying = false;
+		    	mPlayPause.setText(R.string.play);					
+			}
+		});
+	}
+	
+	/**
+	 * Sets button text and playing attribute.
+	 * Call this after starting playback. 
+	 */
+	private void playbackStarted() {
+		getActivity().runOnUiThread(new Runnable() {
+			
+			@Override
+			public void run() {
+				mPlaying = true;
+		    	mPlayPause.setText(R.string.pause);				
+			}
+		});	
 	}
 
 }
