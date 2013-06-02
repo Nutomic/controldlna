@@ -41,7 +41,9 @@ import com.github.nutomic.controldlna.MainActivity.OnBackPressedListener;
  */
 public class ServerFragment extends ListFragment implements OnBackPressedListener {
 	
-	private String TAG = "ServerFragment";
+	private final String TAG = "ServerFragment";
+	
+	private final String ROOT_DIRECTORY = "0";
 	
 	/**
 	 * ListView adapter for showing a list of DLNA media servers.
@@ -202,8 +204,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     	if (getListAdapter() == mServerAdapter) {
     		setListAdapter(mFileAdapter);
     		mCurrentServer = mServerAdapter.getItem(position);
-    		// Root directory.
-    		getFiles("0");
+    		getFiles(ROOT_DIRECTORY);
     	}
     	else if (getListAdapter() == mFileAdapter) {
     		if (mFileAdapter.getItem(position) instanceof Container) {

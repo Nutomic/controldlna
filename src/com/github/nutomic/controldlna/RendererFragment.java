@@ -36,7 +36,7 @@ import com.github.nutomic.controldlna.MainActivity.OnBackPressedListener;
  */
 public class RendererFragment extends ListFragment implements OnBackPressedListener {
 	
-	private String TAG = "RendererFragment";
+	private final String TAG = "RendererFragment";
 	
 	/**
 	 * ListView adapter of media renderers.
