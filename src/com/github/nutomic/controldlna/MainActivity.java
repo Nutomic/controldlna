@@ -140,7 +140,7 @@ public class MainActivity extends SherlockFragmentActivity implements
 	 */
 	public void play(Item[] playlist, int start) {
 		getSupportActionBar().selectTab(getSupportActionBar().getTabAt(0));
-		mRendererFragment.play(playlist, start);
+		mRendererFragment.setPlaylist(playlist, start);
 	}
 
 }

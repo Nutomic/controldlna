@@ -25,8 +25,10 @@ import org.teleal.cling.support.avtransport.lastchange.AVTransportVariable;
 import org.teleal.cling.support.lastchange.LastChange;
 import org.teleal.cling.support.model.item.Item;
 
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
@@ -229,20 +231,24 @@ public class RendererFragment extends Fragment implements
     }
 	
     /**
-     * Plays the URIs in playlist to the current renderer, or caches parameters
-     * until a renderer is selected.
-     * 
-     * @param playlist Array of URIs to play.
-     * @param start Index of the URI which should be played first.
+     * Sets the new playlist and starts playing it (if a renderer is selected).
      */
-	public void play(Item[] playlist, final int start) {
+	public void setPlaylist(Item[] playlist, int start) {
 		mPlaylist = playlist;
+		playTrack(start);
+	}
+	
+	/**
+	 * Plays the specified track in the current playlist, caches value if no 
+	 * renderer is selected.
+	 */
+	private void playTrack(int track) {
 		if (mCurrentRenderer != null) {
 			mListView.setAdapter(mPlaylistAdapter);
 	    	final Service<?, ?> service = mCurrentRenderer.findService(
 	    			new ServiceType("schemas-upnp-org", "AVTransport"));
 	    	mUpnpService.getControlPoint().execute(new SetAVTransportURI(service, 
-	    			playlist[start].getFirstResource().getValue(), "NO METADATA") {
+	    			mPlaylist[track].getFirstResource().getValue(), "NO METADATA") {
 				@SuppressWarnings("rawtypes")
 				@Override
 	            public void failure(ActionInvocation invocation, 
@@ -253,22 +259,15 @@ public class RendererFragment extends Fragment implements
 				@SuppressWarnings("rawtypes")
 				@Override
         		public void success(ActionInvocation invocation) {
-	    	    	mUpnpService.getControlPoint().execute(new Play(service) {
-	    	    		
-	    	            @Override
-	    	            public void failure(ActionInvocation invocation, 
-	    	            		UpnpResponse operation, String defaultMsg) {
-	    	                Log.w(TAG, "Playback failed: " + defaultMsg);
-	    	            }
-	    	        });
+	    	    	play();
         		}
 	        });
 		}
 		else {
 			Toast.makeText(getActivity(), "Please select a renderer.", 
 					Toast.LENGTH_SHORT).show();
-			mCachedStart = start;
-		}
+			mCachedStart = track;
+		}		
 	}
 	
 	/**
@@ -276,7 +275,7 @@ public class RendererFragment extends Fragment implements
 	 */
 	@Override
 	public void onItemClick(AdapterView<?> a, View v, int position, long id) {
-		if (mCurrentRenderer == null) {
+		if (mListView.getAdapter() == mRendererAdapter) {
 			mCurrentRenderer = mRendererAdapter.getItem(position);
 	    	Service<?, ?> service = mCurrentRenderer.findService(
 	    			new ServiceType("schemas-upnp-org", "AVTransport"));	
@@ -312,7 +311,6 @@ public class RendererFragment extends Fragment implements
 								public void run() {
 							    	mPlayPause.setText(R.string.pause);
 									mPlaying = true;	
-							    	Log.d(TAG, "play");
 								}
 							});
 					    	break;
@@ -324,8 +322,7 @@ public class RendererFragment extends Fragment implements
 								@Override
 								public void run() {
 							    	mPlayPause.setText(R.string.play);
-									mPlaying = false;	
-							    	Log.d(TAG, "stop");								
+									mPlaying = false;								
 								}
 							});
 					    	break;
@@ -351,7 +348,7 @@ public class RendererFragment extends Fragment implements
 			};
 	    	mUpnpService.getControlPoint().execute(mSubscriptionCallback);
 			if (mCachedStart != -1) {
-				play(mPlaylist, mCachedStart);
+				setPlaylist(mPlaylist, mCachedStart);
 				mCachedStart = -1;
 			}
 
@@ -365,15 +362,36 @@ public class RendererFragment extends Fragment implements
 	 */
 	@Override
 	public boolean onBackPressed() {
-		if (mCurrentRenderer != null) {
-	        mCurrentRenderer = null;
-			mSubscriptionCallback.end();
-			
-	        mListView.setAdapter(mRendererAdapter);  
-	        mPlayPause.setVisibility(View.GONE);	        
+		if (mListView.getAdapter() == mPlaylistAdapter) {
+			if (mPlaying) {
+				new AlertDialog.Builder(getActivity())
+						.setMessage(R.string.exit_renderer)
+						.setPositiveButton(android.R.string.yes, 
+								new DialogInterface.OnClickListener() {
+							
+							@Override
+							public void onClick(DialogInterface dialog, 
+									int which) {
+								pause();
+								exitPlaylistMode();
+							}
+						})
+				    .setNegativeButton(android.R.string.no, null)
+				    .show();
+			}     
+			else 
+				exitPlaylistMode();
 	        return true;
 		}
 		return false;
+	}
+	
+	private void exitPlaylistMode() {
+		mCurrentRenderer = null;
+		mSubscriptionCallback.end();
+		
+        mListView.setAdapter(mRendererAdapter);  
+        mPlayPause.setVisibility(View.GONE);			
 	}
 
 	/**
@@ -383,39 +401,54 @@ public class RendererFragment extends Fragment implements
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case R.id.playpause:
-	    	final Service<?, ?> service = mCurrentRenderer.findService(
-	    			new ServiceType("schemas-upnp-org", "AVTransport"));
-			if (mPlaying) {
+			if (mPlaying)
+				pause();
+			else
+				play();
+		}		
+	}
+	
+	/**
+	 * Sends 'pause' signal to current renderer.
+	 */
+	private void pause() {
+    	final Service<?, ?> service = mCurrentRenderer.findService(
+    			new ServiceType("schemas-upnp-org", "AVTransport"));
+		mUpnpService.getControlPoint().execute(new Stop(service) {
+			
+			@SuppressWarnings("rawtypes")
+			@Override
+			public void failure(ActionInvocation invocation, 
+					UpnpResponse operation, String defaultMessage) {
+				Log.w(TAG, "Pause failed, trying stop: " + defaultMessage);
+				// Sometimes stop works even though pause does not.
 				mUpnpService.getControlPoint().execute(new Stop(service) {
 					
-					@SuppressWarnings("rawtypes")
 					@Override
 					public void failure(ActionInvocation invocation, 
 							UpnpResponse operation, String defaultMessage) {
-						Log.w(TAG, "Pause failed, trying stop: " + defaultMessage);
-						// Sometimes stop works even though pause does not.
-						mUpnpService.getControlPoint().execute(new Stop(service) {
-							
-							@Override
-							public void failure(ActionInvocation invocation, 
-									UpnpResponse operation, String defaultMessage) {
-								Log.w(TAG, "Stop failed: " + defaultMessage);
-							}
-						});		
+						Log.w(TAG, "Stop failed: " + defaultMessage);
 					}
-				});			
-			} else {
-				mUpnpService.getControlPoint().execute(new Play(service) {
-					
-					@SuppressWarnings("rawtypes")
-					@Override
-					public void failure(ActionInvocation invocation, 
-							UpnpResponse operation, String defaultMessage) {
-						Log.w(TAG, "Play failed: " + defaultMessage);
-					}
-				});
+				});		
 			}
-		}		
+		});			
+	}
+	
+	/**
+	 * Sends 'play' signal to current renderer.
+	 */
+	private void play() {
+    	final Service<?, ?> service = mCurrentRenderer.findService(
+    			new ServiceType("schemas-upnp-org", "AVTransport"));
+		mUpnpService.getControlPoint().execute(new Play(service) {
+			
+			@SuppressWarnings("rawtypes")
+			@Override
+			public void failure(ActionInvocation invocation, 
+					UpnpResponse operation, String defaultMessage) {
+				Log.w(TAG, "Play failed: " + defaultMessage);
+			}
+		});
 	}
 
 }
