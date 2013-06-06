@@ -1,5 +1,7 @@
 package com.github.nutomic.controldlna;
 
+import org.teleal.cling.support.model.item.Item;
+
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -133,9 +135,12 @@ public class MainActivity extends SherlockFragmentActivity implements
 			super.onBackPressed();
 	}
 	
-	public void play(String uri) {
+	/**
+	 * Utility function to call RendererFragment.play from ServerFragment.
+	 */
+	public void play(Item[] playlist, int start) {
 		getSupportActionBar().selectTab(getSupportActionBar().getTabAt(0));
-		mRendererFragment.play(uri);
+		mRendererFragment.play(playlist, start);
 	}
 
 }

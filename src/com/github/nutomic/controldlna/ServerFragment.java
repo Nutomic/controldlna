@@ -211,9 +211,14 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     			getFiles(((Container) mFileAdapter.getItem(position)).getId());    			
     		}
     		else {
+    			Item[] playlist = new Item[mFileAdapter.getCount()];
+    			for (int i = 0; i < mFileAdapter.getCount(); i++) {
+    				if (mFileAdapter.getItem(i) instanceof Item) {
+    					playlist[i] = (Item) mFileAdapter.getItem(position);
+    				}
+    			}
     			MainActivity activity = (MainActivity) getActivity();
-    			activity.play(mFileAdapter.getItem(position)
-    					.getFirstResource().getValue());
+    			activity.play(playlist, position);
     		}
     	}
     }
