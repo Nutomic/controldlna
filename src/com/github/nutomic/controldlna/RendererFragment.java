@@ -10,13 +10,9 @@ import org.teleal.cling.model.gena.CancelReason;
 import org.teleal.cling.model.gena.GENASubscription;
 import org.teleal.cling.model.message.UpnpResponse;
 import org.teleal.cling.model.meta.Device;
-import org.teleal.cling.model.meta.LocalDevice;
-import org.teleal.cling.model.meta.RemoteDevice;
 import org.teleal.cling.model.meta.Service;
 import org.teleal.cling.model.state.StateVariableValue;
 import org.teleal.cling.model.types.ServiceType;
-import org.teleal.cling.registry.Registry;
-import org.teleal.cling.registry.RegistryListener;
 import org.teleal.cling.support.avtransport.callback.GetPositionInfo;
 import org.teleal.cling.support.avtransport.callback.Play;
 import org.teleal.cling.support.avtransport.callback.Seek;
@@ -110,90 +106,17 @@ public class RendererFragment extends Fragment implements
         public void onServiceConnected(ComponentName className, IBinder service) {
             mUpnpService = (AndroidUpnpService) service;
             Log.i(TAG, "Starting device search");
-            mUpnpService.getRegistry().addListener(mRegistryListener);
+            mUpnpService.getRegistry().addListener(mRendererAdapter);
             mUpnpService.getControlPoint().search();
+            for (Device<?, ?, ?> d : mUpnpService
+            		.getControlPoint().getRegistry().getDevices())
+            	mRendererAdapter.add(d);
         }
 
         public void onServiceDisconnected(ComponentName className) {
             mUpnpService = null;
         }
     };
-
-    /**
-     * Receives updates when devices are added or removed.
-     */
-    private RegistryListener mRegistryListener = new RegistryListener() {
-		
-		@Override
-		public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-		}
-		
-		@Override
-		public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
-			remove(device);	
-		}
-		
-		@Override
-		public void remoteDeviceDiscoveryStarted(Registry registry, 
-				RemoteDevice device) {
-		}
-		
-		@Override
-		public void remoteDeviceDiscoveryFailed(Registry registry, 
-				RemoteDevice device, Exception exception) {
-			Log.w(TAG, "Device discovery failed" + exception.getMessage());
-		}
-		
-		@Override
-		public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
-			add(device);
-		}
-		
-		@Override
-		public void localDeviceRemoved(Registry registry, LocalDevice device) {
-			remove(device);	
-		}
-		
-		@Override
-		public void localDeviceAdded(Registry registry, LocalDevice device) {
-			add(device);
-		}
-		
-		@Override
-		public void beforeShutdown(Registry registry) {			
-		}
-		
-		@Override
-		public void afterShutdown() {
-		}
-		
-		/**
-		 * Add a device to the ListView.
-		 */
-		private void add(final Device<?, ?, ?> device) {
-			getActivity().runOnUiThread(new Runnable() {
-				
-				@Override
-				public void run() {
-					if (device.getType().getType().equals("MediaRenderer"))
-						mRendererAdapter.add(device);	
-				}
-			});			
-		}
-		
-		/**
-		 * Remove a device from the ListView.
-		 */
-		private void remove(final Device<?, ?, ?> device) {
-			getActivity().runOnUiThread(new Runnable() {
-				
-				@Override
-				public void run() {
-					mRendererAdapter.remove(device);	
-				}
-			});			
-		}
-	};
     
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
@@ -207,8 +130,9 @@ public class RendererFragment extends Fragment implements
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
     	super.onActivityCreated(savedInstanceState);
-    	mRendererAdapter = new DeviceArrayAdapter(getActivity());
     	mListView = (ListView) getView().findViewById(R.id.listview);
+    	mRendererAdapter = new DeviceArrayAdapter(
+    			getActivity(), DeviceArrayAdapter.RENDERER);
         mListView.setAdapter(mRendererAdapter);
         mListView.setOnItemClickListener(this);
         mControls = getView().findViewById(R.id.controls);
@@ -272,7 +196,7 @@ public class RendererFragment extends Fragment implements
 	public void onDestroy() {
         super.onDestroy();
         if (mUpnpService != null)
-            mUpnpService.getRegistry().removeListener(mRegistryListener);
+            mUpnpService.getRegistry().removeListener(mRendererAdapter);
         getActivity().getApplicationContext().unbindService(mServiceConnection);
     }
 	

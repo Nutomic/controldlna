@@ -7,12 +7,8 @@ import org.teleal.cling.android.AndroidUpnpServiceImpl;
 import org.teleal.cling.model.action.ActionInvocation;
 import org.teleal.cling.model.message.UpnpResponse;
 import org.teleal.cling.model.meta.Device;
-import org.teleal.cling.model.meta.LocalDevice;
-import org.teleal.cling.model.meta.RemoteDevice;
 import org.teleal.cling.model.meta.Service;
 import org.teleal.cling.model.types.ServiceType;
-import org.teleal.cling.registry.Registry;
-import org.teleal.cling.registry.RegistryListener;
 import org.teleal.cling.support.contentdirectory.callback.Browse;
 import org.teleal.cling.support.model.BrowseFlag;
 import org.teleal.cling.support.model.DIDLContent;
@@ -80,92 +76,17 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
         public void onServiceConnected(ComponentName className, IBinder service) {
             mUpnpService = (AndroidUpnpService) service;
             Log.i(TAG, "Starting device search");
-            mUpnpService.getRegistry().addListener(registryListener);
+            mUpnpService.getRegistry().addListener(mServerAdapter);
             mUpnpService.getControlPoint().search();
+            for (Device<?, ?, ?> d : mUpnpService
+            		.getControlPoint().getRegistry().getDevices())
+            	mServerAdapter.add(d);
         }
 
         public void onServiceDisconnected(ComponentName className) {
             mUpnpService = null;
         }
     };
-
-    /**
-     * Receives updates when devices are added or removed.
-     */
-    private RegistryListener registryListener = new RegistryListener() {
-		
-		@Override
-		public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-			if (device == mCurrentServer)
-				getFiles();
-		}
-		
-		@Override
-		public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
-			remove(device);	
-		}
-		
-		@Override
-		public void remoteDeviceDiscoveryStarted(Registry registry, 
-				RemoteDevice device) {
-		}
-		
-		@Override
-		public void remoteDeviceDiscoveryFailed(Registry registry, 
-				RemoteDevice device, Exception exception) {
-			Log.w(TAG, "Device discovery failed" + exception.getMessage());
-		}
-		
-		@Override
-		public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
-			add(device);
-		}
-		
-		@Override
-		public void localDeviceRemoved(Registry registry, LocalDevice device) {
-			remove(device);	
-		}
-		
-		@Override
-		public void localDeviceAdded(Registry registry, LocalDevice device) {
-			add(device);
-		}
-		
-		@Override
-		public void beforeShutdown(Registry registry) {			
-		}
-		
-		@Override
-		public void afterShutdown() {
-		}
-		
-		/**
-		 * Add a device to the ListView.
-		 */
-		private void add(final Device<?, ?, ?> device) {
-			getActivity().runOnUiThread(new Runnable() {
-				
-				@Override
-				public void run() {
-					if (device.getType().getType().equals("MediaServer"))
-						mServerAdapter.add(device);	
-				}
-			});			
-		}
-		
-		/**
-		 * Remove a device from the ListView.
-		 */
-		private void remove(final Device<?, ?, ?> device) {
-			getActivity().runOnUiThread(new Runnable() {
-				
-				@Override
-				public void run() {
-					mServerAdapter.remove(device);	
-				}
-			});			
-		}
-	};
     
 	/**
 	 * Initializes ListView adapters, launches Cling UPNP service.
@@ -173,9 +94,10 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
     	super.onActivityCreated(savedInstanceState);
-    	mServerAdapter = new DeviceArrayAdapter(getActivity());
     	mFileAdapter = new FileArrayAdapter(getActivity());
-    	
+
+    	mServerAdapter = new DeviceArrayAdapter(
+    			getActivity(), DeviceArrayAdapter.SERVER);
         setListAdapter(mServerAdapter);  
 
         getActivity().getApplicationContext().bindService(
@@ -192,7 +114,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	public void onDestroy() {
         super.onDestroy();
         if (mUpnpService != null)
-            mUpnpService.getRegistry().removeListener(registryListener);
+            mUpnpService.getRegistry().removeListener(mServerAdapter);
         getActivity().getApplicationContext().unbindService(mServiceConnection);
     }
     
