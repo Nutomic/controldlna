@@ -10,13 +10,32 @@
         android:layout_height="wrap_content"
         android:layout_weight="1" >
     </ListView>
-
-    <Button
-        android:id="@+id/playpause"
-        android:layout_width="wrap_content"
+    
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="0"
-        android:onClick="playPauseClicked"
-        android:visibility="gone" />
+    	android:orientation="vertical"
+    	android:id="@+id/controls"
+    	android:visibility="gone" >
+    	
+    	<SeekBar
+	        android:id="@+id/progressBar"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content" />
+	
+	    <LinearLayout
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content" >
+	        
+		    <Button
+		        android:id="@+id/playpause"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:onClick="playPauseClicked" />
+		    
+	    </LinearLayout>
+	    
+    </LinearLayout>
 
 </LinearLayout>

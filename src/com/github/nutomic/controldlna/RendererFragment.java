@@ -17,12 +17,18 @@ import org.teleal.cling.model.state.StateVariableValue;
 import org.teleal.cling.model.types.ServiceType;
 import org.teleal.cling.registry.Registry;
 import org.teleal.cling.registry.RegistryListener;
+import org.teleal.cling.support.avtransport.callback.GetPositionInfo;
 import org.teleal.cling.support.avtransport.callback.Play;
+import org.teleal.cling.support.avtransport.callback.Seek;
 import org.teleal.cling.support.avtransport.callback.SetAVTransportURI;
 import org.teleal.cling.support.avtransport.callback.Stop;
 import org.teleal.cling.support.avtransport.lastchange.AVTransportLastChangeParser;
 import org.teleal.cling.support.avtransport.lastchange.AVTransportVariable;
+import org.teleal.cling.support.contentdirectory.DIDLParser;
 import org.teleal.cling.support.lastchange.LastChange;
+import org.teleal.cling.support.model.DIDLContent;
+import org.teleal.cling.support.model.PositionInfo;
+import org.teleal.cling.support.model.SeekMode;
 import org.teleal.cling.support.model.item.Item;
 
 import android.app.AlertDialog;
@@ -32,6 +38,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -43,6 +50,8 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
 
 import com.github.nutomic.controldlna.MainActivity.OnBackPressedListener;
@@ -54,12 +63,15 @@ import com.github.nutomic.controldlna.MainActivity.OnBackPressedListener;
  *
  */
 public class RendererFragment extends Fragment implements 
-		OnBackPressedListener, OnItemClickListener, OnClickListener {
+		OnBackPressedListener, OnItemClickListener, OnClickListener, 
+		OnSeekBarChangeListener {
 	
 	private final String TAG = "RendererFragment";
 	
 	private ListView mListView;
 	
+	private View mControls;
+	private SeekBar mProgressBar;
 	private Button mPlayPause;
 	
 	private boolean mPlaying = false;
@@ -199,6 +211,9 @@ public class RendererFragment extends Fragment implements
     	mListView = (ListView) getView().findViewById(R.id.listview);
         mListView.setAdapter(mRendererAdapter);
         mListView.setOnItemClickListener(this);
+        mControls = getView().findViewById(R.id.controls);
+        mProgressBar = (SeekBar) getView().findViewById(R.id.progressBar);
+        mProgressBar.setOnSeekBarChangeListener(this);
         mPlayPause = (Button) getView().findViewById(R.id.playpause);
         mPlayPause.setOnClickListener(this);
     	mPlayPause.setText(R.string.play);
@@ -208,6 +223,37 @@ public class RendererFragment extends Fragment implements
             mServiceConnection,
             Context.BIND_AUTO_CREATE
         );     
+    }
+    
+    private void pollTimePosition() {
+    	final Service<?, ?> service = mCurrentRenderer.findService(
+    			new ServiceType("schemas-upnp-org", "AVTransport"));
+		mUpnpService.getControlPoint().execute(new GetPositionInfo(service) {
+			
+			@SuppressWarnings("rawtypes")
+			@Override
+			public void failure(ActionInvocation invocation, 
+					UpnpResponse operation, String defaultMessage) {
+				Log.w(TAG, "Get position failed: " + defaultMessage);			
+			}
+			
+			@SuppressWarnings("rawtypes")
+			@Override
+			public void received(ActionInvocation invocation, PositionInfo positionInfo) {
+				mProgressBar.setMax((int) positionInfo.getTrackDurationSeconds());
+				mProgressBar.setProgress((int) positionInfo.getTrackElapsedSeconds());
+			}
+		});
+    	
+		if (mPlaying) {
+			new Handler().postDelayed(new Runnable() {
+				
+				@Override
+				public void run() {
+					pollTimePosition();
+				}
+	        }, 1000);    	
+		}
     }
     
     /**
@@ -247,8 +293,19 @@ public class RendererFragment extends Fragment implements
 			mListView.setAdapter(mPlaylistAdapter);
 	    	final Service<?, ?> service = mCurrentRenderer.findService(
 	    			new ServiceType("schemas-upnp-org", "AVTransport"));
+	    	DIDLParser parser = new DIDLParser();
+			DIDLContent didl = new DIDLContent();
+			didl.addItem(mPlaylist[track]);
+			String metadata;
+			try	{
+				metadata = parser.generate(didl, true);
+			}
+			catch (Exception e)	{
+				Log.w(TAG, "Metadata serialization failed", e);
+				metadata = "NO METADATA";
+			}
 	    	mUpnpService.getControlPoint().execute(new SetAVTransportURI(service, 
-	    			mPlaylist[track].getFirstResource().getValue(), "NO METADATA") {
+	    			mPlaylist[track].getFirstResource().getValue(), metadata) {
 				@SuppressWarnings("rawtypes")
 				@Override
 	            public void failure(ActionInvocation invocation, 
@@ -311,6 +368,7 @@ public class RendererFragment extends Fragment implements
 								public void run() {
 							    	mPlayPause.setText(R.string.pause);
 									mPlaying = true;	
+									pollTimePosition();
 								}
 							});
 					    	break;
@@ -353,7 +411,7 @@ public class RendererFragment extends Fragment implements
 			}
 
 			mListView.setAdapter(mPlaylistAdapter);
-			mPlayPause.setVisibility(View.VISIBLE);
+			mControls.setVisibility(View.VISIBLE);
 		}
 	}
 
@@ -391,7 +449,7 @@ public class RendererFragment extends Fragment implements
 		mSubscriptionCallback.end();
 		
         mListView.setAdapter(mRendererAdapter);  
-        mPlayPause.setVisibility(View.GONE);			
+        mControls.setVisibility(View.GONE);			
 	}
 
 	/**
@@ -449,6 +507,36 @@ public class RendererFragment extends Fragment implements
 				Log.w(TAG, "Play failed: " + defaultMessage);
 			}
 		});
+	}
+
+	/**
+	 * Sends manual seek on progress bar to renderer.
+	 */
+	@Override
+	public void onProgressChanged(SeekBar seekBar, int progress, 
+			boolean fromUser) {
+		if (fromUser) {
+	    	final Service<?, ?> service = mCurrentRenderer.findService(
+	    			new ServiceType("schemas-upnp-org", "AVTransport"));
+	    	mUpnpService.getControlPoint().execute(new Seek(service, 
+	    			SeekMode.REL_TIME, Integer.toString(progress)) {
+				
+				@SuppressWarnings("rawtypes")
+				@Override
+				public void failure(ActionInvocation invocation, 
+						UpnpResponse operation, String defaultMessage) {
+					Log.w(TAG, "Seek failed: " + defaultMessage);
+				}
+			});			
+		}
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar seekBar) {
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar seekBar) {
 	}
 
 }
