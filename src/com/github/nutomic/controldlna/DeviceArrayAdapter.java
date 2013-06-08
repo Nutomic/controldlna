@@ -41,7 +41,7 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 	 * @param deviceType One of RENDERER or SERVER.
 	 */
 	public DeviceArrayAdapter(Activity activity, String deviceType) {
-		super(activity, android.R.layout.simple_list_item_1);
+		super(activity, android.R.layout.simple_list_item_2);
 		mActivity = activity;
 		mDeviceType = deviceType;
 	}
