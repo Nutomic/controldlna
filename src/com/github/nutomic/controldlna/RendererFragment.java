@@ -1,5 +1,7 @@
 package com.github.nutomic.controldlna;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.teleal.cling.android.AndroidUpnpService;
@@ -72,7 +74,9 @@ public class RendererFragment extends Fragment implements
 	
 	private boolean mPlaying = false;
 	
-	private Item[] mPlaylist;
+	private int mCurrentTrack;
+	
+	private List<Item> mPlaylist;
 	
 	/**
 	 * ListView adapter of media renderers.
@@ -103,14 +107,14 @@ public class RendererFragment extends Fragment implements
      */
     private ServiceConnection mServiceConnection= new ServiceConnection() {
 
-        public void onServiceConnected(ComponentName className, IBinder service) {
+        @SuppressWarnings("unchecked")
+		public void onServiceConnected(ComponentName className, IBinder service) {
             mUpnpService = (AndroidUpnpService) service;
             Log.i(TAG, "Starting device search");
             mUpnpService.getRegistry().addListener(mRendererAdapter);
             mUpnpService.getControlPoint().search();
-            for (Device<?, ?, ?> d : mUpnpService
-            		.getControlPoint().getRegistry().getDevices())
-            	mRendererAdapter.add(d);
+            mRendererAdapter.addAll((Collection<? extends Device<?, ?, ?>>) 
+            		mUpnpService.getControlPoint().getRegistry().getDevices());
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -131,6 +135,7 @@ public class RendererFragment extends Fragment implements
     public void onActivityCreated(Bundle savedInstanceState) {
     	super.onActivityCreated(savedInstanceState);
     	mListView = (ListView) getView().findViewById(R.id.listview);
+    	mPlaylistAdapter = new FileArrayAdapter(getActivity());
     	mRendererAdapter = new DeviceArrayAdapter(
     			getActivity(), DeviceArrayAdapter.RENDERER);
         mListView.setAdapter(mRendererAdapter);
@@ -141,6 +146,8 @@ public class RendererFragment extends Fragment implements
         mPlayPause = (Button) getView().findViewById(R.id.playpause);
         mPlayPause.setOnClickListener(this);
     	mPlayPause.setText(R.string.play);
+    	getView().findViewById(R.id.previous).setOnClickListener(this);
+    	getView().findViewById(R.id.next).setOnClickListener(this);
 
         getActivity().getApplicationContext().bindService(
             new Intent(getActivity(), AndroidUpnpServiceImpl.class),
@@ -203,8 +210,10 @@ public class RendererFragment extends Fragment implements
     /**
      * Sets the new playlist and starts playing it (if a renderer is selected).
      */
-	public void setPlaylist(Item[] playlist, int start) {
+	public void setPlaylist(List<Item> playlist, int start) {
 		mPlaylist = playlist;
+		mPlaylistAdapter.clear();
+		mPlaylistAdapter.addAll(playlist);
 		playTrack(start);
 	}
 	
@@ -215,11 +224,12 @@ public class RendererFragment extends Fragment implements
 	private void playTrack(int track) {
 		if (mCurrentRenderer != null) {
 			mListView.setAdapter(mPlaylistAdapter);
+			mCurrentTrack = track;
 	    	final Service<?, ?> service = mCurrentRenderer.findService(
 	    			new ServiceType("schemas-upnp-org", "AVTransport"));
 	    	DIDLParser parser = new DIDLParser();
 			DIDLContent didl = new DIDLContent();
-			didl.addItem(mPlaylist[track]);
+			didl.addItem(mPlaylist.get(track));
 			String metadata;
 			try	{
 				metadata = parser.generate(didl, true);
@@ -229,7 +239,7 @@ public class RendererFragment extends Fragment implements
 				metadata = "NO METADATA";
 			}
 	    	mUpnpService.getControlPoint().execute(new SetAVTransportURI(service, 
-	    			mPlaylist[track].getFirstResource().getValue(), metadata) {
+	    			mPlaylist.get(track).getFirstResource().getValue(), metadata) {
 				@SuppressWarnings("rawtypes")
 				@Override
 	            public void failure(ActionInvocation invocation, 
@@ -337,6 +347,8 @@ public class RendererFragment extends Fragment implements
 			mListView.setAdapter(mPlaylistAdapter);
 			mControls.setVisibility(View.VISIBLE);
 		}
+		else if (mListView.getAdapter() == mPlaylistAdapter)
+			playTrack(position);
 	}
 
 	/**
@@ -373,7 +385,7 @@ public class RendererFragment extends Fragment implements
 		mSubscriptionCallback.end();
 		
         mListView.setAdapter(mRendererAdapter);  
-        mControls.setVisibility(View.GONE);			
+        mControls.setVisibility(View.GONE);	
 	}
 
 	/**
@@ -387,6 +399,15 @@ public class RendererFragment extends Fragment implements
 				pause();
 			else
 				play();
+			break;
+		case R.id.previous:
+			if (mCurrentTrack != 0 && !mPlaylist.isEmpty())
+				playTrack(--mCurrentTrack);
+			break;
+		case R.id.next:
+			if (mPlaylist.size() > mCurrentTrack + 1)
+				playTrack(++mCurrentTrack);
+			break;
 		}		
 	}
 	

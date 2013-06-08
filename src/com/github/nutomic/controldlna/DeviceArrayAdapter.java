@@ -1,5 +1,7 @@
 package com.github.nutomic.controldlna;
 
+import java.util.Collection;
+
 import org.teleal.cling.model.meta.Device;
 import org.teleal.cling.model.meta.LocalDevice;
 import org.teleal.cling.model.meta.RemoteDevice;
@@ -120,5 +122,14 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 				remove(device);	
 			}
 		});			
+	}
+
+	/**
+	 * Not implemented on lower API levels.
+	 */
+	@Override
+	public void addAll(Collection<? extends Device<?, ?, ?>> collection) {
+		for (Device<?, ?, ?> d : collection)
+			add(d);
 	}
 }

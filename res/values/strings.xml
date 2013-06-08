@@ -7,5 +7,7 @@
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="exit_renderer">Do you really want to exit the renderer? Playback will be stopped.</string>
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
 
 </resources>

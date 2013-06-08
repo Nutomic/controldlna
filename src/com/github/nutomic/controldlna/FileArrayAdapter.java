@@ -1,5 +1,7 @@
 package com.github.nutomic.controldlna;
 
+import java.util.Collection;
+
 import org.teleal.cling.support.model.DIDLObject;
 
 import android.content.Context;
@@ -25,6 +27,15 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
         TextView tv = (TextView) convertView.findViewById(android.R.id.text1);
         tv.setText(getItem(position).getTitle());
         return convertView;
+	}
+	
+	/**
+	 * Not implemented on lower API levels.
+	 */
+	@Override
+	public void addAll(Collection<? extends DIDLObject> collection) {
+		for (DIDLObject d : collection)
+			add(d);
 	}
 	
 }

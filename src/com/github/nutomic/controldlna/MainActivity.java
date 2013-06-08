@@ -1,5 +1,7 @@
 package com.github.nutomic.controldlna;
 
+import java.util.List;
+
 import org.teleal.cling.support.model.item.Item;
 
 import android.os.Bundle;
@@ -138,7 +140,7 @@ public class MainActivity extends SherlockFragmentActivity implements
 	/**
 	 * Utility function to call RendererFragment.play from ServerFragment.
 	 */
-	public void play(Item[] playlist, int start) {
+	public void play(List<Item> playlist, int start) {
 		getSupportActionBar().selectTab(getSupportActionBar().getTabAt(0));
 		mRendererFragment.setPlaylist(playlist, start);
 	}

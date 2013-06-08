@@ -1,5 +1,8 @@
 package com.github.nutomic.controldlna;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Stack;
 
 import org.teleal.cling.android.AndroidUpnpService;
@@ -73,14 +76,14 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
      */
     private ServiceConnection mServiceConnection= new ServiceConnection() {
 
-        public void onServiceConnected(ComponentName className, IBinder service) {
+        @SuppressWarnings("unchecked")
+		public void onServiceConnected(ComponentName className, IBinder service) {
             mUpnpService = (AndroidUpnpService) service;
             Log.i(TAG, "Starting device search");
             mUpnpService.getRegistry().addListener(mServerAdapter);
             mUpnpService.getControlPoint().search();
-            for (Device<?, ?, ?> d : mUpnpService
-            		.getControlPoint().getRegistry().getDevices())
-            	mServerAdapter.add(d);
+            mServerAdapter.addAll((Collection<? extends Device<?, ?, ?>>) 
+            		mUpnpService.getControlPoint().getRegistry().getDevices());
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -133,11 +136,10 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     			getFiles(((Container) mFileAdapter.getItem(position)).getId());    			
     		}
     		else {
-    			Item[] playlist = new Item[mFileAdapter.getCount()];
+    			List<Item> playlist = new ArrayList<Item>();
     			for (int i = 0; i < mFileAdapter.getCount(); i++) {
-    				if (mFileAdapter.getItem(i) instanceof Item) {
-    					playlist[i] = (Item) mFileAdapter.getItem(position);
-    				}
+    				if (mFileAdapter.getItem(i) instanceof Item)
+    					playlist.add((Item) mFileAdapter.getItem(i));
     			}
     			MainActivity activity = (MainActivity) getActivity();
     			activity.play(playlist, position);
