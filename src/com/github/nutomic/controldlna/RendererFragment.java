@@ -78,6 +78,12 @@ public class RendererFragment extends Fragment implements
 	
 	private int mCurrentTrack;
 	
+	/**
+	 * Used to determine when the player stops due to the media file being 
+	 * over (so the next one can be played).
+	 */
+	private boolean mManuallyStopped;
+	
 	private List<Item> mPlaylist;
 	
 	/**
@@ -285,50 +291,52 @@ public class RendererFragment extends Fragment implements
 
     			@SuppressWarnings("rawtypes")
     			@Override
-    			protected void eventReceived(GENASubscription sub) {
-    				@SuppressWarnings("unchecked")
-					Map<String, StateVariableValue> m = sub.getCurrentValues();
-    				try {
-						LastChange lastChange = new LastChange(
-								new AVTransportLastChangeParser(), 
-								m.get("LastChange").toString());
-						switch (lastChange.getEventedValue(0, 
-								AVTransportVariable.TransportState.class)
-										.getValue()) {
-						case PLAYING:
-							getActivity().runOnUiThread(new Runnable() {
-								
-								@Override
-								public void run() {
+    			protected void eventReceived(final GENASubscription sub) {
+					getActivity().runOnUiThread(new Runnable() {
+						
+						@Override
+						public void run() {
+		    				@SuppressWarnings("unchecked")
+							Map<String, StateVariableValue> m = sub.getCurrentValues();
+		    				try {
+								LastChange lastChange = new LastChange(
+										new AVTransportLastChangeParser(), 
+										m.get("LastChange").toString());
+								switch (lastChange.getEventedValue(0, 
+										AVTransportVariable.TransportState.class)
+												.getValue()) {
+								case PLAYING:
 							    	mPlayPause.setText(R.string.pause);
 									mPlaying = true;	
 									pollTimePosition();
-								}
-							});
-					    	break;
-						case PAUSED_PLAYBACK:
-							// fallthrough
-						case STOPPED:
-							getActivity().runOnUiThread(new Runnable() {
-								
-								@Override
-								public void run() {
+							    	break;
+								case STOPPED:
+									if (!mManuallyStopped && 
+											(mPlaylist.size() > mCurrentTrack + 1)) {
+										Log.d(TAG, "next");
+										mManuallyStopped = false;
+										playTrack(mCurrentTrack +1);
+										break;
+									}
+								case PAUSED_PLAYBACK:
+									mManuallyStopped = false;
 							    	mPlayPause.setText(R.string.play);
-									mPlaying = false;								
-								}
-							});
-					    	break;
-					    default:
-					    }
-						
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+									mPlaying = false;	
+							    	break;
+							    default:
+							    }
+								
+							} catch (Exception e) {
+								Log.w(TAG, "Failed to parse UPNP event", e);
+							}				
+						}
+					});
     			}
 
     			@SuppressWarnings("rawtypes")
     			@Override
-    			protected void eventsMissed(GENASubscription sub, int numberOfMissedEvents) {		
+    			protected void eventsMissed(GENASubscription sub, 
+    					int numberOfMissedEvents) {	
     			}
 
     			@SuppressWarnings("rawtypes")
@@ -402,11 +410,11 @@ public class RendererFragment extends Fragment implements
 			break;
 		case R.id.previous:
 			if (mCurrentTrack != 0 && !mPlaylist.isEmpty())
-				playTrack(--mCurrentTrack);
+				playTrack(mCurrentTrack - 1);
 			break;
 		case R.id.next:
 			if (mPlaylist.size() > mCurrentTrack + 1)
-				playTrack(++mCurrentTrack);
+				playTrack(mCurrentTrack + 1);
 			break;
 		}		
 	}
@@ -415,6 +423,7 @@ public class RendererFragment extends Fragment implements
 	 * Sends 'pause' signal to current renderer.
 	 */
 	private void pause() {
+		mManuallyStopped = true;
     	final Service<?, ?> service = getService("AVTransport");
 		mUpnpService.getControlPoint().execute(new Stop(service) {
 			
