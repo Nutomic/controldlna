@@ -28,6 +28,8 @@ import org.teleal.cling.support.model.DIDLContent;
 import org.teleal.cling.support.model.PositionInfo;
 import org.teleal.cling.support.model.SeekMode;
 import org.teleal.cling.support.model.item.Item;
+import org.teleal.cling.support.renderingcontrol.callback.GetVolume;
+import org.teleal.cling.support.renderingcontrol.callback.SetVolume;
 
 import android.app.AlertDialog;
 import android.content.ComponentName;
@@ -482,6 +484,42 @@ public class RendererFragment extends Fragment implements
 
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
+	}
+
+	/**
+	 * Increases or decreases volume.
+	 * 
+	 * @param increase True to increase volume, false to decrease.
+	 */
+	@SuppressWarnings("rawtypes")
+	public void changeVolume(final boolean increase) {
+		if (mCurrentRenderer == null)
+			return;
+    	final Service<?, ?> service = mCurrentRenderer.findService(
+    			new ServiceType("schemas-upnp-org", "RenderingControl"));
+    	mUpnpService.getControlPoint().execute(new GetVolume(service) {
+			
+			@Override
+			public void failure(ActionInvocation invocation, 
+					UpnpResponse operation, String defaultMessage) {
+				Log.d(TAG, "Failed to get current Volume: " + defaultMessage);
+			}
+			
+			@Override
+			public void received(ActionInvocation invocation, int volume) {
+				int newVolume = volume + ((increase) ? 4 : -4);
+				if (newVolume < 0) newVolume = 0;
+				mUpnpService.getControlPoint().execute(new SetVolume(service, 
+						newVolume) {
+					
+					@Override
+					public void failure(ActionInvocation invocation, 
+							UpnpResponse operation, String defaultMessage) {
+						Log.d(TAG, "Failed to set new Volume: " + defaultMessage);
+					}
+				});
+			}
+		});	
 	}
 
 }

@@ -10,6 +10,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
+import android.view.KeyEvent;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
@@ -144,5 +145,25 @@ public class MainActivity extends SherlockFragmentActivity implements
 		getSupportActionBar().selectTab(getSupportActionBar().getTabAt(0));
 		mRendererFragment.setPlaylist(playlist, start);
 	}
+	
+	/**
+	 * Sends volume key events to RendererFragment (which sends them to 
+	 * media renderer).
+	 */
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {		
+        switch (event.getKeyCode()) {
+        case KeyEvent.KEYCODE_VOLUME_UP:
+            if (event.getAction() == KeyEvent.ACTION_DOWN)
+                mRendererFragment.changeVolume(true);
+            return true;
+        case KeyEvent.KEYCODE_VOLUME_DOWN:
+            if (event.getAction() == KeyEvent.ACTION_DOWN)
+                mRendererFragment.changeVolume(false);
+            return true;
+        default:
+            return super.dispatchKeyEvent(event);
+        }
+    }
 
 }
