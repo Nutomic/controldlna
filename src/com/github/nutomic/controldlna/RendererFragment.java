@@ -227,8 +227,6 @@ public class RendererFragment extends Fragment implements
 		if (mCurrentRenderer != null) {
 			mListView.setAdapter(mPlaylistAdapter);
 			mCurrentTrack = track;
-	    	final Service<?, ?> service = mCurrentRenderer.findService(
-	    			new ServiceType("schemas-upnp-org", "AVTransport"));
 	    	DIDLParser parser = new DIDLParser();
 			DIDLContent didl = new DIDLContent();
 			didl.addItem(mPlaylist.get(track));
@@ -240,7 +238,8 @@ public class RendererFragment extends Fragment implements
 				Log.w(TAG, "Metadata serialization failed", e);
 				metadata = "NO METADATA";
 			}
-	    	mUpnpService.getControlPoint().execute(new SetAVTransportURI(service, 
+	    	mUpnpService.getControlPoint().execute(new SetAVTransportURI(
+	    			getService("AVTransport"), 
 	    			mPlaylist.get(track).getFirstResource().getValue(), metadata) {
 				@SuppressWarnings("rawtypes")
 				@Override
@@ -270,9 +269,8 @@ public class RendererFragment extends Fragment implements
 	public void onItemClick(AdapterView<?> a, View v, int position, long id) {
 		if (mListView.getAdapter() == mRendererAdapter) {
 			mCurrentRenderer = mRendererAdapter.getItem(position);
-	    	Service<?, ?> service = mCurrentRenderer.findService(
-	    			new ServiceType("schemas-upnp-org", "AVTransport"));	
-	    	mSubscriptionCallback = new SubscriptionCallback(service, 600) {
+	    	mSubscriptionCallback = new SubscriptionCallback(
+	    			getService("AVTransport"), 600) {
 
 	    		@SuppressWarnings("rawtypes")
     			@Override
@@ -417,8 +415,7 @@ public class RendererFragment extends Fragment implements
 	 * Sends 'pause' signal to current renderer.
 	 */
 	private void pause() {
-    	final Service<?, ?> service = mCurrentRenderer.findService(
-    			new ServiceType("schemas-upnp-org", "AVTransport"));
+    	final Service<?, ?> service = getService("AVTransport");
 		mUpnpService.getControlPoint().execute(new Stop(service) {
 			
 			@SuppressWarnings("rawtypes")
@@ -443,9 +440,7 @@ public class RendererFragment extends Fragment implements
 	 * Sends 'play' signal to current renderer.
 	 */
 	private void play() {
-    	final Service<?, ?> service = mCurrentRenderer.findService(
-    			new ServiceType("schemas-upnp-org", "AVTransport"));
-		mUpnpService.getControlPoint().execute(new Play(service) {
+		mUpnpService.getControlPoint().execute(new Play(getService("AVTransport")) {
 			
 			@SuppressWarnings("rawtypes")
 			@Override
@@ -463,10 +458,9 @@ public class RendererFragment extends Fragment implements
 	public void onProgressChanged(SeekBar seekBar, int progress, 
 			boolean fromUser) {
 		if (fromUser) {
-	    	final Service<?, ?> service = mCurrentRenderer.findService(
-	    			new ServiceType("schemas-upnp-org", "AVTransport"));
-	    	mUpnpService.getControlPoint().execute(new Seek(service, 
-	    			SeekMode.REL_TIME, Integer.toString(progress)) {
+	    	mUpnpService.getControlPoint().execute(new Seek(
+	    			getService("AVTransport"), SeekMode.REL_TIME, 
+	    			Integer.toString(progress)) {
 				
 				@SuppressWarnings("rawtypes")
 				@Override
@@ -495,8 +489,7 @@ public class RendererFragment extends Fragment implements
 	public void changeVolume(final boolean increase) {
 		if (mCurrentRenderer == null)
 			return;
-    	final Service<?, ?> service = mCurrentRenderer.findService(
-    			new ServiceType("schemas-upnp-org", "RenderingControl"));
+		final Service<?, ?> service = getService("RenderingControl");
     	mUpnpService.getControlPoint().execute(new GetVolume(service) {
 			
 			@Override
@@ -520,6 +513,11 @@ public class RendererFragment extends Fragment implements
 				});
 			}
 		});	
+	}
+	
+	private Service<?, ?> getService(String name) {
+		return mCurrentRenderer.findService(
+    			new ServiceType("schemas-upnp-org", name));
 	}
 
 }
