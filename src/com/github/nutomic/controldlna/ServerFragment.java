@@ -74,7 +74,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     /**
      * Connection Cling to UPNP service.
      */
-    private ServiceConnection mServiceConnection= new ServiceConnection() {
+    private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
 
         @SuppressWarnings("unchecked")
 		public void onServiceConnected(ComponentName className, IBinder service) {
@@ -105,7 +105,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 
         getActivity().getApplicationContext().bindService(
             new Intent(getActivity(), AndroidUpnpServiceImpl.class),
-            mServiceConnection,
+            mUpnpServiceConnection,
             Context.BIND_AUTO_CREATE
         );     
     }
@@ -118,7 +118,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
         super.onDestroy();
         if (mUpnpService != null)
             mUpnpService.getRegistry().removeListener(mServerAdapter);
-        getActivity().getApplicationContext().unbindService(mServiceConnection);
+        getActivity().getApplicationContext().unbindService(mUpnpServiceConnection);
     }
     
     /**

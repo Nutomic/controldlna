@@ -16,20 +16,16 @@ import org.teleal.cling.model.meta.Service;
 import org.teleal.cling.model.state.StateVariableValue;
 import org.teleal.cling.model.types.ServiceType;
 import org.teleal.cling.support.avtransport.callback.GetPositionInfo;
-import org.teleal.cling.support.avtransport.callback.Play;
 import org.teleal.cling.support.avtransport.callback.Seek;
-import org.teleal.cling.support.avtransport.callback.SetAVTransportURI;
-import org.teleal.cling.support.avtransport.callback.Stop;
 import org.teleal.cling.support.avtransport.lastchange.AVTransportLastChangeParser;
 import org.teleal.cling.support.avtransport.lastchange.AVTransportVariable;
-import org.teleal.cling.support.contentdirectory.DIDLParser;
 import org.teleal.cling.support.lastchange.LastChange;
-import org.teleal.cling.support.model.DIDLContent;
 import org.teleal.cling.support.model.PositionInfo;
 import org.teleal.cling.support.model.SeekMode;
 import org.teleal.cling.support.model.item.Item;
 import org.teleal.cling.support.renderingcontrol.callback.GetVolume;
 import org.teleal.cling.support.renderingcontrol.callback.SetVolume;
+
 
 import android.app.AlertDialog;
 import android.content.ComponentName;
@@ -55,6 +51,8 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
 
 import com.github.nutomic.controldlna.MainActivity.OnBackPressedListener;
+import com.github.nutomic.controldlna.service.PlayService;
+import com.github.nutomic.controldlna.service.PlayServiceBinder;
 
 /**
  * Shows a list of media servers, allowing to select one for playback.
@@ -76,15 +74,7 @@ public class RendererFragment extends Fragment implements
 	
 	private boolean mPlaying = false;
 	
-	private int mCurrentTrack;
-	
-	/**
-	 * Used to determine when the player stops due to the media file being 
-	 * over (so the next one can be played).
-	 */
-	private boolean mManuallyStopped;
-	
-	private List<Item> mPlaylist;
+	private Device<?, ?, ?> mCurrentRenderer;
 	
 	/**
 	 * ListView adapter of media renderers.
@@ -93,17 +83,21 @@ public class RendererFragment extends Fragment implements
 	
 	private FileArrayAdapter mPlaylistAdapter;
 	
-	/**
-	 * The media renderer that is currently active.
-	 */
-	private Device<?, ?, ?> mCurrentRenderer;
-	
-	/**
-	 * First track to be played when a renderer is selected (-1 for none).
-	 */
-	private int mCachedStart = -1;
-	
 	private SubscriptionCallback mSubscriptionCallback;
+
+	private PlayServiceBinder mPlayService;
+	
+	private ServiceConnection mPlayServiceConnection = new ServiceConnection() {
+
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			Log.d(TAG, "test");
+			mPlayService = (PlayServiceBinder) service;
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            mPlayService = null;
+        }
+    };
 	
 	/**
 	 * Cling UPNP service. 
@@ -113,7 +107,7 @@ public class RendererFragment extends Fragment implements
     /**
      * Connection Cling to UPNP service.
      */
-    private ServiceConnection mServiceConnection= new ServiceConnection() {
+    private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
 
         @SuppressWarnings("unchecked")
 		public void onServiceConnected(ComponentName className, IBinder service) {
@@ -157,17 +151,29 @@ public class RendererFragment extends Fragment implements
     	getView().findViewById(R.id.previous).setOnClickListener(this);
     	getView().findViewById(R.id.next).setOnClickListener(this);
 
+    	getActivity().startService(new Intent(getActivity(), PlayService.class));
+        getActivity().getApplicationContext().bindService(
+            new Intent(getActivity(), PlayService.class),
+            mPlayServiceConnection,
+            Context.BIND_AUTO_CREATE
+        );
+
         getActivity().getApplicationContext().bindService(
             new Intent(getActivity(), AndroidUpnpServiceImpl.class),
-            mServiceConnection,
+            mUpnpServiceConnection,
             Context.BIND_AUTO_CREATE
-        );     
+        );
     }
     
+    /**
+     * Polls the renderer for the current play progress as long as 
+     * mPlaying is true.
+     */
     private void pollTimePosition() {
     	final Service<?, ?> service = mCurrentRenderer.findService(
     			new ServiceType("schemas-upnp-org", "AVTransport"));
-		mUpnpService.getControlPoint().execute(new GetPositionInfo(service) {
+		mUpnpService.getControlPoint().execute(
+				new GetPositionInfo(service) {
 			
 			@SuppressWarnings("rawtypes")
 			@Override
@@ -194,15 +200,6 @@ public class RendererFragment extends Fragment implements
 	        }, 1000);    	
 		}
     }
-    
-    /**
-     * Clears cached playback URI.
-     */
-    @Override
-    public void onPause() {
-    	super.onPause();    	
-    	mCachedStart = -1;
-    }
 
     /**
      * Closes Cling UPNP service.
@@ -210,88 +207,80 @@ public class RendererFragment extends Fragment implements
     @Override
 	public void onDestroy() {
         super.onDestroy();
-        if (mUpnpService != null)
-            mUpnpService.getRegistry().removeListener(mRendererAdapter);
-        getActivity().getApplicationContext().unbindService(mServiceConnection);
+        mUpnpService.getRegistry().removeListener(mRendererAdapter);
+        getActivity().getApplicationContext().unbindService(mUpnpServiceConnection);
+        getActivity().getApplicationContext().unbindService(mPlayServiceConnection);
     }
 	
     /**
-     * Sets the new playlist and starts playing it (if a renderer is selected).
+     * Sets the new playlist.
      */
 	public void setPlaylist(List<Item> playlist, int start) {
-		mPlaylist = playlist;
 		mPlaylistAdapter.clear();
 		mPlaylistAdapter.addAll(playlist);
-		playTrack(start);
-	}
-	
-	/**
-	 * Plays the specified track in the current playlist, caches value if no 
-	 * renderer is selected.
-	 */
-	private void playTrack(int track) {
-		if (mCurrentRenderer != null) {
-			mListView.setAdapter(mPlaylistAdapter);
-			mCurrentTrack = track;
-	    	DIDLParser parser = new DIDLParser();
-			DIDLContent didl = new DIDLContent();
-			didl.addItem(mPlaylist.get(track));
-			String metadata;
-			try	{
-				metadata = parser.generate(didl, true);
-			}
-			catch (Exception e)	{
-				Log.w(TAG, "Metadata serialization failed", e);
-				metadata = "NO METADATA";
-			}
-	    	mUpnpService.getControlPoint().execute(new SetAVTransportURI(
-	    			getService("AVTransport"), 
-	    			mPlaylist.get(track).getFirstResource().getValue(), metadata) {
-				@SuppressWarnings("rawtypes")
-				@Override
-	            public void failure(ActionInvocation invocation, 
-	            		UpnpResponse operation, String defaultMsg) {
-	                Log.w(TAG, "Playback failed: " + defaultMsg);
-	            }
-	            
-				@SuppressWarnings("rawtypes")
-				@Override
-        		public void success(ActionInvocation invocation) {
-	    	    	play();
-        		}
-	        });
-		}
-		else {
-			Toast.makeText(getActivity(), "Please select a renderer.", 
-					Toast.LENGTH_SHORT).show();
-			mCachedStart = track;
-		}		
+		mPlayService.getService().setPlaylist(playlist, start);
 	}
 	
 	/**
 	 * Selects a media renderer.
 	 */
 	@Override
-	public void onItemClick(AdapterView<?> a, View v, int position, long id) {
+	public void onItemClick(AdapterView<?> a, View v, final int position, long id) {
 		if (mListView.getAdapter() == mRendererAdapter) {
-			mCurrentRenderer = mRendererAdapter.getItem(position);
+			if (mCurrentRenderer != null &&
+					mCurrentRenderer != mRendererAdapter.getItem(position)) {
+				new AlertDialog.Builder(getActivity())
+						.setMessage(R.string.exit_renderer)
+						.setPositiveButton(android.R.string.yes, 
+						new DialogInterface.OnClickListener() {
+					
+									@Override
+									public void onClick(DialogInterface dialog, 
+											int which) {
+										mControls.setVisibility(View.VISIBLE);
+										selectRenderer(mRendererAdapter
+												.getItem(position));
+									}
+								})
+						.setNegativeButton(android.R.string.no, null)
+						.show();
+				
+			}
+			else {
+				mControls.setVisibility(View.VISIBLE);
+				selectRenderer(mRendererAdapter.getItem(position));
+			}
+		}
+		else if (mListView.getAdapter() == mPlaylistAdapter)
+			mPlayService.getService().playTrack(position);
+	}
+	
+	private void selectRenderer(Device<?, ?, ?> renderer) {
+		if (mCurrentRenderer != renderer) {		
+			if (mCurrentRenderer != null)
+				mPlayService.getService().pause();
+			if (mSubscriptionCallback != null)
+				mSubscriptionCallback.end();
+			
+			mCurrentRenderer = renderer;
+			mPlayService.getService().setRenderer(renderer);
 	    	mSubscriptionCallback = new SubscriptionCallback(
 	    			getService("AVTransport"), 600) {
-
+	
 	    		@SuppressWarnings("rawtypes")
-    			@Override
-    			protected void established(GENASubscription sub) {
-    			}
-
+				@Override
+				protected void established(GENASubscription sub) {
+				}
+	
 	    		@SuppressWarnings("rawtypes")
-    			@Override
-    			protected void ended(GENASubscription sub, CancelReason reason,
-    					UpnpResponse response) {			
-    			}
-
-    			@SuppressWarnings("rawtypes")
-    			@Override
-    			protected void eventReceived(final GENASubscription sub) {
+				@Override
+				protected void ended(GENASubscription sub, CancelReason reason,
+						UpnpResponse response) {			
+				}
+	
+				@SuppressWarnings("rawtypes")
+				@Override
+				protected void eventReceived(final GENASubscription sub) {
 					getActivity().runOnUiThread(new Runnable() {
 						
 						@Override
@@ -307,23 +296,17 @@ public class RendererFragment extends Fragment implements
 												.getValue()) {
 								case PLAYING:
 							    	mPlayPause.setText(R.string.pause);
-									mPlaying = true;	
+									mPlaying = true;
 									pollTimePosition();
 							    	break;
 								case STOPPED:
-									if (!mManuallyStopped && 
-											(mPlaylist.size() > mCurrentTrack + 1)) {
-										Log.d(TAG, "next");
-										mManuallyStopped = false;
-										playTrack(mCurrentTrack +1);
-										break;
-									}
+									// fallthrough
 								case PAUSED_PLAYBACK:
-									mManuallyStopped = false;
 							    	mPlayPause.setText(R.string.play);
 									mPlaying = false;	
 							    	break;
-							    default:
+								default:
+									break;
 							    }
 								
 							} catch (Exception e) {
@@ -331,32 +314,24 @@ public class RendererFragment extends Fragment implements
 							}				
 						}
 					});
-    			}
-
-    			@SuppressWarnings("rawtypes")
-    			@Override
-    			protected void eventsMissed(GENASubscription sub, 
-    					int numberOfMissedEvents) {	
-    			}
-
-    			@SuppressWarnings("rawtypes")
-    			@Override
-    			protected void failed(GENASubscription sub, UpnpResponse responseStatus,
-    					Exception exception, String defaultMsg) {	
-    				Log.d(TAG, defaultMsg);
-    			}
+				}
+	
+				@SuppressWarnings("rawtypes")
+				@Override
+				protected void eventsMissed(GENASubscription sub, 
+						int numberOfMissedEvents) {	
+				}
+	
+				@SuppressWarnings("rawtypes")
+				@Override
+				protected void failed(GENASubscription sub, UpnpResponse responseStatus,
+						Exception exception, String defaultMsg) {	
+					Log.d(TAG, defaultMsg);
+				}
 			};
-	    	mUpnpService.getControlPoint().execute(mSubscriptionCallback);
-			if (mCachedStart != -1) {
-				setPlaylist(mPlaylist, mCachedStart);
-				mCachedStart = -1;
-			}
-
-			mListView.setAdapter(mPlaylistAdapter);
-			mControls.setVisibility(View.VISIBLE);
+			mUpnpService.getControlPoint().execute(mSubscriptionCallback);
 		}
-		else if (mListView.getAdapter() == mPlaylistAdapter)
-			playTrack(position);
+		mListView.setAdapter(mPlaylistAdapter);
 	}
 
 	/**
@@ -365,35 +340,11 @@ public class RendererFragment extends Fragment implements
 	@Override
 	public boolean onBackPressed() {
 		if (mListView.getAdapter() == mPlaylistAdapter) {
-			if (mPlaying) {
-				new AlertDialog.Builder(getActivity())
-						.setMessage(R.string.exit_renderer)
-						.setPositiveButton(android.R.string.yes, 
-								new DialogInterface.OnClickListener() {
-							
-							@Override
-							public void onClick(DialogInterface dialog, 
-									int which) {
-								pause();
-								exitPlaylistMode();
-							}
-						})
-				    .setNegativeButton(android.R.string.no, null)
-				    .show();
-			}     
-			else 
-				exitPlaylistMode();
+			mControls.setVisibility(View.GONE);
+			mListView.setAdapter(mRendererAdapter);
 	        return true;
 		}
 		return false;
-	}
-	
-	private void exitPlaylistMode() {
-		mCurrentRenderer = null;
-		mSubscriptionCallback.end();
-		
-        mListView.setAdapter(mRendererAdapter);  
-        mControls.setVisibility(View.GONE);	
 	}
 
 	/**
@@ -404,60 +355,17 @@ public class RendererFragment extends Fragment implements
 		switch (v.getId()) {
 		case R.id.playpause:
 			if (mPlaying)
-				pause();
+				mPlayService.getService().pause();
 			else
-				play();
+				mPlayService.getService().play();
 			break;
 		case R.id.previous:
-			if (mCurrentTrack != 0 && !mPlaylist.isEmpty())
-				playTrack(mCurrentTrack - 1);
+			mPlayService.getService().playPrevious();
 			break;
 		case R.id.next:
-			if (mPlaylist.size() > mCurrentTrack + 1)
-				playTrack(mCurrentTrack + 1);
+			mPlayService.getService().playNext();
 			break;
 		}		
-	}
-	
-	/**
-	 * Sends 'pause' signal to current renderer.
-	 */
-	private void pause() {
-		mManuallyStopped = true;
-    	final Service<?, ?> service = getService("AVTransport");
-		mUpnpService.getControlPoint().execute(new Stop(service) {
-			
-			@SuppressWarnings("rawtypes")
-			@Override
-			public void failure(ActionInvocation invocation, 
-					UpnpResponse operation, String defaultMessage) {
-				Log.w(TAG, "Pause failed, trying stop: " + defaultMessage);
-				// Sometimes stop works even though pause does not.
-				mUpnpService.getControlPoint().execute(new Stop(service) {
-					
-					@Override
-					public void failure(ActionInvocation invocation, 
-							UpnpResponse operation, String defaultMessage) {
-						Log.w(TAG, "Stop failed: " + defaultMessage);
-					}
-				});		
-			}
-		});			
-	}
-	
-	/**
-	 * Sends 'play' signal to current renderer.
-	 */
-	private void play() {
-		mUpnpService.getControlPoint().execute(new Play(getService("AVTransport")) {
-			
-			@SuppressWarnings("rawtypes")
-			@Override
-			public void failure(ActionInvocation invocation, 
-					UpnpResponse operation, String defaultMessage) {
-				Log.w(TAG, "Play failed: " + defaultMessage);
-			}
-		});
 	}
 
 	/**
@@ -467,7 +375,7 @@ public class RendererFragment extends Fragment implements
 	public void onProgressChanged(SeekBar seekBar, int progress, 
 			boolean fromUser) {
 		if (fromUser) {
-	    	mUpnpService.getControlPoint().execute(new Seek(
+			mUpnpService.getControlPoint().execute(new Seek(
 	    			getService("AVTransport"), SeekMode.REL_TIME, 
 	    			Integer.toString(progress)) {
 				
@@ -496,10 +404,14 @@ public class RendererFragment extends Fragment implements
 	 */
 	@SuppressWarnings("rawtypes")
 	public void changeVolume(final boolean increase) {
-		if (mCurrentRenderer == null)
-			return;
+		if (mCurrentRenderer == null) {
+			Toast.makeText(getActivity(), R.string.select_renderer, 
+					Toast.LENGTH_SHORT).show();
+			return;			
+		}
 		final Service<?, ?> service = getService("RenderingControl");
-    	mUpnpService.getControlPoint().execute(new GetVolume(service) {
+		mUpnpService.getControlPoint().execute(
+    			new GetVolume(service) {
 			
 			@Override
 			public void failure(ActionInvocation invocation, 
@@ -511,8 +423,8 @@ public class RendererFragment extends Fragment implements
 			public void received(ActionInvocation invocation, int volume) {
 				int newVolume = volume + ((increase) ? 4 : -4);
 				if (newVolume < 0) newVolume = 0;
-				mUpnpService.getControlPoint().execute(new SetVolume(service, 
-						newVolume) {
+				mUpnpService.getControlPoint().execute(
+						new SetVolume(service, newVolume) {
 					
 					@Override
 					public void failure(ActionInvocation invocation, 

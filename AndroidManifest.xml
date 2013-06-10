@@ -32,7 +32,9 @@
             
         </activity>
         
-  		<service android:name="org.teleal.cling.android.AndroidUpnpServiceImpl"/>
+  		<service android:name="org.teleal.cling.android.AndroidUpnpServiceImpl" />
+  		
+  		<service android:name="com.github.nutomic.controldlna.service.PlayService" />
         
     </application>    
 

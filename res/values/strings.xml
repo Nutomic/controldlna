@@ -9,5 +9,6 @@
     <string name="exit_renderer">Do you really want to exit the renderer? Playback will be stopped.</string>
     <string name="previous">Previous</string>
     <string name="next">Next</string>
+    <string name="select_renderer">Please select a renderer</string>
 
 </resources>
