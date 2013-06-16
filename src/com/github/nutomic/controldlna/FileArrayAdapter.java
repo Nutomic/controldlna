@@ -82,8 +82,10 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
         			". " + item.getTitle());
         	artist.setText(track.getArtists()[0].getName());
 		}
-        else
+        else {
         	title.setText(item.getTitle());
+        	artist.setText("");
+        }
         return convertView;
 	}
 	
