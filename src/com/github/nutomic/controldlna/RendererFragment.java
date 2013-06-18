@@ -282,6 +282,11 @@ public class RendererFragment extends Fragment implements
 			mPlayService.getService().playTrack(position);
 	}
 	
+	/**
+	 * Shows controls and playlist for the selected media renderer.
+	 * 
+	 * @param renderer The new renderer to select.
+	 */
 	private void selectRenderer(Device<?, ?, ?> renderer) {
 		if (mCurrentRenderer != renderer) {
 			if (mSubscriptionCallback != null)

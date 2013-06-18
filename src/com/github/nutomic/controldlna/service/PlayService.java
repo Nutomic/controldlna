@@ -67,8 +67,8 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.github.nutomic.controldlna.MainActivity;
 import com.github.nutomic.controldlna.R;
-import com.github.nutomic.controldlna.RendererFragment;
 
 public class PlayService extends Service {
 
@@ -194,7 +194,7 @@ public class PlayService extends Service {
 		Notification notification = new NotificationCompat.Builder(this)
 				.setSmallIcon(R.drawable.ic_launcher)
 				.setContentIntent(PendingIntent.getActivity(this, 0, 
-						new Intent(this, RendererFragment.class), 0))
+						new Intent(this, MainActivity.class), 0))
 				.setContentTitle(title)
 				.setContentText(artist)
 				.build();
