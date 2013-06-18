@@ -81,7 +81,8 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 	        convertView = inflater.inflate(android.R.layout.simple_list_item_1, parent, false);
 		}
         TextView tv = (TextView) convertView.findViewById(android.R.id.text1);
-        tv.setText(getItem(position).getDisplayString());
+        tv.setText(getItem(position).getDetails().getFriendlyName());
+        
         return convertView;
 	}
 
