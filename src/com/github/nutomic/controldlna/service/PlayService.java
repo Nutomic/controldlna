@@ -42,6 +42,7 @@ import org.teleal.cling.model.message.UpnpResponse;
 import org.teleal.cling.model.meta.Device;
 import org.teleal.cling.model.state.StateVariableValue;
 import org.teleal.cling.model.types.ServiceType;
+import org.teleal.cling.support.avtransport.callback.Pause;
 import org.teleal.cling.support.avtransport.callback.Play;
 import org.teleal.cling.support.avtransport.callback.SetAVTransportURI;
 import org.teleal.cling.support.avtransport.callback.Stop;
@@ -226,7 +227,7 @@ public class PlayService extends Service {
 	public void pause() {
 		mManuallyStopped.set(true);
 		mUpnpService.getControlPoint().execute(
-				new Stop(mAvTransportService) {
+				new Pause(mAvTransportService) {
 			
 			@SuppressWarnings("rawtypes")
 			@Override
@@ -250,7 +251,7 @@ public class PlayService extends Service {
 	public void setRenderer(Device<?, ?, ?> renderer) {
 		if (mSubscriptionCallback != null)
 			mSubscriptionCallback.end();
-		if (mRenderer != null)
+		if (mRenderer != null && renderer != mRenderer)
 			pause();
 
 		mRenderer = renderer;
@@ -348,6 +349,10 @@ public class PlayService extends Service {
 	
 	public void playPrevious() {
 		playTrack(mCurrentTrack - 1);
+	}
+	
+	public List<Item> getPlaylist() {
+		return mPlaylist;
 	}
 
 }

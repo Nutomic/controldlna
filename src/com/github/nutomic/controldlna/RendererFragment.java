@@ -283,9 +283,7 @@ public class RendererFragment extends Fragment implements
 	}
 	
 	private void selectRenderer(Device<?, ?, ?> renderer) {
-		if (mCurrentRenderer != renderer) {		
-			if (mCurrentRenderer != null)
-				mPlayService.getService().pause();
+		if (mCurrentRenderer != renderer) {
 			if (mSubscriptionCallback != null)
 				mSubscriptionCallback.end();
 			
@@ -308,6 +306,7 @@ public class RendererFragment extends Fragment implements
 				@SuppressWarnings("rawtypes")
 				@Override
 				protected void eventReceived(final GENASubscription sub) {
+					if (getActivity() == null) return;
 					getActivity().runOnUiThread(new Runnable() {
 						
 						@Override
@@ -358,6 +357,8 @@ public class RendererFragment extends Fragment implements
 			};
 			mUpnpService.getControlPoint().execute(mSubscriptionCallback);
 		}
+		mPlaylistAdapter.clear();
+		mPlaylistAdapter.addAll(mPlayService.getService().getPlaylist());
 		mListView.setAdapter(mPlaylistAdapter);
 	}
 
