@@ -251,7 +251,7 @@ public class PlayService extends Service {
 	public void setRenderer(Device<?, ?, ?> renderer) {
 		if (mSubscriptionCallback != null)
 			mSubscriptionCallback.end();
-		if (mRenderer != null && renderer != mRenderer)
+		if (mRenderer != null && !renderer.equals(mRenderer))
 			pause();
 
 		mRenderer = renderer;
