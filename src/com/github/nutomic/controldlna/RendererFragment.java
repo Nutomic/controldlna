@@ -53,13 +53,13 @@ import org.teleal.cling.support.model.item.Item;
 import org.teleal.cling.support.renderingcontrol.callback.GetVolume;
 import org.teleal.cling.support.renderingcontrol.callback.SetVolume;
 
-
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -69,6 +69,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
+import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
@@ -89,7 +91,7 @@ import com.github.nutomic.controldlna.service.PlayServiceBinder;
  */
 public class RendererFragment extends Fragment implements 
 		OnBackPressedListener, OnItemClickListener, OnClickListener, 
-		OnSeekBarChangeListener {
+		OnSeekBarChangeListener, OnScrollListener {
 	
 	private final String TAG = "RendererFragment";
 	
@@ -102,6 +104,8 @@ public class RendererFragment extends Fragment implements
 	private boolean mPlaying = false;
 	
 	private Device<?, ?, ?> mCurrentRenderer;
+	
+	private View mCurrentTrackView;
 	
 	/**
 	 * ListView adapter of media renderers.
@@ -117,7 +121,6 @@ public class RendererFragment extends Fragment implements
 	private ServiceConnection mPlayServiceConnection = new ServiceConnection() {
 
 		public void onServiceConnected(ComponentName className, IBinder service) {
-			Log.d(TAG, "test");
 			mPlayService = (PlayServiceBinder) service;
         }
 
@@ -169,6 +172,7 @@ public class RendererFragment extends Fragment implements
     			getActivity(), DeviceArrayAdapter.RENDERER);
         mListView.setAdapter(mRendererAdapter);
         mListView.setOnItemClickListener(this);
+		mListView.setOnScrollListener(this);
         mControls = getView().findViewById(R.id.controls);
         mProgressBar = (SeekBar) getView().findViewById(R.id.progressBar);
         mProgressBar.setOnSeekBarChangeListener(this);
@@ -329,6 +333,7 @@ public class RendererFragment extends Fragment implements
 							    	mPlayPause.setText(R.string.pause);
 									mPlaying = true;
 									pollTimePosition();
+									enableTrackHighlight();
 							    	break;
 								case STOPPED:
 									// fallthrough
@@ -366,6 +371,29 @@ public class RendererFragment extends Fragment implements
 		mPlaylistAdapter.addAll(mPlayService.getService().getPlaylist());
 		mListView.setAdapter(mPlaylistAdapter);
 	}
+	
+	/**
+	 * Sets colored background on the item that is currently playing.
+	 */
+	private void enableTrackHighlight() {
+		if (mListView.getAdapter() == mRendererAdapter)
+			return;
+		disableTrackHighlight();
+		mCurrentTrackView = mListView.getChildAt(mPlayService.getService()
+				.getCurrentTrack()
+				- mListView.getFirstVisiblePosition() + mListView.getHeaderViewsCount());
+		if (mCurrentTrackView != null)
+			mCurrentTrackView.setBackgroundColor(
+					getResources().getColor(R.color.currently_playing_background));	
+	}
+	
+	/**
+	 * Removes highlight from the item that was last highlighted.
+	 */
+	private void disableTrackHighlight() {
+		if (mCurrentTrackView != null)
+			mCurrentTrackView.setBackgroundColor(Color.TRANSPARENT);
+	}
 
 	/**
 	 * Unselects current media renderer if one is selected.
@@ -375,6 +403,7 @@ public class RendererFragment extends Fragment implements
 		if (mListView.getAdapter() == mPlaylistAdapter) {
 			mControls.setVisibility(View.GONE);
 			mListView.setAdapter(mRendererAdapter);
+			disableTrackHighlight();
 	        return true;
 		}
 		return false;
@@ -472,6 +501,16 @@ public class RendererFragment extends Fragment implements
 	private Service<?, ?> getService(String name) {
 		return mCurrentRenderer.findService(
     			new ServiceType("schemas-upnp-org", name));
+	}
+
+	@Override
+	public void onScroll(AbsListView arg0, int arg1, int arg2, int arg3) {
+		enableTrackHighlight();
+	}
+
+	@Override
+	public void onScrollStateChanged(AbsListView arg0, int arg1) {
+		enableTrackHighlight();
 	}
 
 }

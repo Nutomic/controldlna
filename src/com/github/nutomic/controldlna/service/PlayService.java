@@ -354,5 +354,9 @@ public class PlayService extends Service {
 	public List<Item> getPlaylist() {
 		return mPlaylist;
 	}
+	
+	public int getCurrentTrack() {
+		return mCurrentTrack;
+	}
 
 }
