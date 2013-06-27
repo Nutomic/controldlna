@@ -246,7 +246,7 @@ public class RendererFragment extends Fragment implements
      */
 	public void setPlaylist(List<Item> playlist, int start) {
 		mPlaylistAdapter.clear();
-		mPlaylistAdapter.addAll(playlist);
+		mPlaylistAdapter.add(playlist);
 		mPlayService.getService().setPlaylist(playlist, start);
 	}
 	
@@ -366,7 +366,7 @@ public class RendererFragment extends Fragment implements
 			mUpnpService.getControlPoint().execute(mSubscriptionCallback);
 		}
 		mPlaylistAdapter.clear();
-		mPlaylistAdapter.addAll(mPlayService.getService().getPlaylist());
+		mPlaylistAdapter.add(mPlayService.getService().getPlaylist());
 		mListView.setAdapter(mPlaylistAdapter);
 	}
 	

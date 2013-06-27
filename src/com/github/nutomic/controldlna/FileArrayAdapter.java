@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.github.nutomic.controldlna;
 
 import java.util.Comparator;
+import java.util.List;
 
 import org.teleal.cling.support.model.DIDLObject;
 import org.teleal.cling.support.model.container.Container;
@@ -86,6 +87,14 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
         	artist.setText("");
         }
         return convertView;
+	}
+
+	/**
+	 * Replacement for addAll, which is not implemented on lower API levels.
+	 */
+	public void add(List<Item> playlist) {
+		for (DIDLObject d : playlist)
+			add(d);
 	}
 	
 }
