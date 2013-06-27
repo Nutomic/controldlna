@@ -27,7 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -139,13 +138,12 @@ public class RendererFragment extends Fragment implements
      */
     private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
 
-        @SuppressWarnings("unchecked")
 		public void onServiceConnected(ComponentName className, IBinder service) {
             mUpnpService = (AndroidUpnpService) service;
             Log.i(TAG, "Starting device search");
             mUpnpService.getRegistry().addListener(mRendererAdapter);
             mUpnpService.getControlPoint().search();
-            mRendererAdapter.addAll((Collection<? extends Device<?, ?, ?>>) 
+            mRendererAdapter.add(
             		mUpnpService.getControlPoint().getRegistry().getDevices());
         }
 

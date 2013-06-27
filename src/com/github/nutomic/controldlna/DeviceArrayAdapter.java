@@ -153,10 +153,10 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 	}
 
 	/**
-	 * Not implemented on lower API levels.
+	 * Replacement for addAll, which is not implemented on lower API levels.
 	 */
-	@Override
-	public void addAll(Collection<? extends Device<?, ?, ?>> collection) {
+	@SuppressWarnings("rawtypes")
+	public void add(Collection<Device> collection) {
 		for (Device<?, ?, ?> d : collection)
 			add(d);
 	}

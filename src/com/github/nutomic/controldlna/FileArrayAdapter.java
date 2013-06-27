@@ -27,7 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna;
 
-import java.util.Collection;
 import java.util.Comparator;
 
 import org.teleal.cling.support.model.DIDLObject;
@@ -87,15 +86,6 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
         	artist.setText("");
         }
         return convertView;
-	}
-	
-	/**
-	 * Not implemented on lower API levels.
-	 */
-	@Override
-	public void addAll(Collection<? extends DIDLObject> collection) {
-		for (DIDLObject d : collection)
-			add(d);
 	}
 	
 }

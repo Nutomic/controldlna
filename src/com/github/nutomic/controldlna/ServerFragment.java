@@ -28,7 +28,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.github.nutomic.controldlna;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Stack;
 
@@ -103,13 +102,12 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
      */
     private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
 
-        @SuppressWarnings("unchecked")
 		public void onServiceConnected(ComponentName className, IBinder service) {
             mUpnpService = (AndroidUpnpService) service;
             Log.i(TAG, "Starting device search");
             mUpnpService.getRegistry().addListener(mServerAdapter);
             mUpnpService.getControlPoint().search();
-            mServerAdapter.addAll((Collection<? extends Device<?, ?, ?>>) 
+            mServerAdapter.add(
             		mUpnpService.getControlPoint().getRegistry().getDevices());
         }
 
