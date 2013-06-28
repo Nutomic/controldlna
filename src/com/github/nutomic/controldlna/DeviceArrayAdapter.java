@@ -127,8 +127,15 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 
 	@Override
 	public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-		deviceRemoved(device);
-		deviceAdded(device);
+		if (!device.getType().getType().equals(mDeviceType))
+			deviceRemoved(device);
+		mActivity.runOnUiThread(new Runnable() {
+			
+			@Override
+			public void run() {
+				notifyDataSetChanged();	
+			}
+		});
 	}
 	
 	private void deviceAdded(final Device<?, ?, ?> device) {
