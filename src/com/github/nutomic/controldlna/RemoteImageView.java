@@ -71,6 +71,7 @@ public class RemoteImageView extends ImageView {
     }
 
 	public void setImageUri(URI uri) {
+		setImageDrawable(null);
 		new LoadImageTask().execute(uri);
 	}
 	

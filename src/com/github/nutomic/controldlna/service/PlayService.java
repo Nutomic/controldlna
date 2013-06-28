@@ -140,7 +140,6 @@ public class PlayService extends Service {
 	
 	@Override
 	public IBinder onBind(Intent intent) {
-		Log.d(TAG, "test2");
 		return mBinder;
 	}
 	

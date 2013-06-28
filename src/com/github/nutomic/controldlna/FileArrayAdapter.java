@@ -87,7 +87,6 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
         	title.setText(item.getTitle());
         	artist.setText("");
         }
-		image.setImageDrawable(null);
 		image.setImageUri(item.getFirstPropertyValue(
 				DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
         return convertView;

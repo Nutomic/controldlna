@@ -27,6 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 
 import org.teleal.cling.model.meta.Device;
@@ -68,7 +70,7 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 	 * @param deviceType One of RENDERER or SERVER.
 	 */
 	public DeviceArrayAdapter(Activity activity, String deviceType) {
-		super(activity, android.R.layout.simple_list_item_2);
+		super(activity, R.layout.list_item);
 		mActivity = activity;
 		mDeviceType = deviceType;
 	}
@@ -78,11 +80,26 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 		if (convertView == null) {
 	        LayoutInflater inflater = (LayoutInflater) getContext()
 	                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-	        convertView = inflater.inflate(android.R.layout.simple_list_item_1, parent, false);
+	        convertView = inflater.inflate(R.layout.list_item, parent, false);
 		}
-        TextView tv = (TextView) convertView.findViewById(android.R.id.text1);
+        TextView tv = (TextView) convertView.findViewById(R.id.title);
+        RemoteImageView image = 
+        		(RemoteImageView) convertView.findViewById(R.id.image);
         tv.setText(getItem(position).getDetails().getFriendlyName());
         
+        // Loading icons for local devices is not currently implemented.
+        if (getItem(position) instanceof RemoteDevice && 
+        		getItem(position).hasIcons()) {
+	        RemoteDevice device = (RemoteDevice) getItem(position);
+			URI uri = null;
+			try {
+				uri = device.normalizeURI(
+						getItem(position).getIcons()[0].getUri()).toURI();
+			} catch (URISyntaxException e) {
+				Log.w(TAG, "Failed to get device icon URI", e);
+			}
+			image.setImageUri(uri);
+        }
         return convertView;
 	}
 
@@ -127,17 +144,13 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 
 	@Override
 	public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-		if (!device.getType().getType().equals(mDeviceType))
+		if (!(device.getType().getType().equals(mDeviceType)))
 			deviceRemoved(device);
-		mActivity.runOnUiThread(new Runnable() {
-			
-			@Override
-			public void run() {
-				notifyDataSetChanged();	
-			}
-		});
 	}
 	
+	/**
+	 * Adds a new device to the list if its type equals mDeviceType.
+	 */
 	private void deviceAdded(final Device<?, ?, ?> device) {
 		mActivity.runOnUiThread(new Runnable() {
 			
@@ -149,12 +162,16 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 		});
 	}
 
+	/** 
+	 * Removes the device from the list (if it is an element).
+	 */
 	private void deviceRemoved(final Device<?, ?, ?> device) {
 		mActivity.runOnUiThread(new Runnable() {
 			
 			@Override
 			public void run() {
-				remove(device);	
+				if (getPosition(device) != -1)
+					remove(device);	
 			}
 		});			
 	}
