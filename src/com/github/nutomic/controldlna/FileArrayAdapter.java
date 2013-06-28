@@ -45,7 +45,7 @@ import android.widget.TextView;
 public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 	
 	public FileArrayAdapter(Context context) {
-		super(context, android.R.layout.simple_list_item_1);
+		super(context, R.layout.list_item);
 		sort(new Comparator<DIDLObject>() {
 
 			@Override
@@ -70,11 +70,12 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 		if (convertView == null) {
 	        LayoutInflater inflater = (LayoutInflater) getContext()
 	                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-	        convertView = inflater.inflate(android.R.layout.simple_list_item_2, parent, false);
+	        convertView = inflater.inflate(R.layout.list_item, parent, false);	
 		}
 		DIDLObject item = getItem(position);
-        TextView title = (TextView) convertView.findViewById(android.R.id.text1);
-        TextView artist = (TextView) convertView.findViewById(android.R.id.text2);
+        TextView title = (TextView) convertView.findViewById(R.id.title);
+        TextView artist = (TextView) convertView.findViewById(R.id.subtitle);	
+        RemoteImageView image = (RemoteImageView) convertView.findViewById(R.id.image);
         MusicTrack track;
 		if (item instanceof MusicTrack) {
         	track = (MusicTrack) item;
@@ -86,6 +87,9 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
         	title.setText(item.getTitle());
         	artist.setText("");
         }
+		image.setImageDrawable(null);
+		image.setImageUri(item.getFirstPropertyValue(
+				DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
         return convertView;
 	}
 
