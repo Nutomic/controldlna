@@ -94,12 +94,12 @@ public class MainActivity extends SherlockFragmentActivity implements
 						actionBar.setSelectedNavigationItem(position);
 					}
 				});
-		
-		actionBar.addTab(actionBar.newTab()
-				.setText(R.string.title_renderer)
-				.setTabListener(this));
+
 		actionBar.addTab(actionBar.newTab()
 				.setText(R.string.title_server)
+				.setTabListener(this));
+		actionBar.addTab(actionBar.newTab()
+				.setText(R.string.title_renderer)
 				.setTabListener(this));
 	}
 
@@ -131,8 +131,8 @@ public class MainActivity extends SherlockFragmentActivity implements
 		@Override
 		public Fragment getItem(int position) {
 			switch (position) {
-			case 0:	return mRendererFragment;
-			case 1: return mServerFragment;
+			case 0: return mServerFragment;
+			case 1:	return mRendererFragment;
 			default: return null;
 			}
 		}
