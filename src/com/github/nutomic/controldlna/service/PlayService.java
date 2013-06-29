@@ -51,6 +51,7 @@ import org.teleal.cling.support.avtransport.lastchange.AVTransportVariable;
 import org.teleal.cling.support.contentdirectory.DIDLParser;
 import org.teleal.cling.support.lastchange.LastChange;
 import org.teleal.cling.support.model.DIDLContent;
+import org.teleal.cling.support.model.DIDLObject;
 import org.teleal.cling.support.model.item.Item;
 import org.teleal.cling.support.model.item.MusicTrack;
 
@@ -62,11 +63,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.github.nutomic.controldlna.LoadImageTask;
 import com.github.nutomic.controldlna.MainActivity;
 import com.github.nutomic.controldlna.R;
 
@@ -74,7 +77,7 @@ public class PlayService extends Service {
 
 	private static final String TAG = "PlayService";
 	
-	private static final int mNotificationId = 1;
+	private static final int NOTIFICATION_ID = 1;
 	
 	private final PlayServiceBinder mBinder = new PlayServiceBinder(this);
 	
@@ -127,6 +130,40 @@ public class PlayService extends Service {
 
 	private SubscriptionCallback mSubscriptionCallback;
 	
+	/**
+	 * Creates a notification after the icon bitmap is loaded.
+	 * 
+	 * @author Felix
+	 *
+	 */
+	private class CreateNotificationTask extends LoadImageTask {
+		
+		@Override
+		protected void onPostExecute(Bitmap result) {
+			String title = "";
+			String artist = "";
+			if (mCurrentTrack < mPlaylist.size()) {
+				title = mPlaylist.get(mCurrentTrack).getTitle();
+				if (mPlaylist.get(mCurrentTrack) instanceof MusicTrack) {
+		        	MusicTrack track = (MusicTrack) mPlaylist.get(mCurrentTrack);
+		        	artist = track.getArtists()[0].getName();
+				}
+			}
+			Notification notification = new NotificationCompat.Builder(PlayService.this)
+					.setContentIntent(PendingIntent.getActivity(PlayService.this, 0, 
+							new Intent(PlayService.this, MainActivity.class), 0))
+					.setContentTitle(title)
+					.setContentText(artist)
+					.setLargeIcon(result)
+					.setSmallIcon(R.drawable.ic_launcher)
+					.build();
+			NotificationManager notificationManager =
+				    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+			notificationManager.notify(NOTIFICATION_ID, notification);
+			notification.flags |= Notification.FLAG_ONGOING_EVENT;
+		}
+		
+	}
 	
 	@Override
 	public void onCreate() {
@@ -181,26 +218,8 @@ public class PlayService extends Service {
 	}
 	
 	private void updateNotification() {
-		String title = "";
-		String artist = "";
-		if (mCurrentTrack < mPlaylist.size()) {
-			title = mPlaylist.get(mCurrentTrack).getTitle();
-			if (mPlaylist.get(mCurrentTrack) instanceof MusicTrack) {
-	        	MusicTrack track = (MusicTrack) mPlaylist.get(mCurrentTrack);
-	        	artist = track.getArtists()[0].getName();
-			}
-		}
-		Notification notification = new NotificationCompat.Builder(this)
-				.setSmallIcon(R.drawable.ic_launcher)
-				.setContentIntent(PendingIntent.getActivity(this, 0, 
-						new Intent(this, MainActivity.class), 0))
-				.setContentTitle(title)
-				.setContentText(artist)
-				.build();
-		NotificationManager notificationManager =
-			    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-		notificationManager.notify(mNotificationId, notification);
-		notification.flags |= Notification.FLAG_ONGOING_EVENT;
+		new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+				.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
 	}
 	
 	/**
@@ -295,7 +314,7 @@ public class PlayService extends Service {
 					case PAUSED_PLAYBACK:
 						NotificationManager notificationManager =
 					    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-								notificationManager.cancel(mNotificationId);
+								notificationManager.cancel(NOTIFICATION_ID);
 						mManuallyStopped.set(false);
 				    	break;
 				    default:
