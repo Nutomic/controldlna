@@ -169,7 +169,7 @@ public class MainActivity extends SherlockFragmentActivity implements
 	 * Utility function to call RendererFragment.play from ServerFragment.
 	 */
 	public void play(List<Item> playlist, int start) {
-		getSupportActionBar().selectTab(getSupportActionBar().getTabAt(0));
+		getSupportActionBar().selectTab(getSupportActionBar().getTabAt(1));
 		mRendererFragment.setPlaylist(playlist, start);
 	}
 	

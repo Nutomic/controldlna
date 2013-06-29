@@ -8,7 +8,7 @@
         android:id="@+id/image"
         android:layout_width="?android:attr/listPreferredItemHeight"
         android:layout_height="?android:attr/listPreferredItemHeight"
-	    android:layout_margin="4dip"
+	    android:padding="4dip"
         android:contentDescription="@string/album_art" />
         
     
