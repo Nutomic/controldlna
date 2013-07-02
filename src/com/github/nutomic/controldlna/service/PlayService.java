@@ -226,6 +226,9 @@ public class PlayService extends Service {
 	 * Sends 'play' signal to current renderer.
 	 */
 	public void play() {
+		if (mPlaylist.size() == 0) 
+			return;
+		
 		updateNotification();
 		mUpnpService.getControlPoint().execute(
 				new Play(mAvTransportService) {

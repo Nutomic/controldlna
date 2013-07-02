@@ -72,7 +72,7 @@ import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
@@ -98,7 +98,7 @@ public class RendererFragment extends Fragment implements
 	
 	private View mControls;
 	private SeekBar mProgressBar;
-	private Button mPlayPause;
+	private ImageButton mPlayPause;
 	
 	private boolean mPlaying = false;
 	
@@ -174,9 +174,13 @@ public class RendererFragment extends Fragment implements
         mControls = getView().findViewById(R.id.controls);
         mProgressBar = (SeekBar) getView().findViewById(R.id.progressBar);
         mProgressBar.setOnSeekBarChangeListener(this);
-        mPlayPause = (Button) getView().findViewById(R.id.playpause);
+        ImageButton previous = (ImageButton) getView().findViewById(R.id.previous);
+        previous.setImageResource(R.drawable.ic_media_previous);
+        ImageButton next = (ImageButton) getView().findViewById(R.id.next);
+        next.setImageResource(R.drawable.ic_media_next);
+        mPlayPause = (ImageButton) getView().findViewById(R.id.playpause);
         mPlayPause.setOnClickListener(this);
-    	mPlayPause.setText(R.string.play);
+    	mPlayPause.setImageResource(R.drawable.ic_media_play);
     	getView().findViewById(R.id.previous).setOnClickListener(this);
     	getView().findViewById(R.id.next).setOnClickListener(this);
 
@@ -328,7 +332,9 @@ public class RendererFragment extends Fragment implements
 										AVTransportVariable.TransportState.class)
 												.getValue()) {
 								case PLAYING:
-							    	mPlayPause.setText(R.string.pause);
+							    	mPlayPause.setImageResource(R.drawable.ic_media_pause);
+							    	mPlayPause.setContentDescription(getResources().
+							    			getString(R.string.pause));
 									mPlaying = true;
 									pollTimePosition();
 									enableTrackHighlight();
@@ -336,7 +342,9 @@ public class RendererFragment extends Fragment implements
 								case STOPPED:
 									// fallthrough
 								case PAUSED_PLAYBACK:
-							    	mPlayPause.setText(R.string.play);
+							    	mPlayPause.setImageResource(R.drawable.ic_media_play);
+							    	mPlayPause.setContentDescription(getResources().
+							    			getString(R.string.play));
 									mPlaying = false;	
 							    	break;
 								default:

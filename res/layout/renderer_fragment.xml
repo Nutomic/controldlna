@@ -26,24 +26,26 @@
 	
 	    <LinearLayout
 	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content" >
+	        android:layout_height="wrap_content"
+    		android:gravity="center" >
 	        
-		    <Button
+		    <ImageButton
 		        android:id="@+id/previous"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
-		        android:text="@string/previous" />
+		        android:contentDescription="@string/previous" />
 	        
-		    <Button
+		    <ImageButton
 		        android:id="@+id/playpause"
 		        android:layout_width="wrap_content"
-		        android:layout_height="wrap_content" />
+		        android:layout_height="wrap_content"
+		        android:contentDescription="@string/play" />
 	        
-		    <Button
+		    <ImageButton
 		        android:id="@+id/next"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content" 
-		        android:text="@string/next" />
+		        android:contentDescription="@string/next" />
 		    
 	    </LinearLayout>
 	    
