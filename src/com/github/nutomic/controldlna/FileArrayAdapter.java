@@ -76,11 +76,12 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
         TextView title = (TextView) convertView.findViewById(R.id.title);
         TextView artist = (TextView) convertView.findViewById(R.id.subtitle);	
         RemoteImageView image = (RemoteImageView) convertView.findViewById(R.id.image);
-        MusicTrack track;
 		if (item instanceof MusicTrack) {
-        	track = (MusicTrack) item;
-        	title.setText(Integer.toString(track.getOriginalTrackNumber()) + 
-        			". " + item.getTitle());
+	        MusicTrack track = (MusicTrack) item;
+	        String trackNumber = (track.getOriginalTrackNumber() != null) 
+	        		? Integer.toString(track.getOriginalTrackNumber()) + ". "
+	        		: "";
+        	title.setText(trackNumber + item.getTitle());
         	artist.setText(track.getArtists()[0].getName());
 		}
         else {
