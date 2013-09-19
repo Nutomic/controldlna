@@ -50,6 +50,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
 import android.view.View;
@@ -93,6 +94,11 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	private Stack<String> mCurrentPath = new Stack<String>();
 	
 	/**
+	 * Holds the scroll position in the list view at each directory level.
+	 */
+	private Stack<Parcelable> mListState = new Stack<Parcelable>();
+	
+	/**
 	 * Cling UPNP service. 
 	 */
     private AndroidUpnpService mUpnpService;
@@ -132,7 +138,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
             new Intent(getActivity(), AndroidUpnpServiceImpl.class),
             mUpnpServiceConnection,
             Context.BIND_AUTO_CREATE
-        );     
+        );
     }
 
     /**
@@ -176,14 +182,15 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
      * Opens a new directory and displays it.
      */
     private void getFiles(String directory) {
-		mCurrentPath.push(directory);    	
-    	getFiles();
+    	mListState.push(getListView().onSaveInstanceState());
+		mCurrentPath.push(directory);
+    	getFiles(false);
     }
     
     /**
      * Displays the current directory on the ListView.
      */
-    private void getFiles() {
+    private void getFiles(final boolean restoreListState) {
     	Service<?, ?> service = mCurrentServer.findService(
     			new ServiceType("schemas-upnp-org", "ContentDirectory"));
 		mUpnpService.getControlPoint().execute(new Browse(service, 
@@ -202,6 +209,10 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 									mFileAdapter.add(c);
 								for (Item i : didl.getItems())
 									mFileAdapter.add(i);
+								if (restoreListState)
+							    	getListView().onRestoreInstanceState(mListState.pop());
+								else
+									getListView().setSelectionFromTop(0, 0);
 							}
 						});	
 					}
@@ -228,13 +239,15 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	public boolean onBackPressed() {
     	if (getListAdapter() == mServerAdapter)
     		return false;
+    	
 		mCurrentPath.pop();
 		if (mCurrentPath.empty()) {
     		setListAdapter(mServerAdapter);
+	    	getListView().onRestoreInstanceState(mListState.pop());
     		mCurrentServer = null;
 		}
 		else {
-			getFiles();
+			getFiles(true);
 		}
 		return true;		
 	}
