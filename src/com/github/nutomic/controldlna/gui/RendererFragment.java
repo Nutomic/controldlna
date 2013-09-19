@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.github.nutomic.controldlna;
+package com.github.nutomic.controldlna.gui;
 
 import java.util.List;
 import java.util.Map;
@@ -78,7 +78,10 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
 
-import com.github.nutomic.controldlna.MainActivity.OnBackPressedListener;
+import com.github.nutomic.controldlna.DeviceArrayAdapter;
+import com.github.nutomic.controldlna.FileArrayAdapter;
+import com.github.nutomic.controldlna.R;
+import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
 import com.github.nutomic.controldlna.service.PlayService;
 import com.github.nutomic.controldlna.service.PlayServiceBinder;
 

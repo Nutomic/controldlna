@@ -37,6 +37,9 @@ import org.teleal.cling.model.meta.RemoteDevice;
 import org.teleal.cling.registry.Registry;
 import org.teleal.cling.registry.RegistryListener;
 
+import com.github.nutomic.controldlna.RemoteImageView;
+
+
 import android.app.Activity;
 import android.content.Context;
 import android.util.Log;

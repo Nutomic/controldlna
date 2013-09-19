@@ -70,8 +70,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.github.nutomic.controldlna.LoadImageTask;
-import com.github.nutomic.controldlna.MainActivity;
 import com.github.nutomic.controldlna.R;
+import com.github.nutomic.controldlna.gui.MainActivity;
 
 public class PlayService extends Service {
 

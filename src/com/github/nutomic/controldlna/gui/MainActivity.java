@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.github.nutomic.controldlna;
+package com.github.nutomic.controldlna.gui;
 
 import java.util.List;
 
@@ -41,6 +41,7 @@ import android.view.KeyEvent;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
+import com.github.nutomic.controldlna.R;
 
 /**
  * Main activity, with tabs for media servers and media renderers.

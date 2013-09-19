@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.github.nutomic.controldlna;
+package com.github.nutomic.controldlna.gui;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +56,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
-import com.github.nutomic.controldlna.MainActivity.OnBackPressedListener;
+import com.github.nutomic.controldlna.DeviceArrayAdapter;
+import com.github.nutomic.controldlna.FileArrayAdapter;
+import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
 
 /**
  * Shows a list of media servers, upon selecting one, allows browsing theur

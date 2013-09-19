@@ -2,6 +2,9 @@ package com.github.nutomic.controldlna;
 
 import java.net.URI;
 
+import com.github.nutomic.controldlna.LoadImageTask;
+
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.AttributeSet;
