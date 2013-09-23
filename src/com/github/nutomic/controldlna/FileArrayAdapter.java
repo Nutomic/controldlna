@@ -42,8 +42,17 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+/**
+ * Allows displaying UPNP media server directory contents in a ListView.
+ * 
+ * @author Felix Ableitner
+ *
+ */
 public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 	
+	/**
+	 * Provides sorting of elements by track number.
+	 */
 	public FileArrayAdapter(Context context) {
 		super(context, R.layout.list_item);
 		sort(new Comparator<DIDLObject>() {
@@ -65,6 +74,9 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 		});
 	}
 	
+	/**
+	 * Returns a view with folder/media title, and artist name (for audio only).
+	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		if (convertView == null) {

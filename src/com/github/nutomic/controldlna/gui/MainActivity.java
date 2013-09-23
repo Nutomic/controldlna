@@ -27,30 +27,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.gui;
 
-import java.util.List;
-
-import org.teleal.cling.support.model.item.Item;
-
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.KeyEvent;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.github.nutomic.controldlna.R;
+import com.github.nutomic.controldlna.UpnpPlayer;
 
 /**
  * Main activity, with tabs for media servers and media renderers.
  * 
- * @author Felix
+ * @author Felix Ableitner
  * 
  */
 public class MainActivity extends SherlockFragmentActivity implements
 		ActionBar.TabListener {
+	
+	/**
+	 * Manages all UPNP connections including playback.
+	 */
+	private UpnpPlayer mPlayer = new UpnpPlayer();
 
 	/**
 	 * Provides Fragments, holding all of them in memory.
@@ -102,6 +105,14 @@ public class MainActivity extends SherlockFragmentActivity implements
 		actionBar.addTab(actionBar.newTab()
 				.setText(R.string.title_renderer)
 				.setTabListener(this));
+		
+		mPlayer.open(getApplicationContext());
+	}
+	
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		mPlayer.close(getApplicationContext());
 	}
 
 	@Override
@@ -148,15 +159,12 @@ public class MainActivity extends SherlockFragmentActivity implements
 	 * Listener for the 'back' key.
 	 */
 	public interface OnBackPressedListener {
-		
-		/**
-		 * Returns true if the press was consumed, false otherwise.
-		 */
 		public boolean onBackPressed();
 	}
 	
 	/**
-	 * Forwards back press to active Fragment.
+	 * Forwards back press to active Fragment (unless the fragment is 
+	 * showing its root view).
 	 */
 	@Override
 	public void onBackPressed() {
@@ -167,31 +175,37 @@ public class MainActivity extends SherlockFragmentActivity implements
 	}
 	
 	/**
-	 * Utility function to call RendererFragment.play from ServerFragment.
+	 * Changes volume on key press.
 	 */
-	public void play(List<Item> playlist, int start) {
-		getSupportActionBar().selectTab(getSupportActionBar().getTabAt(1));
-		mRendererFragment.setPlaylist(playlist, start);
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		switch (event.getKeyCode()) {
+		case KeyEvent.KEYCODE_VOLUME_UP:
+		    if (event.getAction() == KeyEvent.ACTION_DOWN)
+				mPlayer.increaseVolume();
+		    return true;
+		case KeyEvent.KEYCODE_VOLUME_DOWN:
+		    if (event.getAction() == KeyEvent.ACTION_DOWN)
+	    		mPlayer.decreaseVolume();
+		    return true;
+		default:
+		    return super.dispatchKeyEvent(event);
+		}
+    }
+	
+	/**
+	 * Returns shared instance of UpnpPlayer.
+	 */
+	public UpnpPlayer getUpnpPlayer() {
+		return mPlayer;
 	}
 	
 	/**
-	 * Sends volume key events to RendererFragment (which sends them to 
-	 * media renderer).
+	 * Opens the UPNP renderer tab in the activity.
 	 */
-	@Override
-	public boolean dispatchKeyEvent(KeyEvent event) {		
-        switch (event.getKeyCode()) {
-        case KeyEvent.KEYCODE_VOLUME_UP:
-            if (event.getAction() == KeyEvent.ACTION_DOWN)
-                mRendererFragment.changeVolume(true);
-            return true;
-        case KeyEvent.KEYCODE_VOLUME_DOWN:
-            if (event.getAction() == KeyEvent.ACTION_DOWN)
-                mRendererFragment.changeVolume(false);
-            return true;
-        default:
-            return super.dispatchKeyEvent(event);
-        }
-    }
+	public void switchToRendererTab() {
+		Log.d("tag", "called");
+        getSupportActionBar().selectTab(getSupportActionBar().getTabAt(1));
+	}
 
 }

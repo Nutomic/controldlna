@@ -73,6 +73,12 @@ import com.github.nutomic.controldlna.LoadImageTask;
 import com.github.nutomic.controldlna.R;
 import com.github.nutomic.controldlna.gui.MainActivity;
 
+/**
+ * Background service that handles media playback to a single UPNP media renderer.
+ * 
+ * @author Felix Ableitner
+ *
+ */
 public class PlayService extends Service {
 
 	private static final String TAG = "PlayService";
@@ -82,7 +88,7 @@ public class PlayService extends Service {
 	private final PlayServiceBinder mBinder = new PlayServiceBinder(this);
 	
 	/**
-	 * The DLNA media renderer device that is currently active.
+	 * The DLNA media renderer device that is currently active for playback.
 	 */
 	private Device<?, ?, ?> mRenderer;
 	
@@ -115,7 +121,7 @@ public class PlayService extends Service {
     private AndroidUpnpService mUpnpService;
 
     /**
-     * Connection Cling to UPNP service.
+     * Cling connection to UPNP service.
      */
     private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
 
@@ -344,6 +350,10 @@ public class PlayService extends Service {
 		mUpnpService.getControlPoint().execute(mSubscriptionCallback);
 		if (mWaitingForRenderer)
 			playTrack(mCurrentTrack);
+	}
+	
+	public Device<?, ?, ?> getRenderer() {
+		return mRenderer;
 	}
 	
 	/**

@@ -29,6 +29,12 @@ package com.github.nutomic.controldlna.service;
 
 import android.os.Binder;
 
+/**
+ * Provides connection to PlayService.
+ * 
+ * @author Felix Ableitner
+ *
+ */
 public class PlayServiceBinder extends Binder {
 	
 	PlayService mService;

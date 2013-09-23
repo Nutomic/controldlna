@@ -13,7 +13,7 @@ import android.widget.ImageView;
 /**
  * ImageView that can directly load from a UPNP URI.
  * 
- * @author Felix
+ * @author Felix Ableitner
  *
  */
 public class RemoteImageView extends ImageView {

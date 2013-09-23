@@ -31,8 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-import org.teleal.cling.android.AndroidUpnpService;
-import org.teleal.cling.android.AndroidUpnpServiceImpl;
 import org.teleal.cling.model.action.ActionInvocation;
 import org.teleal.cling.model.message.UpnpResponse;
 import org.teleal.cling.model.meta.Device;
@@ -44,12 +42,7 @@ import org.teleal.cling.support.model.DIDLContent;
 import org.teleal.cling.support.model.container.Container;
 import org.teleal.cling.support.model.item.Item;
 
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.os.Parcelable;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
@@ -61,10 +54,10 @@ import com.github.nutomic.controldlna.FileArrayAdapter;
 import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
 
 /**
- * Shows a list of media servers, upon selecting one, allows browsing theur
+ * Shows a list of media servers, upon selecting one, allows browsing their
  * directories.
  * 
- * @author Felix
+ * @author Felix Ableitner
  *
  */
 public class ServerFragment extends ListFragment implements OnBackPressedListener {
@@ -99,30 +92,6 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	 * Holds the scroll position in the list view at each directory level.
 	 */
 	private Stack<Parcelable> mListState = new Stack<Parcelable>();
-	
-	/**
-	 * Cling UPNP service. 
-	 */
-    private AndroidUpnpService mUpnpService;
-
-    /**
-     * Connection Cling to UPNP service.
-     */
-    private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
-
-		public void onServiceConnected(ComponentName className, IBinder service) {
-            mUpnpService = (AndroidUpnpService) service;
-            Log.i(TAG, "Starting device search");
-            mUpnpService.getRegistry().addListener(mServerAdapter);
-            mUpnpService.getControlPoint().search();
-            mServerAdapter.add(
-            		mUpnpService.getControlPoint().getRegistry().getDevices());
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            mUpnpService = null;
-        }
-    };
     
 	/**
 	 * Initializes ListView adapters, launches Cling UPNP service.
@@ -134,24 +103,9 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 
     	mServerAdapter = new DeviceArrayAdapter(
     			getActivity(), DeviceArrayAdapter.SERVER);
-        setListAdapter(mServerAdapter);  
-
-        getActivity().getApplicationContext().bindService(
-            new Intent(getActivity(), AndroidUpnpServiceImpl.class),
-            mUpnpServiceConnection,
-            Context.BIND_AUTO_CREATE
-        );
-    }
-
-    /**
-     * Closes Cling UPNP service.
-     */
-    @Override
-	public void onDestroy() {
-        super.onDestroy();
-        if (mUpnpService != null)
-            mUpnpService.getRegistry().removeListener(mServerAdapter);
-        getActivity().getApplicationContext().unbindService(mUpnpServiceConnection);
+        setListAdapter(mServerAdapter);
+        MainActivity activity = (MainActivity) getActivity();
+        activity.getUpnpPlayer().getDeviceListener().addCallback(mServerAdapter);
     }
     
     /**
@@ -175,7 +129,9 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     					playlist.add((Item) mFileAdapter.getItem(i));
     			}
     			MainActivity activity = (MainActivity) getActivity();
-    			activity.play(playlist, position);
+    	        activity.switchToRendererTab();
+    			activity.getUpnpPlayer().getPlayService()
+    					.setPlaylist(playlist, position);
     		}
     	}
     }
@@ -191,11 +147,15 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     
     /**
      * Displays the current directory on the ListView.
+     * 
+     * @param restoreListState True if we are going back up the directory tree, 
+     * 							which means we restore scroll position etc.
      */
     private void getFiles(final boolean restoreListState) {
     	Service<?, ?> service = mCurrentServer.findService(
     			new ServiceType("schemas-upnp-org", "ContentDirectory"));
-		mUpnpService.getControlPoint().execute(new Browse(service, 
+    	MainActivity activity = (MainActivity) getActivity();
+    	activity.getUpnpPlayer().execute(new Browse(service, 
 				mCurrentPath.peek(), BrowseFlag.DIRECT_CHILDREN) {
 		
 					@SuppressWarnings("rawtypes")

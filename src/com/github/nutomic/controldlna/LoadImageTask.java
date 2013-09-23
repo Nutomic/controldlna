@@ -15,7 +15,7 @@ import android.util.Log;
 /**
  * Handles background task of loading a bitmap by URI.
  * 
- * @author Felix
+ * @author Felix Ableitner
  *
  */
 public class LoadImageTask extends AsyncTask<URI, Void, Bitmap> {

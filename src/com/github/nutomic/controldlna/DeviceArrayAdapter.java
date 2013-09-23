@@ -29,16 +29,9 @@ package com.github.nutomic.controldlna;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collection;
 
 import org.teleal.cling.model.meta.Device;
-import org.teleal.cling.model.meta.LocalDevice;
 import org.teleal.cling.model.meta.RemoteDevice;
-import org.teleal.cling.registry.Registry;
-import org.teleal.cling.registry.RegistryListener;
-
-import com.github.nutomic.controldlna.RemoteImageView;
-
 
 import android.app.Activity;
 import android.content.Context;
@@ -49,15 +42,17 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import com.github.nutomic.controldlna.DeviceListener.DeviceListenerCallback;
+
 /**
  * Displays the devices that are inserted through the RegistryListener (either 
  * of type RENDERER or SERVER).
  * 
- * @author Felix
+ * @author Felix Ableitner
  *
  */
 public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>> 
-		implements RegistryListener {
+		implements DeviceListenerCallback {
 	
 	private static final String TAG = "DeviceArrayAdapter";
 
@@ -105,56 +100,12 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
         }
         return convertView;
 	}
-
-	@Override
-	public void afterShutdown() {
-	}
-
-	@Override
-	public void beforeShutdown(Registry registry) {
-	}
-
-	@Override
-	public void localDeviceAdded(Registry registry, LocalDevice device) {
-		deviceAdded(device);
-	}
-
-	@Override
-	public void localDeviceRemoved(Registry registry, LocalDevice device) {
-		deviceRemoved(device);
-	}
-
-	@Override
-	public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
-		deviceAdded(device);
-	}
-
-	@Override
-	public void remoteDeviceDiscoveryFailed(Registry registry, 
-			RemoteDevice device, Exception exception) {
-		Log.w(TAG, "Device discovery failed", exception);
-	}
-
-	@Override
-	public void remoteDeviceDiscoveryStarted(Registry registry, 
-			RemoteDevice device) {
-	}
-
-	@Override
-	public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
-		deviceRemoved(device);
-	}
-
-	@Override
-	public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-		if (!(device.getType().getType().equals(mDeviceType)))
-			deviceRemoved(device);
-	}
 	
 	/**
 	 * Adds a new device to the list if its type equals mDeviceType.
 	 */
-	private void deviceAdded(final Device<?, ?, ?> device) {
+	@Override
+	public void deviceAdded(final Device<?, ?, ?> device) {
 		mActivity.runOnUiThread(new Runnable() {
 			
 			@Override
@@ -168,7 +119,8 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 	/** 
 	 * Removes the device from the list (if it is an element).
 	 */
-	private void deviceRemoved(final Device<?, ?, ?> device) {
+	@Override
+	public void deviceRemoved(final Device<?, ?, ?> device) {
 		mActivity.runOnUiThread(new Runnable() {
 			
 			@Override
@@ -177,14 +129,5 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 					remove(device);	
 			}
 		});			
-	}
-
-	/**
-	 * Replacement for addAll, which is not implemented on lower API levels.
-	 */
-	@SuppressWarnings("rawtypes")
-	public void add(Collection<Device> collection) {
-		for (Device<?, ?, ?> d : collection)
-			add(d);
 	}
 }

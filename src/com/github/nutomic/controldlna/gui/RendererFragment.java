@@ -30,8 +30,6 @@ package com.github.nutomic.controldlna.gui;
 import java.util.List;
 import java.util.Map;
 
-import org.teleal.cling.android.AndroidUpnpService;
-import org.teleal.cling.android.AndroidUpnpServiceImpl;
 import org.teleal.cling.controlpoint.SubscriptionCallback;
 import org.teleal.cling.model.action.ActionInvocation;
 import org.teleal.cling.model.gena.CancelReason;
@@ -40,28 +38,18 @@ import org.teleal.cling.model.message.UpnpResponse;
 import org.teleal.cling.model.meta.Device;
 import org.teleal.cling.model.meta.Service;
 import org.teleal.cling.model.state.StateVariableValue;
-import org.teleal.cling.model.types.ServiceType;
 import org.teleal.cling.support.avtransport.callback.GetPositionInfo;
-import org.teleal.cling.support.avtransport.callback.Seek;
 import org.teleal.cling.support.avtransport.lastchange.AVTransportLastChangeParser;
 import org.teleal.cling.support.avtransport.lastchange.AVTransportVariable;
 import org.teleal.cling.support.lastchange.LastChange;
 import org.teleal.cling.support.model.PositionInfo;
-import org.teleal.cling.support.model.SeekMode;
 import org.teleal.cling.support.model.item.Item;
-import org.teleal.cling.support.renderingcontrol.callback.GetVolume;
-import org.teleal.cling.support.renderingcontrol.callback.SetVolume;
 
 import android.app.AlertDialog;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -76,19 +64,17 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
-import android.widget.Toast;
 
 import com.github.nutomic.controldlna.DeviceArrayAdapter;
 import com.github.nutomic.controldlna.FileArrayAdapter;
 import com.github.nutomic.controldlna.R;
+import com.github.nutomic.controldlna.UpnpPlayer;
 import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
-import com.github.nutomic.controldlna.service.PlayService;
-import com.github.nutomic.controldlna.service.PlayServiceBinder;
 
 /**
  * Shows a list of media servers, allowing to select one for playback.
  * 
- * @author Felix
+ * @author Felix Ableitner
  *
  */
 public class RendererFragment extends Fragment implements 
@@ -117,43 +103,6 @@ public class RendererFragment extends Fragment implements
 	private FileArrayAdapter mPlaylistAdapter;
 	
 	private SubscriptionCallback mSubscriptionCallback;
-
-	private PlayServiceBinder mPlayService;
-	
-	private ServiceConnection mPlayServiceConnection = new ServiceConnection() {
-
-		public void onServiceConnected(ComponentName className, IBinder service) {
-			mPlayService = (PlayServiceBinder) service;
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            mPlayService = null;
-        }
-    };
-	
-	/**
-	 * Cling UPNP service. 
-	 */
-    private AndroidUpnpService mUpnpService;
-
-    /**
-     * Connection Cling to UPNP service.
-     */
-    private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
-
-		public void onServiceConnected(ComponentName className, IBinder service) {
-            mUpnpService = (AndroidUpnpService) service;
-            Log.i(TAG, "Starting device search");
-            mUpnpService.getRegistry().addListener(mRendererAdapter);
-            mUpnpService.getControlPoint().search();
-            mRendererAdapter.add(
-            		mUpnpService.getControlPoint().getRegistry().getDevices());
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            mUpnpService = null;
-        }
-    };
     
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
@@ -186,29 +135,22 @@ public class RendererFragment extends Fragment implements
     	mPlayPause.setImageResource(R.drawable.ic_media_play);
     	getView().findViewById(R.id.previous).setOnClickListener(this);
     	getView().findViewById(R.id.next).setOnClickListener(this);
-
-    	getActivity().startService(new Intent(getActivity(), PlayService.class));
-        getActivity().getApplicationContext().bindService(
-            new Intent(getActivity(), PlayService.class),
-            mPlayServiceConnection,
-            Context.BIND_AUTO_CREATE
-        );
-
-        getActivity().getApplicationContext().bindService(
-            new Intent(getActivity(), AndroidUpnpServiceImpl.class),
-            mUpnpServiceConnection,
-            Context.BIND_AUTO_CREATE
-        );
+    	getPlayer().getDeviceListener().addCallback(mRendererAdapter);
+    }
+    
+    private UpnpPlayer getPlayer() {
+    	MainActivity activity = (MainActivity) getActivity();
+    	return activity.getUpnpPlayer();
     }
     
     /**
      * Polls the renderer for the current play progress as long as 
-     * mPlaying is true.
+     * playback is active.
      */
     private void pollTimePosition() {
-    	final Service<?, ?> service = mCurrentRenderer.findService(
-    			new ServiceType("schemas-upnp-org", "AVTransport"));
-		mUpnpService.getControlPoint().execute(
+    	Service<?, ?> service = getPlayer()
+    			.getService(mCurrentRenderer, "AVTransport");
+    	getPlayer().execute(
 				new GetPositionInfo(service) {
 			
 			@SuppressWarnings("rawtypes")
@@ -236,17 +178,6 @@ public class RendererFragment extends Fragment implements
 	        }, 1000);    	
 		}
     }
-
-    /**
-     * Closes Cling UPNP service.
-     */
-    @Override
-	public void onDestroy() {
-        super.onDestroy();
-        mUpnpService.getRegistry().removeListener(mRendererAdapter);
-        getActivity().getApplicationContext().unbindService(mUpnpServiceConnection);
-        getActivity().getApplicationContext().unbindService(mPlayServiceConnection);
-    }
 	
     /**
      * Sets the new playlist.
@@ -254,7 +185,7 @@ public class RendererFragment extends Fragment implements
 	public void setPlaylist(List<Item> playlist, int start) {
 		mPlaylistAdapter.clear();
 		mPlaylistAdapter.add(playlist);
-		mPlayService.getService().setPlaylist(playlist, start);
+		getPlayer().getPlayService().setPlaylist(playlist, start);
 	}
 	
 	/**
@@ -288,7 +219,7 @@ public class RendererFragment extends Fragment implements
 			}
 		}
 		else if (mListView.getAdapter() == mPlaylistAdapter)
-			mPlayService.getService().playTrack(position);
+			getPlayer().getPlayService().playTrack(position);
 	}
 	
 	/**
@@ -302,9 +233,9 @@ public class RendererFragment extends Fragment implements
 				mSubscriptionCallback.end();
 			
 			mCurrentRenderer = renderer;
-			mPlayService.getService().setRenderer(renderer);
+			getPlayer().selectRenderer(renderer);
 	    	mSubscriptionCallback = new SubscriptionCallback(
-	    			getService("AVTransport"), 600) {
+	    			getPlayer().getService("AVTransport"), 600) {
 	
 	    		@SuppressWarnings("rawtypes")
 				@Override
@@ -374,10 +305,10 @@ public class RendererFragment extends Fragment implements
 					Log.d(TAG, defaultMsg);
 				}
 			};
-			mUpnpService.getControlPoint().execute(mSubscriptionCallback);
+			getPlayer().execute(mSubscriptionCallback);
 		}
 		mPlaylistAdapter.clear();
-		mPlaylistAdapter.add(mPlayService.getService().getPlaylist());
+		mPlaylistAdapter.add(getPlayer().getPlayService().getPlaylist());
 		mListView.setAdapter(mPlaylistAdapter);
 	}
 	
@@ -388,7 +319,7 @@ public class RendererFragment extends Fragment implements
 		if (mListView.getAdapter() == mRendererAdapter)
 			return;
 		disableTrackHighlight();
-		mCurrentTrackView = mListView.getChildAt(mPlayService.getService()
+		mCurrentTrackView = mListView.getChildAt(getPlayer().getPlayService()
 				.getCurrentTrack()
 				- mListView.getFirstVisiblePosition() + mListView.getHeaderViewsCount());
 		if (mCurrentTrackView != null)
@@ -426,15 +357,15 @@ public class RendererFragment extends Fragment implements
 		switch (v.getId()) {
 		case R.id.playpause:
 			if (mPlaying)
-				mPlayService.getService().pause();
+				getPlayer().getPlayService().pause();
 			else
-				mPlayService.getService().play();
+				getPlayer().getPlayService().play();
 			break;
 		case R.id.previous:
-			mPlayService.getService().playPrevious();
+			getPlayer().getPlayService().playPrevious();
 			break;
 		case R.id.next:
-			mPlayService.getService().playNext();
+			getPlayer().getPlayService().playNext();
 			break;
 		}		
 	}
@@ -446,17 +377,7 @@ public class RendererFragment extends Fragment implements
 	public void onProgressChanged(SeekBar seekBar, int progress, 
 			boolean fromUser) {
 		if (fromUser) {
-			mUpnpService.getControlPoint().execute(new Seek(
-	    			getService("AVTransport"), SeekMode.REL_TIME, 
-	    			Integer.toString(progress)) {
-				
-				@SuppressWarnings("rawtypes")
-				@Override
-				public void failure(ActionInvocation invocation, 
-						UpnpResponse operation, String defaultMessage) {
-					Log.w(TAG, "Seek failed: " + defaultMessage);
-				}
-			});			
+			getPlayer().seek(progress);	
 		}
 	}
 
@@ -466,50 +387,6 @@ public class RendererFragment extends Fragment implements
 
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
-	}
-
-	/**
-	 * Increases or decreases volume.
-	 * 
-	 * @param increase True to increase volume, false to decrease.
-	 */
-	@SuppressWarnings("rawtypes")
-	public void changeVolume(final boolean increase) {
-		if (mCurrentRenderer == null) {
-			Toast.makeText(getActivity(), R.string.select_renderer, 
-					Toast.LENGTH_SHORT).show();
-			return;			
-		}
-		final Service<?, ?> service = getService("RenderingControl");
-		mUpnpService.getControlPoint().execute(
-    			new GetVolume(service) {
-			
-			@Override
-			public void failure(ActionInvocation invocation, 
-					UpnpResponse operation, String defaultMessage) {
-				Log.d(TAG, "Failed to get current Volume: " + defaultMessage);
-			}
-			
-			@Override
-			public void received(ActionInvocation invocation, int volume) {
-				int newVolume = volume + ((increase) ? 4 : -4);
-				if (newVolume < 0) newVolume = 0;
-				mUpnpService.getControlPoint().execute(
-						new SetVolume(service, newVolume) {
-					
-					@Override
-					public void failure(ActionInvocation invocation, 
-							UpnpResponse operation, String defaultMessage) {
-						Log.d(TAG, "Failed to set new Volume: " + defaultMessage);
-					}
-				});
-			}
-		});	
-	}
-	
-	private Service<?, ?> getService(String name) {
-		return mCurrentRenderer.findService(
-    			new ServiceType("schemas-upnp-org", name));
 	}
 
 	@Override
