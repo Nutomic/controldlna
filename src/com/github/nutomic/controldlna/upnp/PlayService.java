@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.github.nutomic.controldlna.service;
+package com.github.nutomic.controldlna.upnp;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,9 +69,9 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.github.nutomic.controldlna.LoadImageTask;
 import com.github.nutomic.controldlna.R;
 import com.github.nutomic.controldlna.gui.MainActivity;
+import com.github.nutomic.controldlna.utility.LoadImageTask;
 
 /**
  * Background service that handles media playback to a single UPNP media renderer.

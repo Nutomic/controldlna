@@ -27,7 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.gui;
 
-import java.util.List;
 import java.util.Map;
 
 import org.teleal.cling.controlpoint.SubscriptionCallback;
@@ -43,7 +42,6 @@ import org.teleal.cling.support.avtransport.lastchange.AVTransportLastChangePars
 import org.teleal.cling.support.avtransport.lastchange.AVTransportVariable;
 import org.teleal.cling.support.lastchange.LastChange;
 import org.teleal.cling.support.model.PositionInfo;
-import org.teleal.cling.support.model.item.Item;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -65,11 +63,11 @@ import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
-import com.github.nutomic.controldlna.DeviceArrayAdapter;
-import com.github.nutomic.controldlna.FileArrayAdapter;
 import com.github.nutomic.controldlna.R;
-import com.github.nutomic.controldlna.UpnpPlayer;
 import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
+import com.github.nutomic.controldlna.upnp.UpnpPlayer;
+import com.github.nutomic.controldlna.utility.DeviceArrayAdapter;
+import com.github.nutomic.controldlna.utility.FileArrayAdapter;
 
 /**
  * Shows a list of media servers, allowing to select one for playback.
@@ -179,15 +177,6 @@ public class RendererFragment extends Fragment implements
 		}
     }
 	
-    /**
-     * Sets the new playlist.
-     */
-	public void setPlaylist(List<Item> playlist, int start) {
-		mPlaylistAdapter.clear();
-		mPlaylistAdapter.add(playlist);
-		getPlayer().getPlayService().setPlaylist(playlist, start);
-	}
-	
 	/**
 	 * Selects a media renderer.
 	 */
@@ -266,10 +255,12 @@ public class RendererFragment extends Fragment implements
 										AVTransportVariable.TransportState.class)
 												.getValue()) {
 								case PLAYING:
+									mPlaying = true;
 							    	mPlayPause.setImageResource(R.drawable.ic_media_pause);
 							    	mPlayPause.setContentDescription(getResources().
 							    			getString(R.string.pause));
-									mPlaying = true;
+							    	mPlaylistAdapter.clear();
+							    	mPlaylistAdapter.add(getPlayer().getPlayService().getPlaylist());
 									pollTimePosition();
 									enableTrackHighlight();
 							    	break;

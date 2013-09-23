@@ -39,7 +39,7 @@ import android.view.KeyEvent;
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockFragmentActivity;
 import com.github.nutomic.controldlna.R;
-import com.github.nutomic.controldlna.UpnpPlayer;
+import com.github.nutomic.controldlna.upnp.UpnpPlayer;
 
 /**
  * Main activity, with tabs for media servers and media renderers.

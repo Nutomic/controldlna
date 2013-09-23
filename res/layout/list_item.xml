@@ -4,7 +4,7 @@
     android:layout_height="?android:attr/listPreferredItemHeight"
     android:orientation="horizontal" >
 
-    <com.github.nutomic.controldlna.RemoteImageView
+    <com.github.nutomic.controldlna.utility.RemoteImageView
         android:id="@+id/image"
         android:layout_width="?android:attr/listPreferredItemHeight"
         android:layout_height="?android:attr/listPreferredItemHeight"

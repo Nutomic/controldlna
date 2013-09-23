@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.github.nutomic.controldlna;
+package com.github.nutomic.controldlna.utility;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,7 +42,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.github.nutomic.controldlna.DeviceListener.DeviceListenerCallback;
+import com.github.nutomic.controldlna.R;
+import com.github.nutomic.controldlna.upnp.DeviceListener.DeviceListenerCallback;
+
 
 /**
  * Displays the devices that are inserted through the RegistryListener (either 

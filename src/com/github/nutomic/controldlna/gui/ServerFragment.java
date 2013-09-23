@@ -49,9 +49,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
-import com.github.nutomic.controldlna.DeviceArrayAdapter;
-import com.github.nutomic.controldlna.FileArrayAdapter;
 import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
+import com.github.nutomic.controldlna.utility.DeviceArrayAdapter;
+import com.github.nutomic.controldlna.utility.FileArrayAdapter;
 
 /**
  * Shows a list of media servers, upon selecting one, allows browsing their

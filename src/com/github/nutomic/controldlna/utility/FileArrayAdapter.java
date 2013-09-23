@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.github.nutomic.controldlna;
+package com.github.nutomic.controldlna.utility;
 
 import java.util.Comparator;
 import java.util.List;
@@ -41,6 +41,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+
+import com.github.nutomic.controldlna.R;
 
 /**
  * Allows displaying UPNP media server directory contents in a ListView.

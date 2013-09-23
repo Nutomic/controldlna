@@ -34,7 +34,7 @@
         
   		<service android:name="org.teleal.cling.android.AndroidUpnpServiceImpl" />
   		
-  		<service android:name="com.github.nutomic.controldlna.service.PlayService" />
+  		<service android:name="com.github.nutomic.controldlna.upnp.PlayService" />
         
     </application>    
 
