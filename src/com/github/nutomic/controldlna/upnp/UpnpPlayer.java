@@ -57,11 +57,13 @@ public class UpnpPlayer extends UpnpController {
 
 	private PlayServiceBinder mPlayService;
 	
-	private long mMinVolume;
+	private int mMinVolume;
 	
-	private long mMaxVolume;
+	private int mMaxVolume;
 	
-	private long mVolumeStep;
+	private int mVolumeStep;
+	
+	private int mCurrentVolume;
 	
 	private ServiceConnection mPlayServiceConnection = new ServiceConnection() {
 
@@ -100,13 +102,15 @@ public class UpnpPlayer extends UpnpController {
     /**
      * Sets an absolute volume.
      */
-    public void setVolume(long newVolume) {
+    public void setVolume(int newVolume) {
     	if (mPlayService.getService().getRenderer() == null)
     		return;
 
     	if (newVolume > mMaxVolume) newVolume = mMaxVolume;
     	if (newVolume < mMinVolume) newVolume = mMinVolume;
     	
+    	mCurrentVolume = newVolume;
+    	Log.d(TAG, "volume: " + Integer.toString(mCurrentVolume));
 		mUpnpService.getControlPoint().execute(
 				new SetVolume(getService("RenderingControl"), newVolume) {
 			
@@ -125,9 +129,35 @@ public class UpnpPlayer extends UpnpController {
 	 * 
 	 * @param amount Amount to change volume by (negative to lower volume).
 	 */
-    private void changeVolume(final long amount) {
-    	if (mPlayService.getService().getRenderer() == null)
-    		return;
+    public void changeVolume(int delta) {
+    	if (delta > 0 && delta < mVolumeStep) {
+    		delta = mVolumeStep;
+    	}
+    	else if (delta < 0 && delta > -mVolumeStep) {
+    		delta = -mVolumeStep;
+    	}
+    	setVolume(mCurrentVolume + delta);
+    }
+    
+    /**
+     * Selects the renderer for playback, applying its minimum and maximum volume.
+     */
+    public void selectRenderer(Device<?, ?, ?> renderer) {
+    	mPlayService.getService().setRenderer(renderer);
+    	
+        if (getService("RenderingControl").getStateVariable("Volume") != null) {
+        	StateVariableAllowedValueRange volumeRange = 
+        			getService("RenderingControl").getStateVariable("Volume")
+        					.getTypeDetails().getAllowedValueRange();
+        	mMinVolume = (int) volumeRange.getMinimum();
+        	mMaxVolume = (int) volumeRange.getMaximum();
+        	mVolumeStep = (int) volumeRange.getStep();
+        }
+        else {
+        	mMinVolume = 0;
+        	mMaxVolume = 100;
+        	mVolumeStep = 1;    	
+        }
 		
 		mUpnpService.getControlPoint().execute(
     			new GetVolume(getService("RenderingControl")) {
@@ -142,47 +172,9 @@ public class UpnpPlayer extends UpnpController {
 			@SuppressWarnings("rawtypes")
 			@Override
 			public void received(ActionInvocation invocation, int currentVolume) {
-				setVolume(currentVolume + amount);
+				mCurrentVolume = currentVolume;
 			}
 		});	
-    }
-    
-    /**
-     * Increases the device volume by a minimum volume step.
-     */
-    public void increaseVolume() {
-    	changeVolume(mVolumeStep);
-    }
-    
-    /**
-     * Decreases the device volume by a minimum volume step.
-     */
-    public void decreaseVolume() {
-    	changeVolume(- mVolumeStep);
-    }
-    
-    /**
-     * Selects the renderer for playback, applying its minimum and maximum volume.
-     */
-    public void selectRenderer(Device<?, ?, ?> renderer) {
-    	mPlayService.getService().setRenderer(renderer);
-    	
-        if (getService("RenderingControl").getStateVariable("Volume") != null) {
-        	StateVariableAllowedValueRange volumeRange = 
-        			getService("RenderingControl").getStateVariable("Volume")
-        					.getTypeDetails().getAllowedValueRange();
-        	mMinVolume = volumeRange.getMinimum();
-        	mMaxVolume = volumeRange.getMaximum();
-        	mVolumeStep = volumeRange.getStep();
-        }
-        else {
-        	mMinVolume = 0;
-        	mMaxVolume = 100;
-        	mVolumeStep = 1;    	
-        }
-        // Hack, needed as using a smaller step seems to not 
-        // increase volume on some devices.
-        mVolumeStep = 4;
     }
     
     /**

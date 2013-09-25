@@ -143,11 +143,11 @@ public class MainActivity extends ActionBarActivity {
         switch (event.getKeyCode()) {
         case KeyEvent.KEYCODE_VOLUME_UP:
             if (event.getAction() == KeyEvent.ACTION_DOWN)
-                        mPlayer.increaseVolume();
+                        mPlayer.changeVolume(1);
             return true;
         case KeyEvent.KEYCODE_VOLUME_DOWN:
             if (event.getAction() == KeyEvent.ACTION_DOWN)
-                mPlayer.decreaseVolume();
+                mPlayer.changeVolume(-1);
             return true;
         default:
             return super.dispatchKeyEvent(event);
