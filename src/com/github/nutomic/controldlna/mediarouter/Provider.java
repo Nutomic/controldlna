@@ -1,0 +1,358 @@
+/*
+Copyright (c) 2013, Felix Ableitner
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the <organization> nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+package com.github.nutomic.controldlna.mediarouter;
+
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
+
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.IntentFilter.MalformedMimeTypeException;
+import android.content.ServiceConnection;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.os.RemoteException;
+import android.support.v7.media.MediaControlIntent;
+import android.support.v7.media.MediaRouteDescriptor;
+import android.support.v7.media.MediaRouteDiscoveryRequest;
+import android.support.v7.media.MediaRouteProvider;
+import android.support.v7.media.MediaRouteProviderDescriptor.Builder;
+import android.support.v7.media.MediaRouter;
+import android.support.v7.media.MediaRouter.ControlRequestCallback;
+
+/**
+ * Allows playing to a DLNA renderer from a remote app.
+ * 
+ * @author Felix Ableitner
+ */
+final class Provider extends MediaRouteProvider {
+	
+	// Device has been added.
+	// param: Device device
+	public static final int MSG_RENDERER_ADDED = 1;	
+	// Device has been removed.
+	// param: int id
+	public static final int MSG_RENDERER_REMOVED = 2;
+	
+	/**
+	 * Allows passing and storing basic information about a device.
+	 */
+	static public class Device implements Parcelable {
+		
+		public String id;
+		public String name;
+		public String description;
+		public int volume;
+		public int volumeMax;
+		
+		public static final Parcelable.Creator<Device> CREATOR
+			= new Parcelable.Creator<Device>() {
+			    public Device createFromParcel(Parcel in) {
+			        return new Device(in);
+			    }
+
+			    public Device[] newArray(int size) {
+			        return new Device[size];
+			    }
+			};
+		
+		private Device(Parcel in) {
+	         id = in.readString();
+	         name = in.readString();
+	         description = in.readString();
+	         volume = in.readInt();
+	         volumeMax = in.readInt();
+	     }
+		
+		public Device(String id, String name, String description, int volume, int volumeMax) {
+			this.id = id;
+			this.name = name;
+			this.description = description;
+			this.volume = volume;
+			this.volumeMax = volumeMax;
+		}
+
+		@Override
+		public int describeContents() {
+			return 0;
+		}
+
+		@Override
+		public void writeToParcel(Parcel dest, int flags) {
+			dest.writeString(id);
+			dest.writeString(name);
+			dest.writeString(description);
+			dest.writeInt(volume);
+			dest.writeInt(volumeMax);
+		}		
+		
+	}
+    
+    private HashMap<String, Device> mDevices = new HashMap<String, Device>();
+    
+    private Messenger mRemotePlayService;
+    
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+        	mRemotePlayService = new Messenger(service);
+        	Message msg = Message.obtain(null, RemotePlayService.MSG_OPEN, 0, 0);
+        	msg.replyTo = mListener;
+            try {
+            	mRemotePlayService.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+        	mRemotePlayService = null;
+        }
+    };
+
+    private static final ArrayList<IntentFilter> CONTROL_FILTERS;
+    // Static constructor for CONTROL_FILTERS.
+    static {
+
+        IntentFilter f = new IntentFilter();
+        f.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
+        f.addAction(MediaControlIntent.ACTION_PLAY);
+        f.addAction(MediaControlIntent.ACTION_PAUSE);
+        f.addAction(MediaControlIntent.ACTION_SEEK);
+        f.addAction(MediaControlIntent.ACTION_STOP);
+        f.addDataScheme("http");
+        f.addDataScheme("https");
+        try {
+            f.addDataType("video/*");
+            f.addDataType("audio/*");
+        } catch (MalformedMimeTypeException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        CONTROL_FILTERS = new ArrayList<IntentFilter>();
+        CONTROL_FILTERS.add(f);
+    }
+	
+	/**
+     * Listens for messages about devices.
+     */
+    static private class DeviceListener extends Handler {
+        	
+        private final WeakReference<Provider> mService; 
+
+        DeviceListener(Provider provider) {
+            mService = new WeakReference<Provider>(provider);
+        }
+        
+        @Override
+        public void handleMessage(Message msg) {
+        	if (mService.get() != null) {
+        		mService.get().handleMessage(msg);
+        	}
+        }
+    }
+    
+    final Messenger mListener = new Messenger(new DeviceListener(this));
+
+    public Provider(Context context) {
+        super(context);
+    	context.bindService(
+            new Intent(context, RemotePlayService.class),
+            mConnection,
+            Context.BIND_AUTO_CREATE
+        );
+    }
+
+	public void close() {
+		getContext().unbindService(mConnection);
+	}
+    
+    @Override
+    public void onDiscoveryRequestChanged(MediaRouteDiscoveryRequest request) {
+    	if (request == null) return;
+    	Message msg;
+    	if (request.isActiveScan()) {
+        	msg = Message.obtain(null, RemotePlayService.MSG_OPEN, 0, 0);
+        	msg.replyTo = mListener;
+    	}
+    	else {
+        	msg = Message.obtain(null, RemotePlayService.MSG_CLOSE, 0, 0);
+    	}
+        try {
+        	if (mRemotePlayService != null) {
+        		mRemotePlayService.send(msg);
+        	}
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public RouteController onCreateRouteController(String routeId) {
+        return new RouteController(routeId);
+    }
+
+    private void updateRoutes() {
+    	Builder builder = new Builder();
+    	for (Entry<String, Device> d : mDevices.entrySet()) {
+    		MediaRouteDescriptor routeDescriptor = new MediaRouteDescriptor.Builder(
+	                d.getValue().id,
+	                d.getValue().name)
+	                .setDescription("DLNA Playback")
+	                .addControlFilters(CONTROL_FILTERS)
+	                .setPlaybackType(MediaRouter.RouteInfo.PLAYBACK_TYPE_REMOTE)
+	                .setVolumeHandling(MediaRouter.RouteInfo.PLAYBACK_VOLUME_VARIABLE)
+	                .setVolumeMax(d.getValue().volumeMax)
+	                .setVolume(d.getValue().volume)
+	                .build();
+	        builder.addRoute(routeDescriptor);
+    	}
+        setDescriptor(builder.build());
+    }
+
+    /**
+     * Receives and forwards device selections, volume change 
+     * requests and control requests.
+     */
+    private final class RouteController extends MediaRouteProvider.RouteController {
+        private final String mRouteId;
+
+        public RouteController(String routeId) {
+            mRouteId = routeId;
+        }
+
+        @Override
+        public void onRelease() {
+        }
+
+        @Override
+        public void onSelect() {
+        	Message msg = Message.obtain(null, RemotePlayService.MSG_SELECT, 0, 0);
+        	msg.getData().putString("id", mRouteId);
+	        try {
+	            mRemotePlayService.send(msg);
+	        } catch (RemoteException e) {
+	            e.printStackTrace();
+	        }
+        }
+
+        @Override
+        public void onUnselect() {
+        	Message msg = Message.obtain(null, RemotePlayService.MSG_UNSELECT, 0, 0);
+        	msg.getData().putString("id", mRouteId);
+	        try {
+	            mRemotePlayService.send(msg);
+	        } catch (RemoteException e) {
+	            e.printStackTrace();
+	        }
+        }
+
+        @Override
+        public void onSetVolume(int volume) {
+        	Message msg = Message.obtain(null, RemotePlayService.MSG_SET_VOPLUME, 0, 0);
+        	msg.getData().putInt("volume", volume);
+        	mDevices.get(mRouteId).volume = volume;
+	        try {
+	            mRemotePlayService.send(msg);
+	        } catch (RemoteException e) {
+	            e.printStackTrace();
+	        }
+        	updateRoutes();
+        }
+
+        @Override
+        public void onUpdateVolume(int delta) {
+        	Message msg = Message.obtain(null, RemotePlayService.MSG_CHANGE_VOLUME, 0, 0);
+        	msg.getData().putInt("delta", delta);
+        	mDevices.get(mRouteId).volume += delta;        	
+	        try {
+	            mRemotePlayService.send(msg);
+	        } catch (RemoteException e) {
+	            e.printStackTrace();
+	        }
+        	updateRoutes();
+        }
+
+        @Override
+        public boolean onControlRequest(Intent intent, ControlRequestCallback callback) {
+	        try {
+	            if (intent.getAction().equals(MediaControlIntent.ACTION_PLAY)) {
+	            	Message msg = Message.obtain(null, RemotePlayService.MSG_PLAY, 0, 0);	            	
+	            	msg.getData().putString("uri", intent.getDataString());
+	                mRemotePlayService.send(msg);
+	                return true;
+	        	}
+	            else if (intent.getAction().equals(MediaControlIntent.ACTION_PAUSE)) {
+	            	Message msg = Message.obtain(null, RemotePlayService.MSG_PAUSE, 0, 0);
+	                mRemotePlayService.send(msg);
+	                return true;
+	        	}
+	            else if (intent.getAction().equals(MediaControlIntent.ACTION_PLAY)) {
+	            	Message msg = Message.obtain(null, RemotePlayService.MSG_STOP, 0, 0);	   
+	                mRemotePlayService.send(msg);
+	                return true;
+	        	}
+	            else if (intent.getAction().equals(MediaControlIntent.ACTION_PLAY)) {
+	            	Message msg = Message.obtain(null, RemotePlayService.MSG_PLAY, 0, 0);	            	
+	            	msg.getData().putLong("milliseconds", 
+	            			intent.getIntExtra(MediaControlIntent.EXTRA_ITEM_CONTENT_POSITION, 0));
+	                mRemotePlayService.send(msg);
+	                return true;
+	        	}
+	        } catch (RemoteException e) {
+	            e.printStackTrace();
+	        }
+            return false;
+        }
+    }
+    
+    public void handleMessage(Message msg) {
+    	Bundle data = msg.getData();
+        switch (msg.what) {
+        case MSG_RENDERER_ADDED:
+        	msg.getData().setClassLoader(Device.class.getClassLoader());
+        	Device device = (Device) data.getParcelable("device");
+        	mDevices.put(device.id, device);
+        	updateRoutes();
+        	break;
+        case MSG_RENDERER_REMOVED:
+        	mDevices.remove(data.getString("id"));
+        	updateRoutes();
+        	break;
+        }
+    }
+    
+}

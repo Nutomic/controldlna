@@ -64,9 +64,9 @@ public class DeviceListener implements RegistryListener {
 	
 	public void addCallback(DeviceListenerCallback callback) {
 		mListeners.add(callback);
-		for (Device<?, ?, ?> d : mDevices) 
+		for (Device<?, ?, ?> d : mDevices) {
 			callback.deviceAdded(d);
-		
+		}
 	}
 	
 	public void removeCallback(DeviceListenerCallback callback) {
@@ -75,14 +75,16 @@ public class DeviceListener implements RegistryListener {
 	
 	private void deviceAdded(Device<?, ?, ?> device) {
 		mDevices.add(device);
-		for (DeviceListenerCallback l : mListeners)
+		for (DeviceListenerCallback l : mListeners) {
 			l.deviceAdded(device);
+		}
 	}
 
 	private void deviceRemoved(Device<?, ?, ?> device) {
 		mDevices.remove(device);
-		for (DeviceListenerCallback l : mListeners)
+		for (DeviceListenerCallback l : mListeners) {
 			l.deviceRemoved(device);
+		}
 	}
 	
 	@Override
@@ -126,8 +128,7 @@ public class DeviceListener implements RegistryListener {
 	@Override
 	public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
 		deviceRemoved(device);
-		deviceAdded(device);
-		
+		deviceAdded(device);		
 	}
 
 }

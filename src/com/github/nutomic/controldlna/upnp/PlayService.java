@@ -85,6 +85,8 @@ public class PlayService extends Service {
 	
 	private static final int NOTIFICATION_ID = 1;
 	
+	private boolean mShowNotification = true;
+	
 	private final PlayServiceBinder mBinder = new PlayServiceBinder(this);
 	
 	/**
@@ -205,9 +207,14 @@ public class PlayService extends Service {
 			Log.w(TAG, "Metadata serialization failed", e);
 			metadata = "NO METADATA";
 		}
-    	mUpnpService.getControlPoint().execute(new SetAVTransportURI(
+    	setTransportUri(metadata, 
+    			mPlaylist.get(track).getFirstResource().getValue());
+	}
+
+	private void setTransportUri(String metadata, final String uri) {
+		mUpnpService.getControlPoint().execute(new SetAVTransportURI(
     			mAvTransportService, 
-    			mPlaylist.get(track).getFirstResource().getValue(), metadata) {
+    			uri, metadata) {
 			@SuppressWarnings("rawtypes")
 			@Override
             public void failure(ActionInvocation invocation, 
@@ -224,17 +231,16 @@ public class PlayService extends Service {
 	}
 	
 	private void updateNotification() {
-		new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
-				.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+		if (mShowNotification) {
+			new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+					.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+		}
 	}
 	
 	/**
 	 * Sends 'play' signal to current renderer.
 	 */
 	public void play() {
-		if (mPlaylist.size() == 0) 
-			return;
-		
 		updateNotification();
 		mUpnpService.getControlPoint().execute(
 				new Play(mAvTransportService) {
@@ -262,17 +268,28 @@ public class PlayService extends Service {
 					UpnpResponse operation, String defaultMessage) {
 				Log.w(TAG, "Pause failed, trying stop: " + defaultMessage);
 				// Sometimes stop works even though pause does not.
-				mUpnpService.getControlPoint().execute(
-						new Stop(mAvTransportService) {
-					
-					@Override
-					public void failure(ActionInvocation invocation, 
-							UpnpResponse operation, String defaultMessage) {
-						Log.w(TAG, "Stop failed: " + defaultMessage);
-					}
-				});		
+				stop();
 			}
 		});			
+	}
+	
+	/**
+	 * Sends 'stop' signal to current renderer.
+	 */
+	public void stop() {
+		mManuallyStopped.set(true);
+		
+		mUpnpService.getControlPoint().execute(
+			new Stop(mAvTransportService) {
+		
+		@SuppressWarnings("rawtypes")
+		@Override
+		public void failure( ActionInvocation invocation, 
+				UpnpResponse operation, String defaultMessage) {
+			Log.w(TAG, "Stop failed: " + defaultMessage);
+		}
+	});
+		
 	}
 	
 	public void setRenderer(Device<?, ?, ?> renderer) {
@@ -388,6 +405,10 @@ public class PlayService extends Service {
 	
 	public int getCurrentTrack() {
 		return mCurrentTrack;
+	}
+	
+	public void setShowNotification(boolean value) {
+		mShowNotification = value;
 	}
 
 }

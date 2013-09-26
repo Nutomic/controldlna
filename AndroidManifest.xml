@@ -35,6 +35,16 @@
   		<service android:name="org.teleal.cling.android.AndroidUpnpServiceImpl" />
   		
   		<service android:name="com.github.nutomic.controldlna.upnp.PlayService" />
+  		
+  		<service android:name="com.github.nutomic.controldlna.mediarouter.RemotePlayService" />
+
+        <service android:name=".mediarouter.ProviderService"
+                android:label="sample_media_route_provider_service"
+                android:process=":mrp">
+            <intent-filter>
+                <action android:name="android.media.MediaRouteProviderService" />
+            </intent-filter>
+        </service>
         
     </application>    
 

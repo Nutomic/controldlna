@@ -110,7 +110,7 @@ public class UpnpController {
     /**
      * Returns a device service by name for direct queries.
      */
-	public Service<?, ?> getService(Device<?, ?, ?> device, String name) {
+	public static Service<?, ?> getService(Device<?, ?, ?> device, String name) {
 		return device.findService(
     			new ServiceType("schemas-upnp-org", name));
 	}

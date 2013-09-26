@@ -83,7 +83,7 @@ public class UpnpPlayer extends UpnpController {
             new Intent(context, PlayService.class),
             mPlayServiceConnection,
             Context.BIND_AUTO_CREATE
-        );    	
+        );
     }
     
     @Override
@@ -110,7 +110,6 @@ public class UpnpPlayer extends UpnpController {
     	if (newVolume < mMinVolume) newVolume = mMinVolume;
     	
     	mCurrentVolume = newVolume;
-    	Log.d(TAG, "volume: " + Integer.toString(mCurrentVolume));
 		mUpnpService.getControlPoint().execute(
 				new SetVolume(getService("RenderingControl"), newVolume) {
 			
@@ -145,7 +144,7 @@ public class UpnpPlayer extends UpnpController {
     public void selectRenderer(Device<?, ?, ?> renderer) {
     	mPlayService.getService().setRenderer(renderer);
     	
-        if (getService("RenderingControl").getStateVariable("Volume") != null) {
+    	if (getService("RenderingControl").getStateVariable("Volume") != null) {
         	StateVariableAllowedValueRange volumeRange = 
         			getService("RenderingControl").getStateVariable("Volume")
         					.getTypeDetails().getAllowedValueRange();
@@ -156,7 +155,6 @@ public class UpnpPlayer extends UpnpController {
         else {
         	mMinVolume = 0;
         	mMaxVolume = 100;
-        	mVolumeStep = 1;    	
         }
 		
 		mUpnpService.getControlPoint().execute(
@@ -203,7 +201,9 @@ public class UpnpPlayer extends UpnpController {
      * Returns the service that handles actual playback.
      */
     public PlayService getPlayService() {
-    	return mPlayService.getService();
+    	return (mPlayService != null) 
+    			? mPlayService.getService()
+    			: null;
     }
 
 }

@@ -65,6 +65,7 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 
 import com.github.nutomic.controldlna.R;
 import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
+import com.github.nutomic.controldlna.upnp.UpnpController;
 import com.github.nutomic.controldlna.upnp.UpnpPlayer;
 import com.github.nutomic.controldlna.utility.DeviceArrayAdapter;
 import com.github.nutomic.controldlna.utility.FileArrayAdapter;
@@ -146,8 +147,8 @@ public class RendererFragment extends Fragment implements
      * playback is active.
      */
     private void pollTimePosition() {
-    	Service<?, ?> service = getPlayer()
-    			.getService(mCurrentRenderer, "AVTransport");
+		Service<?, ?> service = UpnpController
+				.getService(mCurrentRenderer, "AVTransport");
     	getPlayer().execute(
 				new GetPositionInfo(service) {
 			
