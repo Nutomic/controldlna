@@ -56,6 +56,7 @@ public class DeviceListener implements RegistryListener {
 	public interface DeviceListenerCallback {
 		public void deviceAdded(Device<?, ?, ?> device);
 		public void deviceRemoved(Device<?, ?, ?> device);
+		public void deviceUpdated(Device<?, ?, ?> device);
 	}
 	
 	private ArrayList<Device<?, ?, ?>> mDevices = new ArrayList<Device<?, ?, ?>>();
@@ -127,8 +128,9 @@ public class DeviceListener implements RegistryListener {
 
 	@Override
 	public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-		deviceRemoved(device);
-		deviceAdded(device);		
+		for (DeviceListenerCallback l : mListeners) {
+			l.deviceUpdated(device);
+		}	
 	}
 
 }

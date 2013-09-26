@@ -132,4 +132,15 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 			}
 		});			
 	}
+
+	@Override
+	public void deviceUpdated(Device<?, ?, ?> device) {
+		mActivity.runOnUiThread(new Runnable() {
+			
+			@Override
+			public void run() {
+				notifyDataSetChanged();
+			}
+		});	
+	}
 }

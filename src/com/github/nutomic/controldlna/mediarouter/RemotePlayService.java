@@ -244,4 +244,9 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
         }
     }
 
+	@Override
+	public void deviceUpdated(Device<?, ?, ?> device) {
+		// No need to update as the parameters we need are already known.
+	}
+
 }
