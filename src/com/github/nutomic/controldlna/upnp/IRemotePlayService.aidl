@@ -24,27 +24,21 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+ 
+package com.github.nutomic.controldlna.upnp;
 
-package com.github.nutomic.controldlna.mediarouter;
-
-import android.support.v7.media.MediaRouteProvider;
-import android.support.v7.media.MediaRouteProviderService;
-
-public class ProviderService extends MediaRouteProviderService {
-
-	private Provider mProvider;
-	@Override
-	public MediaRouteProvider onCreateMediaRouteProvider() {
-		if (mProvider == null) {
-			mProvider = new Provider(this);
-		}
-		return mProvider;
-	}
-	
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		mProvider.close();
-		mProvider = null;
-	}
+import android.os.Messenger;
+ 
+interface IRemotePlayService {
+	void startSearch(in Messenger listener);
+	void stopSearch();
+	void selectRenderer(String id);
+	void unselectRenderer(String id);
+	void setVolume(int volume);
+	void play(String uri, String metadata);
+	void pause(String sessionId);
+	void resume(String sessionId);
+	void stop(String sessionId);
+	void seek(String sessionId, String itemId, long milliseconds);
+	void getItemStatus(String sessionId, String itemId, int requestHash);
 }

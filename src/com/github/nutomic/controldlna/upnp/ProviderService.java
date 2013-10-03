@@ -27,23 +27,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.upnp;
 
-import android.os.Binder;
+import android.support.v7.media.MediaRouteProvider;
+import android.support.v7.media.MediaRouteProviderService;
 
-/**
- * Provides connection to PlayService.
- * 
- * @author Felix Ableitner
- *
- */
-public class PlayServiceBinder extends Binder {
-	
-	PlayService mService;
-	
-	public PlayServiceBinder(PlayService service) {
-		mService = service;
+public class ProviderService extends MediaRouteProviderService {
+
+	private Provider mProvider;
+	@Override
+	public MediaRouteProvider onCreateMediaRouteProvider() {
+		if (mProvider == null) {
+			mProvider = new Provider(this);
+		}
+		return mProvider;
 	}
 	
-	public PlayService getService() {
-        return mService;
-    }
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		mProvider.close();
+		mProvider = null;
+	}
 }

@@ -43,7 +43,7 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import com.github.nutomic.controldlna.R;
-import com.github.nutomic.controldlna.upnp.DeviceListener.DeviceListenerCallback;
+import com.github.nutomic.controldlna.upnp.UpnpController.DeviceListenerCallback;
 
 
 /**
@@ -87,19 +87,19 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
         		(RemoteImageView) convertView.findViewById(R.id.image);
         tv.setText(getItem(position).getDetails().getFriendlyName());
         
-        // Loading icons for local devices is not currently implemented.
-        if (getItem(position) instanceof RemoteDevice && 
-        		getItem(position).hasIcons()) {
-	        RemoteDevice device = (RemoteDevice) getItem(position);
-			URI uri = null;
-			try {
-				uri = device.normalizeURI(
-						getItem(position).getIcons()[0].getUri()).toURI();
-			} catch (URISyntaxException e) {
-				Log.w(TAG, "Failed to get device icon URI", e);
+        if (getItem(position).hasIcons()) {
+			URI uri = getItem(position).getIcons()[0].getUri();
+			if (getItem(position) instanceof RemoteDevice) {
+				try {
+			        RemoteDevice device = (RemoteDevice) getItem(position);
+					uri = device.normalizeURI(uri).toURI();
+				} catch (URISyntaxException e) {
+					Log.w(TAG, "Failed to get device icon URI", e);
+				}
 			}
 			image.setImageUri(uri);
         }
+        
         return convertView;
 	}
 	
@@ -113,7 +113,7 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 			@Override
 			public void run() {
 				if (device.getType().getType().equals(mDeviceType))
-					add(device);	
+					add(device);
 			}
 		});
 	}

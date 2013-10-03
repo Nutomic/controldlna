@@ -27,7 +27,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.gui;
 
+import java.util.List;
+
+import org.teleal.cling.support.model.item.Item;
+
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
@@ -37,10 +43,9 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.KeyEvent;
 
 import com.github.nutomic.controldlna.R;
-import com.github.nutomic.controldlna.upnp.UpnpPlayer;
 
 /**
- * Main activity, with tabs for media servers and media renderers.
+ * Main activity, with tabs for media servers and media routes.
  *
  * @author Felix Ableitner
  *
@@ -54,21 +59,34 @@ public class MainActivity extends ActionBarActivity {
 		boolean onBackPressed();    	
     }
 	
-	/**
-	 * Manages all UPNP connections including playback.
-	 */
-	private UpnpPlayer mPlayer = new UpnpPlayer();
-	
-    /**
-     * Holds fragments.
-     */
-    SectionsPagerAdapter mSectionsPagerAdapter;
+    FragmentStatePagerAdapter mSectionsPagerAdapter = 
+    		new FragmentStatePagerAdapter(getSupportFragmentManager()) {
+
+    	@Override
+    	public Fragment getItem(int position) {
+    		switch (position) {
+    		case 0: return mServerFragment;
+    		case 1: return mRendererFragment;
+    		default: return null;
+    		}
+    	}
+
+    	@Override
+    	public int getCount() {
+    		return 2;
+    	}
+    	
+    };
+
+    private ServerFragment mServerFragment = new ServerFragment();
     
-    /**
-     * Allows tab swiping.
-     */
+    private RouteFragment mRendererFragment = new RouteFragment();
+    
     ViewPager mViewPager;
 
+    /**
+     * Initializes tab navigation.
+     */
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);        
         final ActionBar actionBar = getSupportActionBar();
@@ -77,11 +95,6 @@ public class MainActivity extends ActionBarActivity {
         actionBar.setDisplayShowTitleEnabled(false);
         actionBar.setDisplayShowHomeEnabled(false);
         setContentView(R.layout.activity_main);
-
-        // ViewPager and its adapters use support library
-        // fragments, so use getSupportFragmentManager.
-        mSectionsPagerAdapter = new SectionsPagerAdapter(
-                        getSupportFragmentManager());
         
         mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
@@ -112,16 +125,8 @@ public class MainActivity extends ActionBarActivity {
                 .setTabListener(tabListener));
         actionBar.addTab(actionBar.newTab()
                 .setText(R.string.title_renderer)
-                .setTabListener(tabListener));
-        
-        mPlayer.open(getApplicationContext());
+                .setTabListener(tabListener));        
     }
-    
-    @Override
-    protected void onDestroy() {
-    	super.onDestroy();
-        mPlayer.close(getApplicationContext());
-    } 
     
     /**
      * Forwards back press to active Fragment (unless the fragment is
@@ -129,44 +134,37 @@ public class MainActivity extends ActionBarActivity {
      */
     @Override
     public void onBackPressed() {
-            OnBackPressedListener currentFragment = (OnBackPressedListener)
-                            mSectionsPagerAdapter.getItem(mViewPager.getCurrentItem());
-            if (!currentFragment.onBackPressed())
-                    super.onBackPressed();
+        OnBackPressedListener currentFragment = (OnBackPressedListener)
+                        mSectionsPagerAdapter.getItem(mViewPager.getCurrentItem());
+        if (!currentFragment.onBackPressed())
+        	super.onBackPressed();
     }
     
     /**
-     * Changes volume on key press.
+     * Changes volume on key press (via RouteFragment).
      */
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         switch (event.getKeyCode()) {
         case KeyEvent.KEYCODE_VOLUME_UP:
             if (event.getAction() == KeyEvent.ACTION_DOWN)
-                        mPlayer.changeVolume(1);
+            	mRendererFragment.increaseVolume();
             return true;
         case KeyEvent.KEYCODE_VOLUME_DOWN:
             if (event.getAction() == KeyEvent.ACTION_DOWN)
-                mPlayer.changeVolume(-1);
+            	mRendererFragment.decreaseVolume();
             return true;
         default:
             return super.dispatchKeyEvent(event);
         }
     }
-    
-    /**
-     * Returns shared instance of UPNP player.
-     * @return
-     */
-    public UpnpPlayer getUpnpPlayer() {
-		return mPlayer;
-    	
-    }
 
     /**
-     * Switches to the "renderer" tab.
+     * Starts playing the playlist from item start (via RouteFragment).
      */
-	public void switchToRendererTab() {
+	public void play(List<Item> playlist, int start) {
         mViewPager.setCurrentItem(1);
+		mRendererFragment.play(playlist, start);
 	}
+    
 }

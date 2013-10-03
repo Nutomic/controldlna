@@ -25,12 +25,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.github.nutomic.controldlna.mediarouter;
+package com.github.nutomic.controldlna.upnp;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Random;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -53,6 +54,8 @@ import android.support.v7.media.MediaRouteProvider;
 import android.support.v7.media.MediaRouteProviderDescriptor.Builder;
 import android.support.v7.media.MediaRouter;
 import android.support.v7.media.MediaRouter.ControlRequestCallback;
+import android.util.Pair;
+import android.util.SparseArray;
 
 /**
  * Allows playing to a DLNA renderer from a remote app.
@@ -67,6 +70,10 @@ final class Provider extends MediaRouteProvider {
 	// Device has been removed.
 	// param: int id
 	public static final int MSG_RENDERER_REMOVED = 2;
+	// Playback status information, retrieved after RemotePlayService.MSG_GET_STATUS.
+	// param: bundle media_item_status
+	// param: int hash
+	public static final int MSG_STATUS_INFO = 3;
 	
 	/**
 	 * Allows passing and storing basic information about a device.
@@ -124,29 +131,23 @@ final class Provider extends MediaRouteProvider {
     
     private HashMap<String, Device> mDevices = new HashMap<String, Device>();
     
-    private Messenger mRemotePlayService;
+    private SparseArray<Pair<Intent, ControlRequestCallback>> mRequests = 
+    		new SparseArray<Pair<Intent, ControlRequestCallback>>();
+    
+    IRemotePlayService mIRemotePlayService;
     
     private ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
-        	mRemotePlayService = new Messenger(service);
-        	Message msg = Message.obtain(null, RemotePlayService.MSG_OPEN, 0, 0);
-        	msg.replyTo = mListener;
-            try {
-            	mRemotePlayService.send(msg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
+        	mIRemotePlayService = IRemotePlayService.Stub.asInterface(service);
         }
 
         public void onServiceDisconnected(ComponentName className) {
-        	mRemotePlayService = null;
+        	mIRemotePlayService = null;
         }
     };
 
     private static final ArrayList<IntentFilter> CONTROL_FILTERS;
-    // Static constructor for CONTROL_FILTERS.
     static {
-
         IntentFilter f = new IntentFilter();
         f.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
         f.addAction(MediaControlIntent.ACTION_PLAY);
@@ -179,9 +180,8 @@ final class Provider extends MediaRouteProvider {
         
         @Override
         public void handleMessage(Message msg) {
-        	if (mService.get() != null) {
+        	if (mService.get() != null)
         		mService.get().handleMessage(msg);
-        	}
         }
     }
     
@@ -202,22 +202,14 @@ final class Provider extends MediaRouteProvider {
     
     @Override
     public void onDiscoveryRequestChanged(MediaRouteDiscoveryRequest request) {
-    	if (request == null) return;
-    	Message msg;
-    	if (request.isActiveScan()) {
-        	msg = Message.obtain(null, RemotePlayService.MSG_OPEN, 0, 0);
-        	msg.replyTo = mListener;
-    	}
-    	else {
-        	msg = Message.obtain(null, RemotePlayService.MSG_CLOSE, 0, 0);
-    	}
-        try {
-        	if (mRemotePlayService != null) {
-        		mRemotePlayService.send(msg);
-        	}
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
+    	try {
+	    	if (request != null && request.isActiveScan())
+				mIRemotePlayService.startSearch(mListener);
+	    	else
+	        	mIRemotePlayService.stopSearch();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
     }
 
     @Override
@@ -260,88 +252,115 @@ final class Provider extends MediaRouteProvider {
 
         @Override
         public void onSelect() {
-        	Message msg = Message.obtain(null, RemotePlayService.MSG_SELECT, 0, 0);
-        	msg.getData().putString("id", mRouteId);
 	        try {
-	            mRemotePlayService.send(msg);
-	        } catch (RemoteException e) {
-	            e.printStackTrace();
-	        }
+				mIRemotePlayService.selectRenderer(mRouteId);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
         }
 
         @Override
         public void onUnselect() {
-        	Message msg = Message.obtain(null, RemotePlayService.MSG_UNSELECT, 0, 0);
-        	msg.getData().putString("id", mRouteId);
 	        try {
-	            mRemotePlayService.send(msg);
-	        } catch (RemoteException e) {
-	            e.printStackTrace();
-	        }
+				mIRemotePlayService.unselectRenderer(mRouteId);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
         }
 
         @Override
         public void onSetVolume(int volume) {
-        	Message msg = Message.obtain(null, RemotePlayService.MSG_SET_VOPLUME, 0, 0);
-        	msg.getData().putInt("volume", volume);
-        	mDevices.get(mRouteId).volume = volume;
+        	if (volume < 0 || volume > mDevices.get(mRouteId).volumeMax)
+        		return;
+        	
 	        try {
-	            mRemotePlayService.send(msg);
-	        } catch (RemoteException e) {
-	            e.printStackTrace();
-	        }
+				mIRemotePlayService.setVolume(volume);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+	        mDevices.get(mRouteId).volume = volume;
         	updateRoutes();
         }
 
         @Override
         public void onUpdateVolume(int delta) {
-        	Message msg = Message.obtain(null, RemotePlayService.MSG_CHANGE_VOLUME, 0, 0);
-        	msg.getData().putInt("delta", delta);
-        	mDevices.get(mRouteId).volume += delta;        	
-	        try {
-	            mRemotePlayService.send(msg);
-	        } catch (RemoteException e) {
-	            e.printStackTrace();
-	        }
-        	updateRoutes();
+        	onSetVolume(mDevices.get(mRouteId).volume + delta);
         }
 
+        /**
+         * Handles play, pause, resume, stop, seek and get_status requests for this route.
+         */
         @Override
         public boolean onControlRequest(Intent intent, ControlRequestCallback callback) {
-	        try {
+        	try {
 	            if (intent.getAction().equals(MediaControlIntent.ACTION_PLAY)) {
-	            	Message msg = Message.obtain(null, RemotePlayService.MSG_PLAY, 0, 0);	            	
-	            	msg.getData().putString("uri", intent.getDataString());
-	                mRemotePlayService.send(msg);
+	            	String metadata = (intent.hasExtra(MediaControlIntent.EXTRA_ITEM_METADATA))
+	            			? intent.getExtras().getString(MediaControlIntent.EXTRA_ITEM_METADATA)
+	            			: null;
+	            	mIRemotePlayService.play(intent.getDataString(), metadata);
+	            	// Store in intent extras for later.
+	            	intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mRouteId);
+	            	intent.putExtra(MediaControlIntent.EXTRA_ITEM_ID, intent.getDataString());
+	                getItemStatus(intent, callback);
 	                return true;
 	        	}
 	            else if (intent.getAction().equals(MediaControlIntent.ACTION_PAUSE)) {
-	            	Message msg = Message.obtain(null, RemotePlayService.MSG_PAUSE, 0, 0);
-	                mRemotePlayService.send(msg);
+					mIRemotePlayService.pause(mRouteId);
 	                return true;
 	        	}
-	            else if (intent.getAction().equals(MediaControlIntent.ACTION_PLAY)) {
-	            	Message msg = Message.obtain(null, RemotePlayService.MSG_STOP, 0, 0);	   
-	                mRemotePlayService.send(msg);
+	            else if (intent.getAction().equals(MediaControlIntent.ACTION_RESUME)) {
+	            	mIRemotePlayService.resume(mRouteId);
 	                return true;
 	        	}
-	            else if (intent.getAction().equals(MediaControlIntent.ACTION_PLAY)) {
-	            	Message msg = Message.obtain(null, RemotePlayService.MSG_PLAY, 0, 0);	            	
-	            	msg.getData().putLong("milliseconds", 
-	            			intent.getIntExtra(MediaControlIntent.EXTRA_ITEM_CONTENT_POSITION, 0));
-	                mRemotePlayService.send(msg);
+	            else if (intent.getAction().equals(MediaControlIntent.ACTION_STOP)) {
+	            	mIRemotePlayService.stop(mRouteId);
 	                return true;
 	        	}
-	        } catch (RemoteException e) {
-	            e.printStackTrace();
-	        }
-            return false;
+	            else if (intent.getAction().equals(MediaControlIntent.ACTION_SEEK)) {
+	                mIRemotePlayService.seek(mRouteId, 
+	                		intent.getStringExtra(
+	                				MediaControlIntent.EXTRA_ITEM_ID), 
+	                		intent.getLongExtra(
+	                				MediaControlIntent.EXTRA_ITEM_CONTENT_POSITION, 0));
+	                getItemStatus(intent, callback);
+	                return true;
+	        	}
+	            else if(intent.getAction().equals(MediaControlIntent.ACTION_GET_STATUS)) {
+	                getItemStatus(intent, callback);
+	                return true;
+	            }
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+			return false;
         }
     }
     
+    /**
+     * Requests status info via RemotePlayService, stores intent and callback to 
+     * access later in handleMessage.
+     */
+    private void getItemStatus(Intent intent, ControlRequestCallback callback) 
+    		throws RemoteException {
+    	if (callback == null)
+    		return;
+
+    	Pair<Intent, ControlRequestCallback> pair = 
+    			new Pair<Intent, ControlRequestCallback>(intent, callback);
+    	int r = new Random().nextInt();
+    	mRequests.put(r, pair);
+    	mIRemotePlayService.getItemStatus(
+    			intent.getStringExtra(MediaControlIntent.EXTRA_SESSION_ID),
+    			intent.getStringExtra(MediaControlIntent.EXTRA_ITEM_ID),
+    			r);  	
+    }
+    
+    /**
+     * Handles device add and remove as well as sending status info requested earlier.
+     */
     public void handleMessage(Message msg) {
     	Bundle data = msg.getData();
-        switch (msg.what) {
+		switch (msg.what) {
         case MSG_RENDERER_ADDED:
         	msg.getData().setClassLoader(Device.class.getClassLoader());
         	Device device = (Device) data.getParcelable("device");
@@ -352,6 +371,20 @@ final class Provider extends MediaRouteProvider {
         	mDevices.remove(data.getString("id"));
         	updateRoutes();
         	break;
+        case MSG_STATUS_INFO:
+        	Pair<Intent, ControlRequestCallback> pair = 
+        			mRequests.get(data.getInt("hash"));
+        	Bundle status = data.getBundle("media_item_status");
+
+        	if (pair.first.hasExtra(MediaControlIntent.EXTRA_SESSION_ID)) {
+        		status.putString(MediaControlIntent.EXTRA_SESSION_ID, 
+        				pair.first.getStringExtra(MediaControlIntent.EXTRA_SESSION_ID));
+        	}
+        	if (pair.first.hasExtra(MediaControlIntent.EXTRA_ITEM_ID)) {
+        		status.putString(MediaControlIntent.EXTRA_ITEM_ID, 
+        				pair.first.getStringExtra(MediaControlIntent.EXTRA_ITEM_ID));
+        	}
+        	pair.second.onResult(status);
         }
     }
     

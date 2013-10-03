@@ -50,6 +50,7 @@ import android.view.View;
 import android.widget.ListView;
 
 import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
+import com.github.nutomic.controldlna.upnp.UpnpController;
 import com.github.nutomic.controldlna.utility.DeviceArrayAdapter;
 import com.github.nutomic.controldlna.utility.FileArrayAdapter;
 
@@ -92,6 +93,11 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	 * Holds the scroll position in the list view at each directory level.
 	 */
 	private Stack<Parcelable> mListState = new Stack<Parcelable>();
+	
+	/**
+	 * Manages all UPNP connections including playback.
+	 */
+	private UpnpController mController = new UpnpController();
     
 	/**
 	 * Initializes ListView adapters, launches Cling UPNP service.
@@ -104,8 +110,26 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     	mServerAdapter = new DeviceArrayAdapter(
     			getActivity(), DeviceArrayAdapter.SERVER);
         setListAdapter(mServerAdapter);
-        MainActivity activity = (MainActivity) getActivity();
-        activity.getUpnpPlayer().getDeviceListener().addCallback(mServerAdapter);
+        mController.open(getActivity());
+        mController.addCallback(mServerAdapter);
+    }
+    
+    @Override
+    public void onResume() {
+    	super.onResume();
+    	mController.startSearch();
+    }
+    
+    @Override
+    public void onPause() {
+    	super.onPause();
+    	mController.stopSearch();
+    }
+    
+    @Override
+    public void onDestroy() {
+    	super.onDestroy();
+        mController.close(getActivity());
     }
     
     /**
@@ -119,9 +143,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     		getFiles(ROOT_DIRECTORY);
     	}
     	else if (getListAdapter() == mFileAdapter) {
-    		if (mFileAdapter.getItem(position) instanceof Container) {
-    			getFiles(((Container) mFileAdapter.getItem(position)).getId());    			
-    		}
+    		if (mFileAdapter.getItem(position) instanceof Container)
+    			getFiles(((Container) mFileAdapter.getItem(position)).getId());
     		else {
     			List<Item> playlist = new ArrayList<Item>();
     			for (int i = 0; i < mFileAdapter.getCount(); i++) {
@@ -129,9 +152,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     					playlist.add((Item) mFileAdapter.getItem(i));
     			}
     			MainActivity activity = (MainActivity) getActivity();
-    	        activity.switchToRendererTab();
-    			activity.getUpnpPlayer().getPlayService()
-    					.setPlaylist(playlist, position);
+    			activity.play(playlist, position);
     		}
     	}
     }
@@ -154,8 +175,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     private void getFiles(final boolean restoreListState) {
     	Service<?, ?> service = mCurrentServer.findService(
     			new ServiceType("schemas-upnp-org", "ContentDirectory"));
-    	MainActivity activity = (MainActivity) getActivity();
-    	activity.getUpnpPlayer().execute(new Browse(service, 
+    	mController.execute(new Browse(service, 
 				mCurrentPath.peek(), BrowseFlag.DIRECT_CHILDREN) {
 		
 					@SuppressWarnings("rawtypes")

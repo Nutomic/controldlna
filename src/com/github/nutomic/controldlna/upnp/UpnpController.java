@@ -27,6 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.upnp;
 
+import java.util.ArrayList;
+
 import org.teleal.cling.android.AndroidUpnpService;
 import org.teleal.cling.android.AndroidUpnpServiceImpl;
 import org.teleal.cling.controlpoint.ActionCallback;
@@ -36,6 +38,8 @@ import org.teleal.cling.model.meta.LocalDevice;
 import org.teleal.cling.model.meta.RemoteDevice;
 import org.teleal.cling.model.meta.Service;
 import org.teleal.cling.model.types.ServiceType;
+import org.teleal.cling.registry.Registry;
+import org.teleal.cling.registry.RegistryListener;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -50,32 +54,54 @@ import android.util.Log;
  * @author Felix Ableitner
  *
  */
-public class UpnpController {
+public class UpnpController implements RegistryListener {
 	
-	private static final String TAG = "DlnaController";
+	private static final String TAG = "UpnpController";
 	
-	private DeviceListener mDeviceListener = new DeviceListener();
+	/**
+	 * Callbacks may be called from a background thread.
+	 * 
+	 * @author Felix Ableitner
+	 *
+	 */
+	public interface DeviceListenerCallback {
+		public void deviceAdded(Device<?, ?, ?> device);
+		public void deviceRemoved(Device<?, ?, ?> device);
+		public void deviceUpdated(Device<?, ?, ?> device);
+	}
+	
+	/**
+	 * Used if the UPNP service is not yet ready. If true, a device search 
+	 * will be started as soon as the service becomes available.
+	 */
+	private boolean mStartSearchImmediately;
+	
+	private ArrayList<Device<?, ?, ?>> mDevices = new ArrayList<Device<?, ?, ?>>();
+	
+	private ArrayList<DeviceListenerCallback> mListeners = 
+			new ArrayList<DeviceListenerCallback>();
 	
     protected AndroidUpnpService mUpnpService;
 
     private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
 
     	/**
-    	 * Registers DeviceListener, adds known devices and starts search.
+    	 * Registers DeviceListener, adds known devices and starts search if requested.
     	 */
 		public void onServiceConnected(ComponentName className, IBinder service) {
             mUpnpService = (AndroidUpnpService) service;
-            Log.i(TAG, "Starting device search");          
-            mUpnpService.getRegistry().addListener(mDeviceListener);
+            mUpnpService.getRegistry().addListener(UpnpController.this);
             for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices()) {
-            	if (d instanceof LocalDevice) {
-            		mDeviceListener.localDeviceAdded(mUpnpService.getRegistry(), (LocalDevice) d);
-            	}
-            	else {
-            		mDeviceListener.remoteDeviceAdded(mUpnpService.getRegistry(), (RemoteDevice) d);
-            	}
+            	if (d instanceof LocalDevice)
+            		localDeviceAdded(mUpnpService.getRegistry(), (LocalDevice) d);
+            	else
+            		remoteDeviceAdded(mUpnpService.getRegistry(), (RemoteDevice) d);
             }
-            mUpnpService.getControlPoint().search();
+        	if (mStartSearchImmediately) {
+                Log.i(TAG, "Starting device search");
+            	mUpnpService.getControlPoint().search();
+            	mStartSearchImmediately = false;
+        	}
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -93,7 +119,7 @@ public class UpnpController {
             new Intent(context, AndroidUpnpServiceImpl.class),
             mUpnpServiceConnection,
             Context.BIND_AUTO_CREATE
-        );    	
+        );
     }
     
     /**
@@ -102,10 +128,29 @@ public class UpnpController {
      * @param context Application context.
      */
     public void close(Context context) {
-        mUpnpService.getRegistry().removeListener(mDeviceListener);
+        mUpnpService.getRegistry().removeListener(this);
         context.unbindService(mUpnpServiceConnection);	
     }
-
+    
+    /**
+     * Starts active search for UPNP devices.
+     */
+    public void startSearch() {
+        if (mUpnpService != null) {
+            Log.i(TAG, "Starting device search");
+        	mUpnpService.getControlPoint().search();
+        }
+        else
+        	mStartSearchImmediately = true;
+    }
+    
+    /**
+     * Stops active search for UPNP devices.
+     * 
+     * Not yet implemented.
+     */
+    public void stopSearch() {
+    }
 
     /**
      * Returns a device service by name for direct queries.
@@ -113,6 +158,29 @@ public class UpnpController {
 	public static Service<?, ?> getService(Device<?, ?, ?> device, String name) {
 		return device.findService(
     			new ServiceType("schemas-upnp-org", name));
+	}
+	
+	public void addCallback(DeviceListenerCallback callback) {
+		mListeners.add(callback);
+		for (Device<?, ?, ?> d : mDevices) {
+			callback.deviceAdded(d);
+		}
+	}
+	
+	public void removeCallback(DeviceListenerCallback callback) {
+		mListeners.remove(callback);
+	}
+	
+	private void deviceAdded(Device<?, ?, ?> device) {
+		mDevices.add(device);
+		for (DeviceListenerCallback l : mListeners)
+			l.deviceAdded(device);
+	}
+
+	private void deviceRemoved(Device<?, ?, ?> device) {
+		mDevices.remove(device);
+		for (DeviceListenerCallback l : mListeners)
+			l.deviceRemoved(device);
 	}
 	
 	public void execute(ActionCallback callback) {
@@ -123,8 +191,48 @@ public class UpnpController {
 		mUpnpService.getControlPoint().execute(callback);
 	}
 	
-	public DeviceListener getDeviceListener() {
-		return mDeviceListener;
+	@Override
+	public void afterShutdown() {
+	}
+
+	@Override
+	public void beforeShutdown(Registry registry) {
+	}
+
+	@Override
+	public void localDeviceAdded(Registry registry, LocalDevice device) {
+		deviceAdded(device);
+	}
+
+	@Override
+	public void localDeviceRemoved(Registry registry, LocalDevice device) {
+		deviceRemoved(device);
+	}
+
+	@Override
+	public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
+		deviceAdded(device);
+	}
+
+	@Override
+	public void remoteDeviceDiscoveryFailed(Registry registry, RemoteDevice device,
+			Exception exception) {
+		Log.w(TAG, "Remote device discovery failed", exception);
+	}
+
+	@Override
+	public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
+	}
+
+	@Override
+	public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
+		deviceRemoved(device);
+	}
+
+	@Override
+	public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
+		for (DeviceListenerCallback l : mListeners)
+			l.deviceUpdated(device);
 	}
 	
 }
