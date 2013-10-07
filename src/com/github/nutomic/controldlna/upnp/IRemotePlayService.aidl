@@ -31,7 +31,6 @@ import android.os.Messenger;
  
 interface IRemotePlayService {
 	void startSearch(in Messenger listener);
-	void stopSearch();
 	void selectRenderer(String id);
 	void unselectRenderer(String id);
 	void setVolume(int volume);

@@ -30,15 +30,21 @@ package com.github.nutomic.controldlna.upnp;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.teleal.cling.android.AndroidUpnpService;
+import org.teleal.cling.android.AndroidUpnpServiceImpl;
 import org.teleal.cling.controlpoint.SubscriptionCallback;
 import org.teleal.cling.model.action.ActionInvocation;
 import org.teleal.cling.model.gena.CancelReason;
 import org.teleal.cling.model.gena.GENASubscription;
 import org.teleal.cling.model.message.UpnpResponse;
 import org.teleal.cling.model.meta.Device;
+import org.teleal.cling.model.meta.LocalDevice;
 import org.teleal.cling.model.meta.RemoteDevice;
 import org.teleal.cling.model.meta.StateVariableAllowedValueRange;
 import org.teleal.cling.model.state.StateVariableValue;
+import org.teleal.cling.model.types.ServiceType;
+import org.teleal.cling.registry.Registry;
+import org.teleal.cling.registry.RegistryListener;
 import org.teleal.cling.support.avtransport.callback.GetPositionInfo;
 import org.teleal.cling.support.avtransport.callback.Pause;
 import org.teleal.cling.support.avtransport.callback.Play;
@@ -54,7 +60,10 @@ import org.teleal.cling.support.renderingcontrol.callback.GetVolume;
 import org.teleal.cling.support.renderingcontrol.callback.SetVolume;
 
 import android.app.Service;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
@@ -63,8 +72,6 @@ import android.support.v7.media.MediaItemStatus;
 import android.support.v7.media.MediaItemStatus.Builder;
 import android.util.Log;
 
-import com.github.nutomic.controldlna.upnp.UpnpController.DeviceListenerCallback;
-
 
 /**
  * Allows UPNP playback from within different apps by providing a proxy interface.
@@ -72,7 +79,7 @@ import com.github.nutomic.controldlna.upnp.UpnpController.DeviceListenerCallback
  * @author Felix Ableitner
  *
  */
-public class RemotePlayService extends Service implements DeviceListenerCallback {
+public class RemotePlayService extends Service implements RegistryListener {
 
 	private static final String TAG = "RemotePlayService";
     
@@ -85,8 +92,31 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
     private int mPlaybackState;
     
     private boolean mManuallyStopped;
-    
-    private UpnpController mUpnpController = new UpnpController();
+	
+    protected AndroidUpnpService mUpnpService;
+
+    private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
+
+    	/**
+    	 * Registers DeviceListener, adds known devices and starts search if requested.
+    	 */
+		public void onServiceConnected(ComponentName className, IBinder service) {
+            mUpnpService = (AndroidUpnpService) service;
+            mUpnpService.getRegistry().addListener(RemotePlayService.this);
+            for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices()) {
+            	if (d instanceof LocalDevice)
+            		localDeviceAdded(mUpnpService.getRegistry(), (LocalDevice) d);
+            	else
+            		remoteDeviceAdded(mUpnpService.getRegistry(), (RemoteDevice) d);
+            }
+            Log.i(TAG, "Starting device search");
+        	mUpnpService.getControlPoint().search();
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            mUpnpService = null;
+        }
+    };
 
     /**
      * Receives events from current renderer.
@@ -98,20 +128,15 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 		@Override
 		public void startSearch(Messenger listener)
 				throws RemoteException {
-	        mUpnpController.startSearch();
 	    	mListener = listener;
-		}
-
-		@Override
-		public void stopSearch() throws RemoteException {
-	    	mUpnpController.stopSearch();	
 		}
 
 		@Override
 		public void selectRenderer(String id) throws RemoteException {
 			mCurrentRenderer = mDevices.get(id);
 			mSubscriptionCallback = new SubscriptionCallback(
-					UpnpController.getService(mCurrentRenderer, "AVTransport"), 600) {
+					mCurrentRenderer.findService(
+			    			new ServiceType("schemas-upnp-org", "AVTransport")), 600) {
 	
 				@SuppressWarnings("rawtypes")
 				@Override
@@ -176,7 +201,7 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 						Exception exception, String defaultMsg) {	
 				}
 			};
-			mUpnpController.execute(mSubscriptionCallback);	
+			mUpnpService.getControlPoint().execute(mSubscriptionCallback);	
 		}
 
 		@Override
@@ -192,8 +217,8 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 	     */
 		@Override
 		public void setVolume(int volume) throws RemoteException {
-	    	mUpnpController.execute(
-					new SetVolume(UpnpController.getService(mCurrentRenderer, 
+			mUpnpService.getControlPoint().execute(
+					new SetVolume(getService(mCurrentRenderer, 
 							"RenderingControl"), volume) {
 				
 				@SuppressWarnings("rawtypes")
@@ -211,8 +236,8 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 		 */
 		@Override
 		public void play(String uri, String metadata) throws RemoteException {
-			mUpnpController.execute(new SetAVTransportURI(
-					UpnpController.getService(mCurrentRenderer, "AVTransport"), 
+			mUpnpService.getControlPoint().execute(new SetAVTransportURI(
+					getService(mCurrentRenderer, "AVTransport"), 
 	    			uri, metadata) {
 				@SuppressWarnings("rawtypes")
 				@Override
@@ -224,8 +249,8 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 				@SuppressWarnings("rawtypes")
 				@Override
 	    		public void success(ActionInvocation invocation) {
-					mUpnpController.execute(
-							new Play(UpnpController.getService(mCurrentRenderer, 
+					mUpnpService.getControlPoint().execute(
+							new Play(getService(mCurrentRenderer, 
 									"AVTransport")) {
 						
 						@Override
@@ -243,9 +268,8 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 		 */
 		@Override
 		public void pause(final String sessionId) throws RemoteException {
-				mUpnpController.execute(
-					new Pause(UpnpController.getService(mDevices.get(sessionId), 
-							"AVTransport")) {
+			mUpnpService.getControlPoint().execute(
+					new Pause(getService(mDevices.get(sessionId), "AVTransport")) {
 				
 				@SuppressWarnings("rawtypes")
 				@Override
@@ -264,8 +288,8 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 
 		@Override
 		public void resume(String sessionId) throws RemoteException {
-			mUpnpController.execute(
-					new Play(UpnpController.getService(mDevices.get(sessionId), 
+			mUpnpService.getControlPoint().execute(
+					new Play(getService(mDevices.get(sessionId), 
 							"AVTransport")) {
 						
 				@Override
@@ -283,9 +307,8 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 		@Override
 		public void stop(String sessionId) throws RemoteException {
 			mManuallyStopped = true;
-			mUpnpController.execute(
-				new Stop(UpnpController.getService(mDevices.get(sessionId), 
-						"AVTransport")) {
+			mUpnpService.getControlPoint().execute(
+				new Stop(getService(mDevices.get(sessionId), "AVTransport")) {
 				
 				@SuppressWarnings("rawtypes")
 				@Override
@@ -303,8 +326,8 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 		@Override
 		public void seek(String sessionId, String itemId, long milliseconds) 
 				throws RemoteException {
-	    	mUpnpController.execute(new Seek(
-	    			UpnpController.getService(mDevices.get(sessionId), "AVTransport"), 
+			mUpnpService.getControlPoint().execute(new Seek(
+	    			getService(mDevices.get(sessionId), "AVTransport"), 
 	    			SeekMode.REL_TIME, 
 	    			Integer.toString((int) milliseconds / 1000)) {
 				
@@ -330,8 +353,8 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 		@Override
 		public void getItemStatus(String sessionId, final String itemId, final int requestHash) 
 				throws RemoteException {
-			mUpnpController.execute(new GetPositionInfo(
-						UpnpController.getService(mDevices.get(sessionId), "AVTransport")) {
+			mUpnpService.getControlPoint().execute(new GetPositionInfo(
+						getService(mDevices.get(sessionId), "AVTransport")) {
 	
 					@SuppressWarnings("rawtypes")
 					@Override
@@ -378,22 +401,34 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		mUpnpController.open(this);
-		mUpnpController.addCallback(this);
+        bindService(
+            new Intent(this, AndroidUpnpServiceImpl.class),
+            mUpnpServiceConnection,
+            Context.BIND_AUTO_CREATE
+        );
 	}
 	
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		mUpnpController.close(this);
+        unbindService(mUpnpServiceConnection);	
+	}
+
+    /**
+     * Returns a device service by name for direct queries.
+     */
+	private org.teleal.cling.model.meta.Service<?, ?> getService(
+			Device<?, ?, ?> device, String name) {
+		return device.findService(
+    			new ServiceType("schemas-upnp-org", name));
 	}
 
 	/**
 	 * Gather device data and send it to Provider.
 	 */
-	@Override
-	public void deviceAdded(final Device<?, ?, ?> device) {
-		final org.teleal.cling.model.meta.Service<?, ?> rc = UpnpController.getService(device, "RenderingControl");
+	private void deviceAdded(final Device<?, ?, ?> device) {
+		final org.teleal.cling.model.meta.Service<?, ?> rc = 
+				getService(device, "RenderingControl");
 		if (rc == null || mListener == null)
 			return;
 		
@@ -401,7 +436,7 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 				device instanceof RemoteDevice) {
         	mDevices.put(device.getIdentity().getUdn().toString(), device);
 
-    		mUpnpController.execute(
+    		mUpnpService.getControlPoint().execute(
         			new GetVolume(rc) {
     			
     			@SuppressWarnings("rawtypes")
@@ -441,8 +476,7 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 	/**
 	 * Remove the device from Provider.
 	 */
-	@Override
-	public void deviceRemoved(Device<?, ?, ?> device) {
+	private void deviceRemoved(Device<?, ?, ?> device) {
 		if (device.getType().getType().equals("MediaRenderer") && 
 				device instanceof RemoteDevice) {
 			Message msg = Message.obtain(null, Provider.MSG_RENDERER_REMOVED, 0, 0);
@@ -462,8 +496,50 @@ public class RemotePlayService extends Service implements DeviceListenerCallback
 	 * If a device was updated, we just add it again (devices are stored in 
 	 * maps, so adding the same one again just overwrites the old one).
 	 */
-	@Override
-	public void deviceUpdated(Device<?, ?, ?> device) {
+	private void deviceUpdated(Device<?, ?, ?> device) {
 		deviceAdded(device);
+	}
+	
+	@Override
+	public void afterShutdown() {
+	}
+
+	@Override
+	public void beforeShutdown(Registry registry) {
+	}
+
+	@Override
+	public void localDeviceAdded(Registry registry, LocalDevice device) {
+		deviceAdded(device);
+	}
+
+	@Override
+	public void localDeviceRemoved(Registry registry, LocalDevice device) {
+		deviceRemoved(device);
+	}
+
+	@Override
+	public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
+		deviceAdded(device);
+	}
+
+	@Override
+	public void remoteDeviceDiscoveryFailed(Registry registry, RemoteDevice device,
+			Exception exception) {
+		Log.w(TAG, "Remote device discovery failed", exception);
+	}
+
+	@Override
+	public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
+	}
+
+	@Override
+	public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
+		deviceRemoved(device);
+	}
+
+	@Override
+	public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
+		deviceUpdated(device);
 	}
 }

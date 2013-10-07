@@ -205,8 +205,6 @@ final class Provider extends MediaRouteProvider {
     	try {
 	    	if (request != null && request.isActiveScan())
 				mIRemotePlayService.startSearch(mListener);
-	    	else
-	        	mIRemotePlayService.stopSearch();
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
