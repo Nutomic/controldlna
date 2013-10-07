@@ -107,7 +107,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			mMediaRouterPlayService = (MediaRouterPlayServiceBinder) service;
-			mMediaRouterPlayService.getService().setRendererFragment(RouteFragment.this);
+			mMediaRouterPlayService.getService().setRouterFragment(RouteFragment.this);
+			mPlaylistAdapter.addAll(mMediaRouterPlayService.getService().getPlaylist());
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -140,6 +141,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
     	super.onActivityCreated(savedInstanceState);
     	
     	mRouteAdapter = new RouteAdapter(getActivity());
+    	mRouteAdapter.addAll(MediaRouter.getInstance(getActivity()).getRoutes());
+    	mRouteAdapter.remove(MediaRouter.getInstance(getActivity()).getDefaultRoute());
     	mPlaylistAdapter = new FileArrayAdapter(getActivity());
     	
     	mListView = (ListView) getView().findViewById(R.id.listview);
@@ -163,11 +166,36 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
         mPlayPause.setOnClickListener(this);
     	mPlayPause.setImageResource(R.drawable.ic_media_play);    	
 
-        getActivity().bindService(
-            new Intent(getActivity(), MediaRouterPlayService.class),
-            mPlayServiceConnection,
-            Context.BIND_AUTO_CREATE
+    	getActivity().getApplicationContext().startService(
+    			new Intent(getActivity(), MediaRouterPlayService.class));
+        getActivity().getApplicationContext().bindService(
+	            new Intent(getActivity(), MediaRouterPlayService.class),
+	            mPlayServiceConnection,
+	            Context.BIND_AUTO_CREATE
         );
+        
+        if (savedInstanceState != null) {
+        	mListView.onRestoreInstanceState(savedInstanceState.getParcelable("list_state"));
+        	if (savedInstanceState.getBoolean("route_selected")) {
+    			mRouteSelected = true;
+    			mListView.setAdapter(mPlaylistAdapter);
+    			mControls.setVisibility(View.VISIBLE);        		
+        	}
+        }
+    }
+    
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+    	super.onSaveInstanceState(outState);
+ 
+    	outState.putBoolean("route_selected", mRouteSelected);
+    	outState.putParcelable("list_state", mListView.onSaveInstanceState());
+    }
+    
+    @Override
+    public void onDestroy() {
+    	super.onDestroy();
+    	getActivity().getApplicationContext().unbindService(mPlayServiceConnection);
     }
 
     /**
@@ -241,9 +269,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			mRouteSelected = true;
 			mListView.setAdapter(mPlaylistAdapter);
 			mControls.setVisibility(View.VISIBLE);
-			if (mStartPlayingOnSelect == -1)
-				mPlaylistAdapter.clear();
-			else {
+			if (mStartPlayingOnSelect != -1) {
 				mMediaRouterPlayService.getService().play(mStartPlayingOnSelect);
 				mStartPlayingOnSelect = -1;
 			}
@@ -256,7 +282,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	 * Sets colored background on the item that is currently playing.
 	 */
 	private void enableTrackHighlight() {
-		if (mListView.getAdapter() == mRouteAdapter)
+		if (mListView.getAdapter() == mRouteAdapter || mMediaRouterPlayService == null || !isVisible())
 			return;
 		
 		disableTrackHighlight();

@@ -97,11 +97,8 @@ public class UpnpController implements RegistryListener {
             	else
             		remoteDeviceAdded(mUpnpService.getRegistry(), (RemoteDevice) d);
             }
-        	if (mStartSearchImmediately) {
-                Log.i(TAG, "Starting device search");
-            	mUpnpService.getControlPoint().search();
-            	mStartSearchImmediately = false;
-        	}
+        	if (mStartSearchImmediately)
+                startSearch();
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -139,6 +136,7 @@ public class UpnpController implements RegistryListener {
         if (mUpnpService != null) {
             Log.i(TAG, "Starting device search");
         	mUpnpService.getControlPoint().search();
+        	mStartSearchImmediately = false;
         }
         else
         	mStartSearchImmediately = true;

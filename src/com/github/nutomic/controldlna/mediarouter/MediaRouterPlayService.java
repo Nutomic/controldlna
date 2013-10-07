@@ -90,9 +90,11 @@ public class MediaRouterPlayService extends Service {
 	
 	private String mSessionId;
 	
-	private WeakReference<RouteFragment> mRendererFragment = new WeakReference<RouteFragment>(null);
+	private WeakReference<RouteFragment> mRouterFragment = new WeakReference<RouteFragment>(null);
 	
 	private boolean mPollingStatus = false;
+	
+	private boolean mBound;
 	
 	/**
 	 * Creates a notification after the icon bitmap is loaded.
@@ -118,10 +120,8 @@ public class MediaRouterPlayService extends Service {
 					.setLargeIcon(result)
 					.setSmallIcon(R.drawable.ic_launcher)
 					.build();
-			NotificationManager notificationManager =
-				    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-			notificationManager.notify(NOTIFICATION_ID, notification);
 			notification.flags |= Notification.FLAG_ONGOING_EVENT;
+			startForeground(NOTIFICATION_ID, notification);
 		}
 		
 	}
@@ -136,11 +136,28 @@ public class MediaRouterPlayService extends Service {
 	
 	@Override
 	public IBinder onBind(Intent intent) {
+		mBound = true;
 		return mBinder;
 	}
 	
-	public void setRendererFragment(RouteFragment rf) {
-		mRendererFragment = new WeakReference<RouteFragment>(rf);
+	/**
+	 * Stops service after a delay if no media is playing (delay in case the 
+	 * fragment is recreated for screen rotation).
+	 */
+	@Override
+	public boolean onUnbind(Intent intent) {		
+		new Handler().postDelayed(new Runnable() {
+			public void run() {
+		    	if (!mPollingStatus && !mBound)
+					stopSelf();
+		    }
+		}, 5000);
+		mBound = false;
+		return super.onUnbind(intent);
+	}
+	
+	public void setRouterFragment(RouteFragment rf) {
+		mRouterFragment = new WeakReference<RouteFragment>(rf);
 	}
 	
 	public void selectRoute(RouteInfo route) {
@@ -256,11 +273,6 @@ public class MediaRouterPlayService extends Service {
 	public int getCurrentTrack() {
 		return mCurrentTrack;
 	}
-
-	public RouteInfo getDefaultRoute() {
-		return mMediaRouter.getDefaultRoute();
-	}
-	
 	/**
 	 * Requests playback information every second, as long as RendererFragment
 	 * is attached or media is playing.
@@ -276,13 +288,15 @@ public class MediaRouterPlayService extends Service {
 						@Override
 						public void onResult(Bundle data) {
 							MediaItemStatus status = MediaItemStatus.fromBundle(data);	
-							if (mRendererFragment.get() != null)
-								mRendererFragment.get().receivePlaybackStatus(status);
+							if (mRouterFragment.get() != null)
+								mRouterFragment.get().receivePlaybackStatus(status);
 							
 							if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED) {
 								if (mCurrentTrack + 1 < mPlaylist.size())
 									playNext();
 								else {
+									if (!mBound)
+										stopSelf();
 									mPollingStatus = false;		
 									NotificationManager notificationManager =
 										    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -308,6 +322,10 @@ public class MediaRouterPlayService extends Service {
 	
 	public void decreaseVolume() {
 		mMediaRouter.getSelectedRoute().requestUpdateVolume(-1);	
+	}
+	
+	public List<Item> getPlaylist() {
+		return mPlaylist;
 	}
 
 }

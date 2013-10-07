@@ -31,7 +31,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.teleal.cling.model.meta.Device;
+import org.teleal.cling.model.meta.LocalDevice;
 import org.teleal.cling.model.meta.RemoteDevice;
+import org.teleal.cling.registry.Registry;
+import org.teleal.cling.registry.RegistryListener;
 
 import android.app.Activity;
 import android.content.Context;
@@ -43,7 +46,6 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import com.github.nutomic.controldlna.R;
-import com.github.nutomic.controldlna.upnp.UpnpController.DeviceListenerCallback;
 
 
 /**
@@ -54,7 +56,7 @@ import com.github.nutomic.controldlna.upnp.UpnpController.DeviceListenerCallback
  *
  */
 public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>> 
-		implements DeviceListenerCallback {
+		implements RegistryListener {
 	
 	private static final String TAG = "DeviceArrayAdapter";
 
@@ -106,8 +108,7 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 	/**
 	 * Adds a new device to the list if its type equals mDeviceType.
 	 */
-	@Override
-	public void deviceAdded(final Device<?, ?, ?> device) {
+	private void deviceAdded(final Device<?, ?, ?> device) {
 		mActivity.runOnUiThread(new Runnable() {
 			
 			@Override
@@ -121,8 +122,7 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 	/** 
 	 * Removes the device from the list (if it is an element).
 	 */
-	@Override
-	public void deviceRemoved(final Device<?, ?, ?> device) {
+	private void deviceRemoved(final Device<?, ?, ?> device) {
 		mActivity.runOnUiThread(new Runnable() {
 			
 			@Override
@@ -133,8 +133,7 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 		});			
 	}
 
-	@Override
-	public void deviceUpdated(Device<?, ?, ?> device) {
+	private void deviceUpdated(Device<?, ?, ?> device) {
 		mActivity.runOnUiThread(new Runnable() {
 			
 			@Override
@@ -142,5 +141,48 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 				notifyDataSetChanged();
 			}
 		});	
+	}
+
+	@Override
+	public void beforeShutdown(Registry registry) {
+	}
+
+	@Override
+	public void localDeviceAdded(Registry registry, LocalDevice device) {
+		deviceAdded(device);
+	}
+
+	@Override
+	public void localDeviceRemoved(Registry registry, LocalDevice device) {
+		deviceRemoved(device);
+	}
+
+	@Override
+	public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
+		deviceAdded(device);
+	}
+
+	@Override
+	public void remoteDeviceDiscoveryFailed(Registry registry, RemoteDevice device,
+			Exception exception) {
+		Log.w(TAG, "Remote device discovery failed", exception);
+	}
+
+	@Override
+	public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
+	}
+
+	@Override
+	public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
+		deviceRemoved(device);
+	}
+
+	@Override
+	public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
+		deviceUpdated(device);
+	}
+
+	@Override
+	public void afterShutdown() {
 	}
 }

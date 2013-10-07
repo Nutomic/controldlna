@@ -31,18 +31,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
+import org.teleal.cling.android.AndroidUpnpService;
+import org.teleal.cling.android.AndroidUpnpServiceImpl;
 import org.teleal.cling.model.action.ActionInvocation;
 import org.teleal.cling.model.message.UpnpResponse;
 import org.teleal.cling.model.meta.Device;
+import org.teleal.cling.model.meta.LocalDevice;
+import org.teleal.cling.model.meta.RemoteDevice;
 import org.teleal.cling.model.meta.Service;
 import org.teleal.cling.model.types.ServiceType;
+import org.teleal.cling.model.types.UDN;
 import org.teleal.cling.support.contentdirectory.callback.Browse;
 import org.teleal.cling.support.model.BrowseFlag;
 import org.teleal.cling.support.model.DIDLContent;
 import org.teleal.cling.support.model.container.Container;
 import org.teleal.cling.support.model.item.Item;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Parcelable;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
@@ -50,7 +60,6 @@ import android.view.View;
 import android.widget.ListView;
 
 import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
-import com.github.nutomic.controldlna.upnp.UpnpController;
 import com.github.nutomic.controldlna.utility.DeviceArrayAdapter;
 import com.github.nutomic.controldlna.utility.FileArrayAdapter;
 
@@ -78,6 +87,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	 */
 	private Device<?, ?, ?> mCurrentServer;
 	
+	private String mRestoreServer;
+	
 	/**
 	 * ListView adapter for showing a list of files/folders.
 	 */
@@ -94,10 +105,40 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	 */
 	private Stack<Parcelable> mListState = new Stack<Parcelable>();
 	
-	/**
-	 * Manages all UPNP connections including playback.
-	 */
-	private UpnpController mController = new UpnpController();
+    protected AndroidUpnpService mUpnpService;
+
+    private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
+
+    	/**
+    	 * Registers DeviceListener, adds known devices and starts search if requested.
+    	 */
+		public void onServiceConnected(ComponentName className, IBinder service) {
+            mUpnpService = (AndroidUpnpService) service;
+            mUpnpService.getRegistry().addListener(mServerAdapter);
+            for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices()) {
+            	if (d instanceof LocalDevice)
+            		mServerAdapter.localDeviceAdded(mUpnpService.getRegistry(), (LocalDevice) d);
+            	else
+            		mServerAdapter.remoteDeviceAdded(mUpnpService.getRegistry(), (RemoteDevice) d);
+            }
+            Log.i(TAG, "Starting device search");
+        	mUpnpService.getControlPoint().search();
+        	
+        	if (mRestoreServer != null) {
+            	mCurrentServer = mUpnpService.getControlPoint().getRegistry()
+                		.getDevice(new UDN(mRestoreServer.replace("uuid:", "")), false);
+            	if (mCurrentServer != null) {
+    	    		setListAdapter(mFileAdapter);
+    	    		getFiles(true);
+            	}
+		    	getListView().onRestoreInstanceState(mListState.lastElement());		
+        	}
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            mUpnpService = null;
+        }
+    };
     
 	/**
 	 * Initializes ListView adapters, launches Cling UPNP service.
@@ -110,26 +151,44 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     	mServerAdapter = new DeviceArrayAdapter(
     			getActivity(), DeviceArrayAdapter.SERVER);
         setListAdapter(mServerAdapter);
-        mController.open(getActivity());
-        mController.addCallback(mServerAdapter);
+        getActivity().getApplicationContext().bindService(
+                new Intent(getActivity(), AndroidUpnpServiceImpl.class),
+                mUpnpServiceConnection,
+                Context.BIND_AUTO_CREATE
+        );
+        
+        if (savedInstanceState != null) {
+        	mRestoreServer = savedInstanceState.getString("current_server");
+        	mCurrentPath.addAll(savedInstanceState.getStringArrayList("path"));
+        	mListState.addAll(savedInstanceState.getParcelableArrayList("list_state"));
+        }
+        else 
+            mListState.push(getListView().onSaveInstanceState());
     }
     
     @Override
-    public void onResume() {
-    	super.onResume();
-    	mController.startSearch();
+    public void onSaveInstanceState(Bundle outState) {
+    	super.onSaveInstanceState(outState);
+    	outState.putString("current_server", (mCurrentServer != null) 
+    			? mCurrentServer.getIdentity().getUdn().toString() 
+    			: "");
+    	outState.putStringArrayList("path", new ArrayList<String>(mCurrentPath));
+    	mListState.pop();
+    	mListState.push(getListView().onSaveInstanceState()); 
+    	outState.putParcelableArrayList("list_state", new ArrayList<Parcelable>(mListState));
     }
     
     @Override
     public void onPause() {
     	super.onPause();
-    	mController.stopSearch();
+    	mListState.pop();
+    	mListState.push(getListView().onSaveInstanceState());    	
     }
     
     @Override
     public void onDestroy() {
     	super.onDestroy();
-        mController.close(getActivity());
+        getActivity().getApplicationContext().unbindService(mUpnpServiceConnection);	
     }
     
     /**
@@ -175,7 +234,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     private void getFiles(final boolean restoreListState) {
     	Service<?, ?> service = mCurrentServer.findService(
     			new ServiceType("schemas-upnp-org", "ContentDirectory"));
-    	mController.execute(new Browse(service, 
+    	mUpnpService.getControlPoint().execute(new Browse(service, 
 				mCurrentPath.peek(), BrowseFlag.DIRECT_CHILDREN) {
 		
 					@SuppressWarnings("rawtypes")
@@ -192,7 +251,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 								for (Item i : didl.getItems())
 									mFileAdapter.add(i);
 								if (restoreListState)
-							    	getListView().onRestoreInstanceState(mListState.pop());
+							    	getListView().onRestoreInstanceState(mListState.peek());
 								else
 									getListView().setSelectionFromTop(0, 0);
 							}
@@ -223,14 +282,14 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     		return false;
     	
 		mCurrentPath.pop();
+		mListState.pop();
 		if (mCurrentPath.empty()) {
     		setListAdapter(mServerAdapter);
-	    	getListView().onRestoreInstanceState(mListState.pop());
+	    	getListView().onRestoreInstanceState(mListState.peek());
     		mCurrentServer = null;
 		}
-		else {
+		else
 			getFiles(true);
-		}
 		return true;		
 	}
 

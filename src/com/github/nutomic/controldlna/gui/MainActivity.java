@@ -33,6 +33,7 @@ import org.teleal.cling.support.model.item.Item;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
@@ -66,7 +67,7 @@ public class MainActivity extends ActionBarActivity {
     	public Fragment getItem(int position) {
     		switch (position) {
     		case 0: return mServerFragment;
-    		case 1: return mRendererFragment;
+    		case 1: return mRouteFragment;
     		default: return null;
     		}
     	}
@@ -78,9 +79,9 @@ public class MainActivity extends ActionBarActivity {
     	
     };
 
-    private ServerFragment mServerFragment = new ServerFragment();
+    private ServerFragment mServerFragment;
     
-    private RouteFragment mRendererFragment = new RouteFragment();
+    private RouteFragment mRouteFragment;
     
     ViewPager mViewPager;
 
@@ -88,7 +89,7 @@ public class MainActivity extends ActionBarActivity {
      * Initializes tab navigation.
      */
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);        
+        super.onCreate(savedInstanceState);   
         final ActionBar actionBar = getSupportActionBar();
 
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -125,7 +126,30 @@ public class MainActivity extends ActionBarActivity {
                 .setTabListener(tabListener));
         actionBar.addTab(actionBar.newTab()
                 .setText(R.string.title_renderer)
-                .setTabListener(tabListener));        
+                .setTabListener(tabListener));  
+        
+        if (savedInstanceState != null) {
+        	FragmentManager fm = getSupportFragmentManager();
+        	mServerFragment = (ServerFragment) fm.getFragment(
+                    savedInstanceState, ServerFragment.class.getName());
+        	mRouteFragment = (RouteFragment) fm.getFragment(
+                    savedInstanceState, RouteFragment.class.getName());
+        }
+        else {
+            mServerFragment = new ServerFragment();
+            mRouteFragment = new RouteFragment();
+        }
+    }
+
+    /**
+     * Saves fragments.
+     */
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+    	super.onSaveInstanceState(outState);
+    	FragmentManager fm = getSupportFragmentManager();
+    	fm.putFragment(outState, ServerFragment.class.getName(), mServerFragment);
+    	fm.putFragment(outState, RouteFragment.class.getName(), mRouteFragment);
     }
     
     /**
@@ -148,11 +172,11 @@ public class MainActivity extends ActionBarActivity {
         switch (event.getKeyCode()) {
         case KeyEvent.KEYCODE_VOLUME_UP:
             if (event.getAction() == KeyEvent.ACTION_DOWN)
-            	mRendererFragment.increaseVolume();
+            	mRouteFragment.increaseVolume();
             return true;
         case KeyEvent.KEYCODE_VOLUME_DOWN:
             if (event.getAction() == KeyEvent.ACTION_DOWN)
-            	mRendererFragment.decreaseVolume();
+            	mRouteFragment.decreaseVolume();
             return true;
         default:
             return super.dispatchKeyEvent(event);
@@ -164,7 +188,7 @@ public class MainActivity extends ActionBarActivity {
      */
 	public void play(List<Item> playlist, int start) {
         mViewPager.setCurrentItem(1);
-		mRendererFragment.play(playlist, start);
+		mRouteFragment.play(playlist, start);
 	}
     
 }
