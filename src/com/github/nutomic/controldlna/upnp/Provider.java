@@ -57,6 +57,8 @@ import android.support.v7.media.MediaRouter.ControlRequestCallback;
 import android.util.Pair;
 import android.util.SparseArray;
 
+import com.github.nutomic.controldlna.R;
+
 /**
  * Allows playing to a DLNA renderer from a remote app.
  * 
@@ -221,7 +223,8 @@ final class Provider extends MediaRouteProvider {
     		MediaRouteDescriptor routeDescriptor = new MediaRouteDescriptor.Builder(
 	                d.getValue().id,
 	                d.getValue().name)
-	                .setDescription("DLNA Playback")
+	                .setDescription(getContext().getResources()
+	                		.getString(R.string.route_description))
 	                .addControlFilters(CONTROL_FILTERS)
 	                .setPlaybackType(MediaRouter.RouteInfo.PLAYBACK_TYPE_REMOTE)
 	                .setVolumeHandling(MediaRouter.RouteInfo.PLAYBACK_VOLUME_VARIABLE)
