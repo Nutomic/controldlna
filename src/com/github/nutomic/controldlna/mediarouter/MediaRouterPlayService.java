@@ -38,7 +38,6 @@ import org.teleal.cling.support.model.item.Item;
 import org.teleal.cling.support.model.item.MusicTrack;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
@@ -176,8 +175,6 @@ public class MediaRouterPlayService extends Service {
 		if (trackNumber < 0 || trackNumber >= mPlaylist.size())
 			return;
 		
-		updateNotification();
-		
 		mCurrentTrack = trackNumber;
 		Item track = mPlaylist.get(trackNumber);
     	DIDLParser parser = new DIDLParser();
@@ -205,11 +202,6 @@ public class MediaRouterPlayService extends Service {
 		                mPollingStatus = true;
 		        	}
 				});
-	}
-	
-	private void updateNotification() {
-		new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
-				.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
 	}
 	
 	/**
@@ -290,6 +282,13 @@ public class MediaRouterPlayService extends Service {
 							MediaItemStatus status = MediaItemStatus.fromBundle(data);	
 							if (mRouterFragment.get() != null)
 								mRouterFragment.get().receivePlaybackStatus(status);
+							if (status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PENDING &&
+									status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_BUFFERING &&
+											status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PLAYING)
+								stopForeground(true);
+							else 
+								new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+										.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
 							
 							if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED) {
 								if (mCurrentTrack + 1 < mPlaylist.size())
@@ -298,9 +297,6 @@ public class MediaRouterPlayService extends Service {
 									if (!mBound)
 										stopSelf();
 									mPollingStatus = false;		
-									NotificationManager notificationManager =
-										    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-									notificationManager.cancel(NOTIFICATION_ID);
 								}
 							}
 						}
