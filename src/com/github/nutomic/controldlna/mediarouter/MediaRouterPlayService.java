@@ -49,6 +49,7 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.media.MediaControlIntent;
 import android.support.v7.media.MediaItemStatus;
+import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 import android.support.v7.media.MediaRouter.ControlRequestCallback;
 import android.support.v7.media.MediaRouter.RouteInfo;
@@ -89,11 +90,30 @@ public class MediaRouterPlayService extends Service {
 	
 	private String mSessionId;
 	
-	private WeakReference<RouteFragment> mRouterFragment = new WeakReference<RouteFragment>(null);
+	private WeakReference<RouteFragment> mRouterFragment = 
+			new WeakReference<RouteFragment>(null);
 	
 	private boolean mPollingStatus = false;
 	
 	private boolean mBound;
+	
+	/**
+	 * Route that is currently being played to. May be invalid.
+	 */
+	private RouteInfo mCurrentRoute;
+	
+	/*
+	 * Stops foreground mode and notification if the current route 
+	 * has been removed.
+	 */
+	private MediaRouter.Callback mRouteRemovedCallback = 
+			new MediaRouter.Callback() {
+		@Override
+		public void onRouteRemoved(MediaRouter router, RouteInfo route) {
+			if (route.equals(mCurrentRoute))
+				stopForeground(true);
+		}
+};
 	
 	/**
 	 * Creates a notification after the icon bitmap is loaded.
@@ -160,7 +180,14 @@ public class MediaRouterPlayService extends Service {
 	}
 	
 	public void selectRoute(RouteInfo route) {
+		mMediaRouter.removeCallback(mRouteRemovedCallback);
 		mMediaRouter.selectRoute(route);
+		 MediaRouteSelector selector = new MediaRouteSelector.Builder()
+		         .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+		         .build();
+
+		 mMediaRouter.addCallback(selector, mRouteRemovedCallback, 0);
+		 mCurrentRoute = route;
 	}
 	
 	public void sendControlRequest(Intent intent) {

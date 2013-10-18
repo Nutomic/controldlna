@@ -36,8 +36,6 @@ import org.teleal.cling.android.AndroidUpnpServiceImpl;
 import org.teleal.cling.model.action.ActionInvocation;
 import org.teleal.cling.model.message.UpnpResponse;
 import org.teleal.cling.model.meta.Device;
-import org.teleal.cling.model.meta.LocalDevice;
-import org.teleal.cling.model.meta.RemoteDevice;
 import org.teleal.cling.model.meta.Service;
 import org.teleal.cling.model.types.ServiceType;
 import org.teleal.cling.model.types.UDN;
@@ -47,10 +45,15 @@ import org.teleal.cling.support.model.DIDLContent;
 import org.teleal.cling.support.model.container.Container;
 import org.teleal.cling.support.model.item.Item;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcelable;
@@ -115,13 +118,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 		public void onServiceConnected(ComponentName className, IBinder service) {
             mUpnpService = (AndroidUpnpService) service;
             mUpnpService.getRegistry().addListener(mServerAdapter);
-            for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices()) {
-            	if (d instanceof LocalDevice)
-            		mServerAdapter.localDeviceAdded(mUpnpService.getRegistry(), (LocalDevice) d);
-            	else
-            		mServerAdapter.remoteDeviceAdded(mUpnpService.getRegistry(), (RemoteDevice) d);
-            }
-            Log.i(TAG, "Starting device search");
+            for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices())
+            		mServerAdapter.deviceAdded(d);
         	mUpnpService.getControlPoint().search();
         	
         	if (mRestoreServer != null) {
@@ -141,7 +139,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     };
     
 	/**
-	 * Initializes ListView adapters, launches Cling UPNP service.
+	 * Initializes ListView adapters, launches Cling UPNP service, registers 
+	 * wifi state change listener and restores instance state if possible.
 	 */
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -157,6 +156,11 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
                 Context.BIND_AUTO_CREATE
         );
         
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        getActivity().registerReceiver(mWifiReceiver, filter);
+        
         if (savedInstanceState != null) {
         	mRestoreServer = savedInstanceState.getString("current_server");
         	mCurrentPath.addAll(savedInstanceState.getStringArrayList("path"));
@@ -166,6 +170,9 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
             mListState.push(getListView().onSaveInstanceState());
     }
     
+    /**
+     * Stores current server and path/list state stacks.
+     */
     @Override
     public void onSaveInstanceState(Bundle outState) {
     	super.onSaveInstanceState(outState);
@@ -232,6 +239,9 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
      * 							which means we restore scroll position etc.
      */
     private void getFiles(final boolean restoreListState) {
+    	if (mCurrentServer == null) 
+    		return;
+    	
     	Service<?, ?> service = mCurrentServer.findService(
     			new ServiceType("schemas-upnp-org", "ContentDirectory"));
     	mUpnpService.getControlPoint().execute(new Browse(service, 
@@ -274,8 +284,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     }
 	
     /**
-     * Handles back button press to traverse directories (while in directory 
-     * browsing mode).
+     * Handles back button press to traverse directories (while browsing 
+     * directories).
      */
 	public boolean onBackPressed() {
     	if (getListAdapter() == mServerAdapter)
@@ -292,5 +302,47 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 			getFiles(true);
 		return true;		
 	}
+	
+	/**
+	 * Starts device search on wifi connect, removes unreachable 
+	 * devices on wifi disconnect.
+	 */
+	private BroadcastReceiver mWifiReceiver = new BroadcastReceiver() {
+
+	    @Override
+	    public void onReceive(Context context, Intent intent) {     
+	        getActivity();
+			ConnectivityManager connManager = (ConnectivityManager) 
+	        		getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+	        NetworkInfo wifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+	       
+	        if (wifi.isConnected()) {
+	        	if (mUpnpService != null) {
+	                for (Device<?, ?, ?> d : mUpnpService.getControlPoint()
+	                		.getRegistry().getDevices())
+	                	mServerAdapter.deviceAdded(d);
+		        	mUpnpService.getControlPoint().search();
+	        	}
+	        }
+	        else {
+	        	for (int i = 0; i < mServerAdapter.getCount(); i++) {
+	        		Device<?, ?, ?> d = mServerAdapter.getItem(i);
+	        		UDN udn = new UDN(d.getIdentity().getUdn().toString());
+	            	if (mUpnpService.getControlPoint().getRegistry()
+	            			.getDevice(udn, false) == null) {
+	            		mServerAdapter.deviceRemoved(d);
+	            		if (d.equals(mCurrentServer)) {
+	            			mCurrentPath.clear();
+	            			mListState.setSize(1);
+	                		setListAdapter(mServerAdapter);
+	            	    	getListView().onRestoreInstanceState(mListState.firstElement());
+	                		mCurrentServer = null;
+	            		}
+	            		i--;
+	            	}	        		
+	        	}
+	        }
+	    }   
+	};
 
 }

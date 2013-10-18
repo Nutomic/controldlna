@@ -94,7 +94,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	
 	private FileArrayAdapter mPlaylistAdapter;
 	
-	private boolean mRouteSelected = false;
+	private RouteInfo mSelectedRoute;
 	
 	/**
 	 * If true, the item at this position will be played as soon as a route is selected.
@@ -177,7 +177,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
         if (savedInstanceState != null) {
         	mListView.onRestoreInstanceState(savedInstanceState.getParcelable("list_state"));
         	if (savedInstanceState.getBoolean("route_selected")) {
-    			mRouteSelected = true;
+        		mSelectedRoute = MediaRouter.getInstance(getActivity())
+        				.getSelectedRoute();
     			mListView.setAdapter(mPlaylistAdapter);
     			mControls.setVisibility(View.VISIBLE);        		
         	}
@@ -188,7 +189,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
     public void onSaveInstanceState(Bundle outState) {
     	super.onSaveInstanceState(outState);
  
-    	outState.putBoolean("route_selected", mRouteSelected);
+    	outState.putBoolean("route_selected", mSelectedRoute != null);
     	outState.putParcelable("list_state", mListView.onSaveInstanceState());
     }
     
@@ -225,6 +226,10 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
             @Override
             public void onRouteRemoved(MediaRouter router, RouteInfo route) {
             	mRouteAdapter.remove(route);
+            	if (route.equals(mSelectedRoute)) {
+            		mPlaying = false;
+                	onBackPressed();
+            	}
             }
 
             @Override
@@ -265,8 +270,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	@Override
 	public void onItemClick(AdapterView<?> a, View v, final int position, long id) {
 		if (mListView.getAdapter() == mRouteAdapter) {
-			mMediaRouterPlayService.getService().selectRoute(mRouteAdapter.getItem(position));
-			mRouteSelected = true;
+			mSelectedRoute = mRouteAdapter.getItem(position);
+			mMediaRouterPlayService.getService().selectRoute(mSelectedRoute);
 			mListView.setAdapter(mPlaylistAdapter);
 			mControls.setVisibility(View.VISIBLE);
 			if (mStartPlayingOnSelect != -1) {
@@ -321,7 +326,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 										mControls.setVisibility(View.GONE);
 										mListView.setAdapter(mRouteAdapter);
 										disableTrackHighlight();
-										mRouteSelected = false;
+										mSelectedRoute = null;
 									}
 								})
 						.setNegativeButton(android.R.string.no, null)
@@ -331,7 +336,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 				mControls.setVisibility(View.GONE);
 				mListView.setAdapter(mRouteAdapter);
 				disableTrackHighlight();
-				mRouteSelected = false;
+				mSelectedRoute = null;
 			}
 	        return true;
 		}
@@ -406,7 +411,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		mPlaylistAdapter.addAll(playlist);
 		mMediaRouterPlayService.getService().setPlaylist(playlist);
 		
-		if (mRouteSelected)
+		if (mSelectedRoute != null)
 			mMediaRouterPlayService.getService().play(start);
 		else {
 			Toast.makeText(getActivity(), R.string.select_renderer, Toast.LENGTH_SHORT)

@@ -12,5 +12,8 @@
     <string name="select_renderer">Please select a renderer</string>
     <string name="album_art">Album Art</string>
     <string name="route_description">DLNA Playback</string>
+    <string name="warning_wifi_not_connected">Wifi needs to be connected for playback</string>
+    <string name="auto_enable_wifi">Enable Wifi automatically on start</string>
+    <string name="dont_show_dialog_again">"Do not show this dialog again"</string>
 
 </resources>

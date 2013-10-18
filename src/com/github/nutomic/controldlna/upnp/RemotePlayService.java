@@ -29,6 +29,7 @@ package com.github.nutomic.controldlna.upnp;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.teleal.cling.android.AndroidUpnpService;
 import org.teleal.cling.android.AndroidUpnpServiceImpl;
@@ -43,6 +44,7 @@ import org.teleal.cling.model.meta.RemoteDevice;
 import org.teleal.cling.model.meta.StateVariableAllowedValueRange;
 import org.teleal.cling.model.state.StateVariableValue;
 import org.teleal.cling.model.types.ServiceType;
+import org.teleal.cling.model.types.UDN;
 import org.teleal.cling.registry.Registry;
 import org.teleal.cling.registry.RegistryListener;
 import org.teleal.cling.support.avtransport.callback.GetPositionInfo;
@@ -60,10 +62,15 @@ import org.teleal.cling.support.renderingcontrol.callback.GetVolume;
 import org.teleal.cling.support.renderingcontrol.callback.SetVolume;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
@@ -109,7 +116,6 @@ public class RemotePlayService extends Service implements RegistryListener {
             	else
             		remoteDeviceAdded(mUpnpService.getRegistry(), (RemoteDevice) d);
             }
-            Log.i(TAG, "Starting device search");
         	mUpnpService.getControlPoint().search();
         }
 
@@ -173,7 +179,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 								mPlaybackState = MediaItemStatus.PLAYBACK_STATE_CANCELED;
 							}
 							else
-								mPlaybackState = MediaItemStatus.PLAYBACK_STATE_FINISHED;
+								mPlaybackState = MediaItemStatus.PLAYBACK_STATE_FINISHED;							
 							break;
 						case TRANSITIONING:
 							mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PENDING;
@@ -204,9 +210,13 @@ public class RemotePlayService extends Service implements RegistryListener {
 			mUpnpService.getControlPoint().execute(mSubscriptionCallback);	
 		}
 
+		/**
+		 * Ends selection, stops playback if possible.
+		 */
 		@Override
 		public void unselectRenderer(String sessionId) throws RemoteException {
-	    	stop(sessionId);
+			if (mDevices.get(sessionId) != null)
+				stop(sessionId);
 	    	mSubscriptionCallback.end();
 	    	mCurrentRenderer = null;					
 		}
@@ -398,6 +408,9 @@ public class RemotePlayService extends Service implements RegistryListener {
 		return mBinder;
 	}
 	
+	/**
+	 * Binds to cling service, registers wifi state change listener.
+	 */
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -406,6 +419,11 @@ public class RemotePlayService extends Service implements RegistryListener {
             mUpnpServiceConnection,
             Context.BIND_AUTO_CREATE
         );
+        
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(mWifiReceiver, filter);
 	}
 	
 	@Override
@@ -413,6 +431,38 @@ public class RemotePlayService extends Service implements RegistryListener {
 		super.onDestroy();
         unbindService(mUpnpServiceConnection);	
 	}
+	
+	/**
+	 * Starts device search on wifi connect, removes unreachable 
+	 * devices on wifi disconnect.
+	 */
+	private BroadcastReceiver mWifiReceiver = new BroadcastReceiver() {
+
+	    @Override
+	    public void onReceive(Context context, Intent intent) {     
+	        ConnectivityManager connManager = (ConnectivityManager) 
+	        		getSystemService(CONNECTIVITY_SERVICE);
+	        NetworkInfo wifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+
+	        if (wifi.isConnected()) {
+	        	if (mUpnpService != null) {
+	                for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices())
+	                	deviceAdded(d);
+		        	mUpnpService.getControlPoint().search();
+	        	}
+	        }
+	        else {
+	        	for (Entry<String, Device<?, ?, ?>> d : mDevices.entrySet()) {
+	            	if (mUpnpService.getControlPoint().getRegistry()
+	            			.getDevice(new UDN(d.getKey()), false) == null) {
+	            		deviceRemoved(d.getValue());
+	            		if (d.getValue().equals(mCurrentRenderer))
+	            			mCurrentRenderer = null;
+	            	}	        		
+	        	}
+	        }
+	    }   
+	};
 
     /**
      * Returns a device service by name for direct queries.
@@ -427,6 +477,9 @@ public class RemotePlayService extends Service implements RegistryListener {
 	 * Gather device data and send it to Provider.
 	 */
 	private void deviceAdded(final Device<?, ?, ?> device) {
+		if (mDevices.containsValue(device))
+			return;
+		
 		final org.teleal.cling.model.meta.Service<?, ?> rc = 
 				getService(device, "RenderingControl");
 		if (rc == null || mListener == null)

@@ -108,7 +108,12 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 	/**
 	 * Adds a new device to the list if its type equals mDeviceType.
 	 */
-	private void deviceAdded(final Device<?, ?, ?> device) {
+	public void deviceAdded(final Device<?, ?, ?> device) {
+		for (int i = 0; i < getCount(); i++) {
+			if (getItem(i).equals(device))
+				return;
+		}
+		
 		mActivity.runOnUiThread(new Runnable() {
 			
 			@Override
@@ -122,7 +127,7 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 	/** 
 	 * Removes the device from the list (if it is an element).
 	 */
-	private void deviceRemoved(final Device<?, ?, ?> device) {
+	public void deviceRemoved(final Device<?, ?, ?> device) {
 		mActivity.runOnUiThread(new Runnable() {
 			
 			@Override
