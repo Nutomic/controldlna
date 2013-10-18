@@ -2,9 +2,9 @@
 
 A DLNA/UPNP control point for Android.
 
-Supports playback of audio and media files from any UPNP media server to any UPNP media renderer.
+It supports playback of audio and media files from any UPNP media server to any UPNP media renderer. Additionally, playing from or to other apps via the MediaRouter API is also supported.
 
-Works on Android 2.2 (Gingerbread) and higher.
+The app requires Android 2.2 (Gingerbread) and higher.
 
 [Download](http://f-droid.org/repository/browse/?fdid=com.github.nutomic.controldlna)
 
@@ -12,9 +12,9 @@ Note about permissions: All permissions are required for UPNP. The app does not 
 
 ## Building
 
-Android Support Library, [ActionBarSherlock](http://actionbarsherlock.com/) and [Cling](http://4thline.org/projects/cling/) are required for building. 
+Android Support Library and [Cling](http://4thline.org/projects/cling/) are required for building. 
 
-Binaries for Support Library and Cling are included in the libs folder.
+Binaries for Cling are included in the libs folder.
 
 ## License
 
