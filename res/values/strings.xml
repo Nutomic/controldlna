@@ -15,5 +15,8 @@
     <string name="warning_wifi_not_connected">Wifi needs to be connected for playback</string>
     <string name="auto_enable_wifi">Enable Wifi automatically on start</string>
     <string name="dont_show_dialog_again">"Do not show this dialog again"</string>
-
+    <string name="device_list_empty">No UPNP devices found. \nNew devices will be added automatically when they are available.</string>
+	<string name="folder_list_etmpy">Folder is empty</string>
+	<string name="playlist_empty">Playlist is empty</string>
+	
 </resources>

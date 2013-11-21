@@ -59,9 +59,13 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.TextView;
 
+import com.github.nutomic.controldlna.R;
 import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
 import com.github.nutomic.controldlna.utility.DeviceArrayAdapter;
 import com.github.nutomic.controldlna.utility.FileArrayAdapter;
@@ -138,6 +142,13 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
         }
     };
     
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
+			Bundle savedInstanceState) {
+
+        return inflater.inflate(R.layout.server_fragment, null);
+	};
+    
 	/**
 	 * Initializes ListView adapters, launches Cling UPNP service, registers 
 	 * wifi state change listener and restores instance state if possible.
@@ -207,6 +218,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     		setListAdapter(mFileAdapter);
     		mCurrentServer = mServerAdapter.getItem(position);
     		getFiles(ROOT_DIRECTORY);
+    		TextView emptyView = (TextView) getListView().getEmptyView();
+    		emptyView.setText(R.string.folder_list_etmpy);
     	}
     	else if (getListAdapter() == mFileAdapter) {
     		if (mFileAdapter.getItem(position) instanceof Container)
@@ -297,6 +310,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     		setListAdapter(mServerAdapter);
 	    	getListView().onRestoreInstanceState(mListState.peek());
     		mCurrentServer = null;
+    		TextView emptyView = (TextView) getListView().getEmptyView();
+    		emptyView.setText(R.string.device_list_empty);
 		}
 		else
 			getFiles(true);
@@ -337,6 +352,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	                		setListAdapter(mServerAdapter);
 	            	    	getListView().onRestoreInstanceState(mListState.firstElement());
 	                		mCurrentServer = null;
+				    		TextView emptyView = (TextView) getListView().getEmptyView();
+				    		emptyView.setText(R.string.device_list_empty);
 	            		}
 	            		i--;
 	            	}	        		

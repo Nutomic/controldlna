@@ -59,6 +59,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
 
@@ -149,6 +150,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
         mListView.setAdapter(mRouteAdapter);
         mListView.setOnItemClickListener(this);
 		mListView.setOnScrollListener(this);
+		mListView.setEmptyView(getView().findViewById(android.R.id.empty));
 		
         mControls = getView().findViewById(R.id.controls);
         mProgressBar = (SeekBar) getView().findViewById(R.id.progressBar);
@@ -278,6 +280,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 				mMediaRouterPlayService.getService().play(mStartPlayingOnSelect);
 				mStartPlayingOnSelect = -1;
 			}
+    		TextView emptyView = (TextView) mListView.getEmptyView();
+    		emptyView.setText(R.string.playlist_empty);
 		}
 		else
 			mMediaRouterPlayService.getService().play(position);
@@ -327,6 +331,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 										mListView.setAdapter(mRouteAdapter);
 										disableTrackHighlight();
 										mSelectedRoute = null;
+							    		TextView emptyView = (TextView) mListView.getEmptyView();
+							    		emptyView.setText(R.string.device_list_empty);
 									}
 								})
 						.setNegativeButton(android.R.string.no, null)
@@ -337,6 +343,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 				mListView.setAdapter(mRouteAdapter);
 				disableTrackHighlight();
 				mSelectedRoute = null;
+	    		TextView emptyView = (TextView) mListView.getEmptyView();
+	    		emptyView.setText(R.string.device_list_empty);
 			}
 	        return true;
 		}
