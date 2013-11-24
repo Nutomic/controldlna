@@ -131,7 +131,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
 			Bundle savedInstanceState) {
 
-        return inflater.inflate(R.layout.renderer_fragment, null);
+        return inflater.inflate(R.layout.route_fragment, null);
 	};
 	
 	/**

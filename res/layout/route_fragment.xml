@@ -25,7 +25,8 @@
         android:layout_alignParentBottom="true"
     	android:orientation="vertical"
     	android:id="@+id/controls"
-    	android:visibility="visible" >
+    	android:visibility="gone"
+    	android:background="@android:color/white" >
     	
     	<SeekBar
 	        android:id="@+id/progressBar"
