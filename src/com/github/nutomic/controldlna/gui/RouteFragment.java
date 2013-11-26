@@ -59,8 +59,8 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.nutomic.controldlna.R;
@@ -429,11 +429,40 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	}
 
 	/**
+	 * Generates a time string in the format mm:ss from a time value in seconds.
+	 * 
+	 * @param time Time value in seconds (non-negative).
+	 * @return Formatted time string.
+	 */
+	private String generateTimeString(int time) {
+		assert(time >= 0);
+		int seconds = (int) time % 60;
+		int minutes = (int) time / 60;
+		if (minutes > 99)
+			return "99:99";
+		else
+			return Integer.toString(minutes) + ":" + 
+					((seconds > 9) 
+							? seconds 
+							: "0" + Integer.toString(seconds));
+	}
+	
+	/**
 	 * Receives information from MediaRouterPlayService about playback status.
+	 * TODO: doc
 	 */
 	public void receivePlaybackStatus(MediaItemStatus status) {
-		mProgressBar.setProgress((int) status.getContentPosition() / 1000);
-		mProgressBar.setMax((int) status.getContentDuration() / 1000);
+		int currentTime = (int) status.getContentPosition() / 1000;
+		int totalTime = (int) status.getContentDuration() / 1000;
+		
+		TextView currentTimeView = (TextView) getView().findViewById(R.id.current_time);
+		currentTimeView.setText(generateTimeString(currentTime));
+		TextView totalTimeView = (TextView) getView().findViewById(R.id.total_time);
+		totalTimeView.setText(generateTimeString(totalTime));
+		
+		mProgressBar.setProgress(currentTime);
+		mProgressBar.setMax(totalTime);
+		
 		if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PLAYING ||
 				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_BUFFERING ||
 				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PENDING) {

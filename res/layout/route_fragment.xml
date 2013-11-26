@@ -7,8 +7,7 @@
     <ListView
         android:id="@+id/listview"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-    </ListView>
+        android:layout_height="wrap_content" />
     
     <TextView
         android:id="@id/android:empty"
@@ -27,36 +26,59 @@
     	android:id="@+id/controls"
     	android:visibility="gone"
     	android:background="@android:color/white" >
-    	
+
     	<SeekBar
 	        android:id="@+id/progressBar"
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content" />
 	
-	    <LinearLayout
+	    <RelativeLayout
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
-    		android:gravity="center" >
-	        
+    		android:gravity="center"
+	    	android:paddingLeft="10dip"
+			android:paddingRight="10dip" >
+
+	    	<TextView
+	    	    android:id="@+id/current_time"
+	    	    android:layout_width="wrap_content"
+	    	    android:layout_height="wrap_content"
+	    	    android:layout_alignParentLeft="true"
+	    	    android:layout_alignParentTop="true"
+	    	    android:gravity="right"
+	    	    android:minEms="2" />
+    	
 		    <ImageButton
 		        android:id="@+id/previous"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
-		        android:contentDescription="@string/previous" />
+		        android:contentDescription="@string/previous"
+		        android:layout_toLeftOf="@+id/playpause" />
 	        
 		    <ImageButton
 		        android:id="@+id/playpause"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content"
-		        android:contentDescription="@string/play" />
+		        android:contentDescription="@string/play" 
+		        android:layout_centerHorizontal="true"/>
 	        
 		    <ImageButton
 		        android:id="@+id/next"
 		        android:layout_width="wrap_content"
 		        android:layout_height="wrap_content" 
-		        android:contentDescription="@string/next" />
+		        android:contentDescription="@string/next"
+		        android:layout_toRightOf="@id/playpause" />
+
+	    	<TextView
+	    	    android:id="@+id/total_time"
+	    	    android:layout_width="wrap_content"
+	    	    android:layout_height="wrap_content"
+	    	    android:layout_alignParentRight="true"
+	    	    android:layout_alignParentTop="true"
+	    	    android:gravity="right"
+	    	    android:minEms="2"/>
 		    
-	    </LinearLayout>
+	    </RelativeLayout>
 	    
     </LinearLayout>
 
