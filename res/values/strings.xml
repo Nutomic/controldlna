@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">ControlDLNA</string>
-    <string name="title_renderer">Renderer</string>
+    <string name="title_route">Route</string>
     <string name="title_server">Server</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>

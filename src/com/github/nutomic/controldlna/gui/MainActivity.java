@@ -137,7 +137,7 @@ public class MainActivity extends ActionBarActivity {
                 .setText(R.string.title_server)
                 .setTabListener(tabListener));
         actionBar.addTab(actionBar.newTab()
-                .setText(R.string.title_renderer)
+                .setText(R.string.title_route)
                 .setTabListener(tabListener));  
         
         ConnectivityManager connManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
