@@ -32,6 +32,7 @@ import java.util.List;
 import org.teleal.cling.support.model.item.Item;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -99,7 +100,8 @@ public class MainActivity extends ActionBarActivity {
      * shows a warning dialog.
      */
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);   
+        super.onCreate(savedInstanceState); 
+        onNewIntent(getIntent());
         final ActionBar actionBar = getSupportActionBar();
 
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -194,6 +196,15 @@ public class MainActivity extends ActionBarActivity {
             mRouteFragment = new RouteFragment();
         }
     }
+    
+    /**
+     * Displays the RouteFragment immediately (instead of ServerFragment). 
+     */
+	@Override
+	protected void onNewIntent(Intent intent) {
+		if (intent.getAction().equals("showRouteFragment"))
+	        mViewPager.setCurrentItem(1);
+	}
 
     /**
      * Saves fragments.

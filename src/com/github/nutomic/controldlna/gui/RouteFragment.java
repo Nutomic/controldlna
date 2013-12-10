@@ -485,7 +485,6 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		
 		if (mListView.getAdapter() == mPlaylistAdapter) 
 			enableTrackHighlight();
-		
 	}
 
 }

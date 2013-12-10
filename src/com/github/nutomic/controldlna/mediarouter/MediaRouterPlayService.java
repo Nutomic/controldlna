@@ -131,9 +131,11 @@ public class MediaRouterPlayService extends Service {
 		        	artist = track.getArtists()[0].getName();
 				}
 			}
+			Intent intent = new Intent(MediaRouterPlayService.this, MainActivity.class);
+			intent.setAction("showRouteFragment");
 			Notification notification = new NotificationCompat.Builder(MediaRouterPlayService.this)
 					.setContentIntent(PendingIntent.getActivity(MediaRouterPlayService.this, 0, 
-							new Intent(MediaRouterPlayService.this, MainActivity.class), 0))
+							intent, 0))
 					.setContentTitle(title)
 					.setContentText(artist)
 					.setLargeIcon(result)
