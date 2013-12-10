@@ -84,7 +84,7 @@ public class MediaRouterPlayService extends Service {
 	/**
 	 * The track that is currently being played.
 	 */
-	private int mCurrentTrack;
+	private int mCurrentTrack = -1;
 	
 	private String mItemId;
 	
@@ -230,6 +230,9 @@ public class MediaRouterPlayService extends Service {
 		                
 		                new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
 		                		.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+
+						if (mRouterFragment.get() != null)
+							mRouterFragment.get().receiveIsPlaying(mCurrentTrack);
 		        	}
 				});
 	}

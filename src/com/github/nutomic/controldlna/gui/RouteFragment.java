@@ -110,6 +110,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			mMediaRouterPlayService = (MediaRouterPlayServiceBinder) service;
 			mMediaRouterPlayService.getService().setRouterFragment(RouteFragment.this);
 			mPlaylistAdapter.addAll(mMediaRouterPlayService.getService().getPlaylist());
+			receiveIsPlaying(mMediaRouterPlayService.getService().getCurrentTrack());
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -448,8 +449,16 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	}
 	
 	/**
+	 * Sent by MediaRouterPlayService when playback of a new track is started.
+	 * 
+	 * @param track Index of the track in the playlist.
+	 */
+	public void receiveIsPlaying(int track) {
+		mListView.smoothScrollToPosition(track);
+	}
+	
+	/**
 	 * Receives information from MediaRouterPlayService about playback status.
-	 * TODO: doc
 	 */
 	public void receivePlaybackStatus(MediaItemStatus status) {
 		int currentTime = (int) status.getContentPosition() / 1000;
