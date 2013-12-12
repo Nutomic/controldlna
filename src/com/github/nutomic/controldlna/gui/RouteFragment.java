@@ -463,6 +463,10 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	 * Receives information from MediaRouterPlayService about playback status.
 	 */
 	public void receivePlaybackStatus(MediaItemStatus status) {
+		// Views may not exist if fragment was just created/destroyed.
+		if (getView() == null)
+			return;
+		
 		int currentTime = (int) status.getContentPosition() / 1000;
 		int totalTime = (int) status.getContentDuration() / 1000;
 		

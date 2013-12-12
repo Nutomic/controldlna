@@ -315,7 +315,9 @@ public class MediaRouterPlayService extends Service {
 						@Override
 						public void onResult(Bundle data) {
 							MediaItemStatus status = MediaItemStatus.fromBundle(data);
-
+							if (status == null)
+								return;
+							
 							if (mRouterFragment.get() != null)
 								mRouterFragment.get().receivePlaybackStatus(status);
 							if (status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PENDING &&
