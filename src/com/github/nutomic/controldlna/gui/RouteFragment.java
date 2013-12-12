@@ -183,7 +183,9 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
         		mSelectedRoute = MediaRouter.getInstance(getActivity())
         				.getSelectedRoute();
     			mListView.setAdapter(mPlaylistAdapter);
-    			mControls.setVisibility(View.VISIBLE);        		
+    			mControls.setVisibility(View.VISIBLE);
+        		TextView emptyView = (TextView) mListView.getEmptyView();
+        		emptyView.setText(R.string.playlist_empty);
         	}
         }
     }
