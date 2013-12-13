@@ -429,7 +429,8 @@ public class RemotePlayService extends Service implements RegistryListener {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-        unbindService(mUpnpServiceConnection);	
+        unbindService(mUpnpServiceConnection);
+        unregisterReceiver(mWifiReceiver);
 	}
 	
 	/**
