@@ -292,14 +292,25 @@ public class MediaRouterPlayService extends Service {
 		mPlaylist = playlist;
 	}
 	
+	/**
+	 * Plays the track after current in the playlist.
+	 */
 	public void playNext() {
 		play(mCurrentTrack + 1);
 	}
+
 	
+	/**
+	 * Plays the track before current in the playlist.
+	 */
 	public void playPrevious() {
 		play(mCurrentTrack - 1);
 	}
 	
+	/**
+	 * Returns index of the track that is currently played (zero-based).
+	 * @return
+	 */
 	public int getCurrentTrack() {
 		return mCurrentTrack;
 	}

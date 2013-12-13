@@ -179,14 +179,9 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
         
         if (savedInstanceState != null) {
         	mListView.onRestoreInstanceState(savedInstanceState.getParcelable("list_state"));
-        	if (savedInstanceState.getBoolean("route_selected")) {
-        		mSelectedRoute = MediaRouter.getInstance(getActivity())
-        				.getSelectedRoute();
-    			mListView.setAdapter(mPlaylistAdapter);
-    			mControls.setVisibility(View.VISIBLE);
-        		TextView emptyView = (TextView) mListView.getEmptyView();
-        		emptyView.setText(R.string.playlist_empty);
-        	}
+        	if (savedInstanceState.getBoolean("route_selected"))
+        		playlistMode(MediaRouter.getInstance(getActivity())
+        				.getSelectedRoute());
         }
     }
     
@@ -274,20 +269,38 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	 */
 	@Override
 	public void onItemClick(AdapterView<?> a, View v, final int position, long id) {
-		if (mListView.getAdapter() == mRouteAdapter) {
-			mSelectedRoute = mRouteAdapter.getItem(position);
-			mMediaRouterPlayService.getService().selectRoute(mSelectedRoute);
-			mListView.setAdapter(mPlaylistAdapter);
-			mControls.setVisibility(View.VISIBLE);
-			if (mStartPlayingOnSelect != -1) {
-				mMediaRouterPlayService.getService().play(mStartPlayingOnSelect);
-				mStartPlayingOnSelect = -1;
-			}
-    		TextView emptyView = (TextView) mListView.getEmptyView();
-    		emptyView.setText(R.string.playlist_empty);
-		}
+		if (mListView.getAdapter() == mRouteAdapter)
+			playlistMode(mRouteAdapter.getItem(position));
 		else
 			mMediaRouterPlayService.getService().play(position);
+	}
+	
+	/**
+	 * Displays UPNP devices in the ListView.
+	 */
+	private void deviceListMode() {
+		mControls.setVisibility(View.GONE);
+		mListView.setAdapter(mRouteAdapter);
+		disableTrackHighlight();
+		mSelectedRoute = null;
+		TextView emptyView = (TextView) mListView.getEmptyView();
+		emptyView.setText(R.string.device_list_empty);
+	}
+	
+	/**
+	 * Displays playlist for route in the ListView.
+	 */
+	private void playlistMode(RouteInfo route) {
+		mSelectedRoute = route;
+		mMediaRouterPlayService.getService().selectRoute(mSelectedRoute);
+		mListView.setAdapter(mPlaylistAdapter);
+		mControls.setVisibility(View.VISIBLE);
+		if (mStartPlayingOnSelect != -1) {
+			mMediaRouterPlayService.getService().play(mStartPlayingOnSelect);
+			mStartPlayingOnSelect = -1;
+		}
+		TextView emptyView = (TextView) mListView.getEmptyView();
+		emptyView.setText(R.string.playlist_empty);		
 	}
 	
 	/**
@@ -330,25 +343,14 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 									public void onClick(DialogInterface dialog, 
 											int which) {
 										mMediaRouterPlayService.getService().stop();
-										mControls.setVisibility(View.GONE);
-										mListView.setAdapter(mRouteAdapter);
-										disableTrackHighlight();
-										mSelectedRoute = null;
-							    		TextView emptyView = (TextView) mListView.getEmptyView();
-							    		emptyView.setText(R.string.device_list_empty);
+							    		deviceListMode();
 									}
 								})
 						.setNegativeButton(android.R.string.no, null)
 						.show();
 			}
-			else {
-				mControls.setVisibility(View.GONE);
-				mListView.setAdapter(mRouteAdapter);
-				disableTrackHighlight();
-				mSelectedRoute = null;
-	    		TextView emptyView = (TextView) mListView.getEmptyView();
-	    		emptyView.setText(R.string.device_list_empty);
-			}
+			else
+				deviceListMode();
 	        return true;
 		}
 		return false;

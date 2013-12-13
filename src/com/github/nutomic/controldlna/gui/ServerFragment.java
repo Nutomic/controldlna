@@ -215,13 +215,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
      */
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-    	if (getListAdapter() == mServerAdapter) {
-    		setListAdapter(mFileAdapter);
-    		mCurrentServer = mServerAdapter.getItem(position);
-    		getFiles(ROOT_DIRECTORY);
-    		TextView emptyView = (TextView) getListView().getEmptyView();
-    		emptyView.setText(R.string.folder_list_etmpy);
-    	}
+    	if (getListAdapter() == mServerAdapter)
+    		browsingMode(mServerAdapter.getItem(position));
     	else if (getListAdapter() == mFileAdapter) {
     		if (mFileAdapter.getItem(position) instanceof Container)
     			getFiles(((Container) mFileAdapter.getItem(position)).getId());
@@ -236,7 +231,28 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     		}
     	}
     }
+
+    /**
+     * Displays available servers in the ListView.
+     */
+    private void serverMode() {
+		setListAdapter(mServerAdapter);
+    	getListView().onRestoreInstanceState(mListState.peek());
+		mCurrentServer = null;
+		TextView emptyView = (TextView) getListView().getEmptyView();
+		emptyView.setText(R.string.device_list_empty);    	
+    }
     
+    /**
+     * Displays files for server (starting from root).
+     */
+    private void browsingMode(Device<?, ?, ?> server) {
+		setListAdapter(mFileAdapter);
+		mCurrentServer = server;
+		getFiles(ROOT_DIRECTORY);
+		TextView emptyView = (TextView) getListView().getEmptyView();
+		emptyView.setText(R.string.folder_list_etmpy);    	
+    }
     /**
      * Opens a new directory and displays it.
      */
@@ -307,13 +323,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     	
 		mCurrentPath.pop();
 		mListState.pop();
-		if (mCurrentPath.empty()) {
-    		setListAdapter(mServerAdapter);
-	    	getListView().onRestoreInstanceState(mListState.peek());
-    		mCurrentServer = null;
-    		TextView emptyView = (TextView) getListView().getEmptyView();
-    		emptyView.setText(R.string.device_list_empty);
-		}
+		if (mCurrentPath.empty())
+			serverMode();
 		else
 			getFiles(true);
 		return true;		
