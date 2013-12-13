@@ -206,7 +206,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     @Override
     public void onDestroy() {
     	super.onDestroy();
-        getActivity().getApplicationContext().unbindService(mUpnpServiceConnection);	
+        getActivity().getApplicationContext().unbindService(mUpnpServiceConnection);
+        getActivity().unregisterReceiver(mWifiReceiver);
     }
     
     /**
