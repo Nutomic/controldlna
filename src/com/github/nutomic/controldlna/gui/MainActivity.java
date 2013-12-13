@@ -47,6 +47,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -190,6 +191,7 @@ public class MainActivity extends ActionBarActivity {
                     savedInstanceState, ServerFragment.class.getName());
         	mRouteFragment = (RouteFragment) fm.getFragment(
                     savedInstanceState, RouteFragment.class.getName());
+        	mViewPager.setCurrentItem(savedInstanceState.getInt("currentTab"));
         }
         else {
             mServerFragment = new ServerFragment();
@@ -215,6 +217,7 @@ public class MainActivity extends ActionBarActivity {
     	FragmentManager fm = getSupportFragmentManager();
     	fm.putFragment(outState, ServerFragment.class.getName(), mServerFragment);
     	fm.putFragment(outState, RouteFragment.class.getName(), mRouteFragment);
+    	outState.putInt("currentTab", mViewPager.getCurrentItem());
     }
     
     /**
