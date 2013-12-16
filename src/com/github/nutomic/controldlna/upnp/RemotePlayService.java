@@ -490,40 +490,45 @@ public class RemotePlayService extends Service implements RegistryListener {
 				device instanceof RemoteDevice) {
         	mDevices.put(device.getIdentity().getUdn().toString(), device);
 
-    		mUpnpService.getControlPoint().execute(
-        			new GetVolume(rc) {
+        	try {
+        		mUpnpService.getControlPoint().execute(new GetVolume(rc) {
     			
-    			@SuppressWarnings("rawtypes")
-    			@Override
-    			public void failure(ActionInvocation invocation, 
-    					UpnpResponse operation, String defaultMessage) {
-    				Log.w(TAG, "Failed to get current Volume: " + defaultMessage);
-    			}
-    			
-    			@SuppressWarnings("rawtypes")
-    			@Override
-    			public void received(ActionInvocation invocation, int currentVolume) {
-    				int maxVolume = 100;
-	            	if (rc.getStateVariable("Volume") != null) {
-	                	StateVariableAllowedValueRange volumeRange = 
-	                			rc.getStateVariable("Volume").getTypeDetails().getAllowedValueRange();
-	                	maxVolume = (int) volumeRange.getMaximum();
-	                }
-            	
-    	        	Message msg = Message.obtain(null, Provider.MSG_RENDERER_ADDED, 0, 0);
-    	        	msg.getData().putParcelable("device", new Provider.Device(
-    	        			device.getIdentity().getUdn().toString(), 
-    	        			device.getDisplayString(), 
-    	        			device.getDetails().getManufacturerDetails().getManufacturer(), 
-    	        			currentVolume, 
-    	        			maxVolume));
-    		        try {
-    		            mListener.send(msg);
-    		        } catch (RemoteException e) {
-    		            e.printStackTrace();
-    		        }
-    			}
-    		});	
+	    			@SuppressWarnings("rawtypes")
+	    			@Override
+	    			public void failure(ActionInvocation invocation, 
+	    					UpnpResponse operation, String defaultMessage) {
+	    				Log.w(TAG, "Failed to get current Volume: " + defaultMessage);
+	    			}
+	    			
+	    			@SuppressWarnings("rawtypes")
+	    			@Override
+	    			public void received(ActionInvocation invocation, int currentVolume) {
+	    				int maxVolume = 100;
+		            	if (rc.getStateVariable("Volume") != null) {
+		                	StateVariableAllowedValueRange volumeRange = 
+		                			rc.getStateVariable("Volume").getTypeDetails().getAllowedValueRange();
+		                	maxVolume = (int) volumeRange.getMaximum();
+		                }
+	            	
+	    	        	Message msg = Message.obtain(null, Provider.MSG_RENDERER_ADDED, 0, 0);
+	    	        	msg.getData().putParcelable("device", new Provider.Device(
+	    	        			device.getIdentity().getUdn().toString(), 
+	    	        			device.getDisplayString(), 
+	    	        			device.getDetails().getManufacturerDetails().getManufacturer(), 
+	    	        			currentVolume, 
+	    	        			maxVolume));
+	    		        try {
+	    		            mListener.send(msg);
+	    		        } catch (RemoteException e) {
+	    		            e.printStackTrace();
+	    		        }
+	    			}
+        		});
+        	}
+        	catch (IllegalArgumentException e) {
+        		e.printStackTrace();
+        		return;
+        	}	
 		}
 	}
 
