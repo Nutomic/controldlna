@@ -27,9 +27,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.upnp;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.teleal.cling.android.AndroidUpnpService;
 import org.teleal.cling.android.AndroidUpnpServiceImpl;
@@ -92,7 +92,8 @@ public class RemotePlayService extends Service implements RegistryListener {
     
     private Messenger mListener;
     
-    private HashMap<String, Device<?, ?, ?>> mDevices = new HashMap<String, Device<?, ?, ?>>();
+    private ConcurrentHashMap<String, Device<?, ?, ?>> mDevices = 
+    		new ConcurrentHashMap<String, Device<?, ?, ?>>();
     
     private Device<?, ?, ?> mCurrentRenderer;
     
