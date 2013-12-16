@@ -377,6 +377,9 @@ public class RemotePlayService extends Service implements RegistryListener {
 					@SuppressWarnings("rawtypes")
 					@Override
 					public void received(ActionInvocation invocation, PositionInfo positionInfo) {
+						if (positionInfo.getTrackURI() == null)
+							return;
+						
 						Message msg = Message.obtain(null, Provider.MSG_STATUS_INFO, 0, 0);
 						Builder status = null;
 						
