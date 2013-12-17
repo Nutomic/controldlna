@@ -8,7 +8,9 @@
         android:id="@+id/listview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentRight="true" />
+        android:layout_above="@+id/controls"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true" />
     
     <TextView
         android:id="@id/android:empty"
@@ -24,8 +26,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
     	android:orientation="vertical"
-    	android:id="@+id/controls"    	
-    	android:visibility="gone"
+    	android:id="@+id/controls" 	
+    	android:visibility="gone"   
     	android:background="@android:color/white" >
 
     	<SeekBar
