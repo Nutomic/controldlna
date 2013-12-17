@@ -138,16 +138,6 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 		});			
 	}
 
-	private void deviceUpdated(Device<?, ?, ?> device) {
-		mActivity.runOnUiThread(new Runnable() {
-			
-			@Override
-			public void run() {
-				notifyDataSetChanged();
-			}
-		});	
-	}
-
 	@Override
 	public void beforeShutdown(Registry registry) {
 	}
@@ -184,7 +174,6 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 
 	@Override
 	public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-		deviceUpdated(device);
 	}
 
 	@Override
