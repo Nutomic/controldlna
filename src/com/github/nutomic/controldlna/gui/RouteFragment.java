@@ -284,7 +284,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		disableTrackHighlight();
 		mSelectedRoute = null;
 		TextView emptyView = (TextView) mListView.getEmptyView();
-		emptyView.setText(R.string.device_list_empty);
+		emptyView.setText(R.string.route_list_empty);
 	}
 	
 	/**
@@ -427,7 +427,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		if (mSelectedRoute != null)
 			mMediaRouterPlayService.getService().play(start);
 		else {
-			Toast.makeText(getActivity(), R.string.select_renderer, Toast.LENGTH_SHORT)
+			Toast.makeText(getActivity(), R.string.select_route, Toast.LENGTH_SHORT)
 					.show();
 			mStartPlayingOnSelect = start;
 		}

@@ -17,7 +17,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="10dip"
-        android:text="@string/device_list_empty"
+        android:text="@string/route_list_empty"
         android:layout_centerInParent="true"
         android:gravity="center" />
     
