@@ -30,6 +30,7 @@ package com.github.nutomic.controldlna.mediarouter;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.teleal.cling.support.contentdirectory.DIDLParser;
 import org.teleal.cling.support.model.DIDLContent;
@@ -85,6 +86,10 @@ public class MediaRouterPlayService extends Service {
 	 * The track that is currently being played.
 	 */
 	private int mCurrentTrack = -1;
+	
+	private boolean mShuffle = false;
+	
+	private boolean mRepeat = false;
 	
 	private String mItemId;
 	
@@ -243,6 +248,9 @@ public class MediaRouterPlayService extends Service {
 	 * Sends 'pause' signal to current renderer.
 	 */
 	public void pause() {
+		if (mPlaylist.isEmpty())
+			return;
+		
         Intent intent = new Intent(MediaControlIntent.ACTION_PAUSE);
         intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
@@ -253,6 +261,9 @@ public class MediaRouterPlayService extends Service {
 	 * Sends 'resume' signal to current renderer.
 	 */
 	public void resume() {
+		if (mPlaylist.isEmpty())
+			return;
+		
         Intent intent = new Intent(MediaControlIntent.ACTION_RESUME);
         intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
@@ -267,6 +278,9 @@ public class MediaRouterPlayService extends Service {
 	 * Sends 'stop' signal to current renderer.
 	 */
 	public void stop() {
+		if (mPlaylist.isEmpty())
+			return;
+		
         Intent intent = new Intent(MediaControlIntent.ACTION_STOP);
         intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
@@ -274,6 +288,9 @@ public class MediaRouterPlayService extends Service {
 	}
 	
 	public void seek(int seconds) {
+		if (mPlaylist.isEmpty())
+			return;
+		
         Intent intent = new Intent(MediaControlIntent.ACTION_SEEK);
         intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
@@ -296,7 +313,23 @@ public class MediaRouterPlayService extends Service {
 	 * Plays the track after current in the playlist.
 	 */
 	public void playNext() {
-		play(mCurrentTrack + 1);
+		if (mCurrentTrack == -1) 
+			return;
+		
+		if (mShuffle)
+			// Play random item.
+			play(new Random().nextInt(mPlaylist.size()));
+		else if (mCurrentTrack + 1 < mPlaylist.size())
+			// Playlist not over, play next item.
+			play(mCurrentTrack + 1);
+		else if (mRepeat)
+			// Playlist over, repeat it.
+			play(0);
+		else if (!mBound) {
+			// Playlist over, stop playback.
+			stopSelf();
+			mPollingStatus = false;
+		}
 	}
 
 	
@@ -304,7 +337,14 @@ public class MediaRouterPlayService extends Service {
 	 * Plays the track before current in the playlist.
 	 */
 	public void playPrevious() {
-		play(mCurrentTrack - 1);
+		if (mCurrentTrack == -1)
+			return;
+		
+		if (mShuffle)
+			// Play random item.
+			play(new Random().nextInt(mPlaylist.size()));
+		else
+			play(mCurrentTrack - 1);
 	}
 	
 	/**
@@ -339,15 +379,8 @@ public class MediaRouterPlayService extends Service {
 											status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PLAYING)
 								stopForeground(true);
 							
-							if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED) {
-								if (mCurrentTrack + 1 < mPlaylist.size())
-									playNext();
-								else {
-									if (!mBound)
-										stopSelf();
-									mPollingStatus = false;		
-								}
-							}
+							if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED)
+								playNext();
 						}
 					});
 		}
@@ -371,6 +404,22 @@ public class MediaRouterPlayService extends Service {
 	
 	public List<Item> getPlaylist() {
 		return mPlaylist;
+	}
+	
+	public void toggleShuffleEnabled() {
+		mShuffle = !mShuffle;
+	}
+	
+	public boolean getShuffleEnabled() {
+		return mShuffle;
+	}
+	
+	public void toggleRepeatEnabled() {
+		mRepeat = !mRepeat;
+	}
+	
+	public boolean getRepeatEnabled() {
+		return mRepeat;
 	}
 
 }

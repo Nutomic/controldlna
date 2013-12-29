@@ -86,6 +86,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	private View mControls;
 	private SeekBar mProgressBar;
 	private ImageButton mPlayPause;
+	private ImageButton mShuffle;
+	private ImageButton mRepeat;
 	
 	private View mCurrentTrackView;
 	
@@ -111,6 +113,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			mMediaRouterPlayService.getService().setRouterFragment(RouteFragment.this);
 			mPlaylistAdapter.addAll(mMediaRouterPlayService.getService().getPlaylist());
 			receiveIsPlaying(mMediaRouterPlayService.getService().getCurrentTrack());
+			applyColors();
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -157,17 +160,25 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
         mProgressBar = (SeekBar) getView().findViewById(R.id.progressBar);
         mProgressBar.setOnSeekBarChangeListener(this);
         
+        mShuffle = (ImageButton) getView().findViewById(R.id.shuffle);
+        mShuffle.setImageResource(R.drawable.ic_action_shuffle);
+        mShuffle.setOnClickListener(this);
+        
         ImageButton previous = (ImageButton) getView().findViewById(R.id.previous);
-        previous.setImageResource(R.drawable.ic_media_previous);
-    	getView().findViewById(R.id.previous).setOnClickListener(this);
+        previous.setImageResource(R.drawable.ic_action_previous);
+    	previous.setOnClickListener(this);
         
         ImageButton next = (ImageButton) getView().findViewById(R.id.next);
-        next.setImageResource(R.drawable.ic_media_next);
-    	getView().findViewById(R.id.next).setOnClickListener(this);
+        next.setImageResource(R.drawable.ic_action_next);
+    	next.setOnClickListener(this);
+        
+        mRepeat = (ImageButton) getView().findViewById(R.id.repeat);
+        mRepeat.setImageResource(R.drawable.ic_action_repeat);
+        mRepeat.setOnClickListener(this);
         
         mPlayPause = (ImageButton) getView().findViewById(R.id.playpause);
         mPlayPause.setOnClickListener(this);
-    	mPlayPause.setImageResource(R.drawable.ic_media_play);    	
+    	mPlayPause.setImageResource(R.drawable.ic_action_play);    	
 
     	getActivity().getApplicationContext().startService(
     			new Intent(getActivity(), MediaRouterPlayService.class));
@@ -361,20 +372,46 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	 */
 	@Override
 	public void onClick(View v) {
+		MediaRouterPlayService s = mMediaRouterPlayService.getService();
 		switch (v.getId()) {
 		case R.id.playpause:
 			if (mPlaying)
-				mMediaRouterPlayService.getService().pause();
+				s.pause();
 			else
-				mMediaRouterPlayService.getService().resume();
+				s.resume();
+			break;
+		case R.id.shuffle:
+			s.toggleShuffleEnabled();
+			applyColors();
 			break;
 		case R.id.previous:
-			mMediaRouterPlayService.getService().playPrevious();
+			s.playPrevious();
 			break;
 		case R.id.next:
-			mMediaRouterPlayService.getService().playNext();
+			s.playNext();
+			break;
+		case R.id.repeat:
+			s.toggleRepeatEnabled();
+			applyColors();
 			break;
 		}		
+	}
+	
+	/**
+	 * Enables or disables highlighting on shuffle/repeat buttons (depending
+	 * if they are enabled or disabled).
+	 */
+	private void applyColors() {
+		MediaRouterPlayService s = mMediaRouterPlayService.getService();
+		int highlight = getResources().getColor(R.color.button_highlight);
+		int transparent = getResources().getColor(android.R.color.transparent);
+		
+		mShuffle.setColorFilter((s.getShuffleEnabled()) 
+				? highlight
+				: transparent);		
+		mRepeat.setColorFilter((s.getRepeatEnabled()) 
+				? highlight
+				: transparent);
 	}
 
 	/**
@@ -484,11 +521,11 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_BUFFERING ||
 				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PENDING) {
 			mPlaying = true;
-			mPlayPause.setImageResource(R.drawable.ic_media_pause);
+			mPlayPause.setImageResource(R.drawable.ic_action_pause);
 		}
 		else {
 			mPlaying = false;
-			mPlayPause.setImageResource(R.drawable.ic_media_play);
+			mPlayPause.setImageResource(R.drawable.ic_action_play);
 		}
 		
 		if (mListView.getAdapter() == mPlaylistAdapter) 

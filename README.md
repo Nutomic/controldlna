@@ -16,6 +16,10 @@ Android Support Library and [Cling](http://4thline.org/projects/cling/) are requ
 
 Binaries for Cling are included in the libs folder.
 
+## Icons
+
+All icons are taken from the Android project.
+
 ## License
 
 [BSD 3-Clause License](LICENSE.md)
