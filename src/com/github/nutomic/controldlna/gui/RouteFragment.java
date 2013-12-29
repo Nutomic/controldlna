@@ -39,6 +39,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v7.app.MediaRouteDiscoveryFragment;
 import android.support.v7.media.MediaControlIntent;
@@ -51,6 +52,7 @@ import android.support.v7.media.MediaRouter.RouteInfo;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
@@ -98,6 +100,12 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	private FileArrayAdapter mPlaylistAdapter;
 	
 	private RouteInfo mSelectedRoute;
+	
+	/**
+	 * Count of the number of taps on the previous button within the 
+	 * doubletap interval.
+	 */
+	private int mPreviousTapCount = 0;
 	
 	/**
 	 * If true, the item at this position will be played as soon as a route is selected.
@@ -372,7 +380,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	 */
 	@Override
 	public void onClick(View v) {
-		MediaRouterPlayService s = mMediaRouterPlayService.getService();
+		final MediaRouterPlayService s = mMediaRouterPlayService.getService();
 		switch (v.getId()) {
 		case R.id.playpause:
 			if (mPlaying)
@@ -385,7 +393,24 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			applyColors();
 			break;
 		case R.id.previous:
-			s.playPrevious();
+			mPreviousTapCount++;
+            Handler handler = new Handler();
+            Runnable r = new Runnable() {
+
+                @Override
+                public void run() {
+                	// Single tap.
+                    mPreviousTapCount = 0;
+                    s.play(s.getCurrentTrack());
+                }
+            };
+            if (mPreviousTapCount == 1)
+                handler.postDelayed(r, ViewConfiguration.getDoubleTapTimeout());
+            else if(mPreviousTapCount == 2) {
+            	// Double tap.
+            	mPreviousTapCount = 0;
+            	s.playPrevious();
+            }
 			break;
 		case R.id.next:
 			s.playNext();
