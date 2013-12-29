@@ -325,10 +325,11 @@ public class MediaRouterPlayService extends Service {
 		else if (mRepeat)
 			// Playlist over, repeat it.
 			play(0);
-		else if (!mBound) {
+		else {
 			// Playlist over, stop playback.
-			stopSelf();
-			mPollingStatus = false;
+			stop();
+			if (!mBound)
+				stopSelf();
 		}
 	}
 
