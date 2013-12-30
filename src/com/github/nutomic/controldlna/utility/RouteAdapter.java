@@ -1,5 +1,7 @@
 package com.github.nutomic.controldlna.utility;
 
+import java.util.List;
+
 import android.content.Context;
 import android.support.v7.media.MediaRouter.RouteInfo;
 import android.view.LayoutInflater;
@@ -31,6 +33,14 @@ public class RouteAdapter extends ArrayAdapter<RouteInfo> {
         subtitle.setText(getItem(position).getDescription());
         
         return convertView;
+	}
+
+	/**
+	 * Replacement for addAll, which is not implemented on lower API levels.
+	 */
+	public void add(List<RouteInfo> routes) {
+		for (RouteInfo r : routes)
+			add(r);
 	}
 
 }

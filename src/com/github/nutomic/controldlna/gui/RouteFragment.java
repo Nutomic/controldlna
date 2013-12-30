@@ -119,7 +119,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			mMediaRouterPlayService = (MediaRouterPlayServiceBinder) service;
 			mMediaRouterPlayService.getService().setRouterFragment(RouteFragment.this);
-			mPlaylistAdapter.addAll(mMediaRouterPlayService.getService().getPlaylist());
+			mPlaylistAdapter.add(mMediaRouterPlayService.getService().getPlaylist());
 			receiveIsPlaying(mMediaRouterPlayService.getService().getCurrentTrack());
 			applyColors();
         }
@@ -154,7 +154,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
     	super.onActivityCreated(savedInstanceState);
     	
     	mRouteAdapter = new RouteAdapter(getActivity());
-    	mRouteAdapter.addAll(MediaRouter.getInstance(getActivity()).getRoutes());
+    	mRouteAdapter.add(MediaRouter.getInstance(getActivity()).getRoutes());
     	mRouteAdapter.remove(MediaRouter.getInstance(getActivity()).getDefaultRoute());
     	mPlaylistAdapter = new FileArrayAdapter(getActivity());
     	
@@ -483,7 +483,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	 */
 	public void play(List<Item> playlist, int start) {
 		mPlaylistAdapter.clear();
-		mPlaylistAdapter.addAll(playlist);
+		mPlaylistAdapter.add(playlist);
 		mMediaRouterPlayService.getService().setPlaylist(playlist);
 		
 		if (mSelectedRoute != null)
