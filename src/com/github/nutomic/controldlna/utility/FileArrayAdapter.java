@@ -88,7 +88,8 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 		}
 		DIDLObject item = getItem(position);
         TextView title = (TextView) convertView.findViewById(R.id.title);
-        TextView artist = (TextView) convertView.findViewById(R.id.subtitle);	
+        TextView artist = (TextView) convertView.findViewById(R.id.subtitle);
+    	artist.setText("");	
         RemoteImageView image = (RemoteImageView) convertView.findViewById(R.id.image);
 		if (item instanceof MusicTrack) {
 	        MusicTrack track = (MusicTrack) item;
@@ -96,12 +97,12 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 	        		? Integer.toString(track.getOriginalTrackNumber()) + ". "
 	        		: "";
         	title.setText(trackNumber + item.getTitle());
-        	artist.setText(track.getArtists()[0].getName());
+        	if (track.getArtists().length > 0)
+        		artist.setText(track.getArtists()[0].getName());
 		}
-        else {
+        else
         	title.setText(item.getTitle());
-        	artist.setText("");
-        }
+		
 		image.setImageUri(item.getFirstPropertyValue(
 				DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
         return convertView;

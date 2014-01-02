@@ -133,7 +133,8 @@ public class MediaRouterPlayService extends Service {
 				title = mPlaylist.get(mCurrentTrack).getTitle();
 				if (mPlaylist.get(mCurrentTrack) instanceof MusicTrack) {
 		        	MusicTrack track = (MusicTrack) mPlaylist.get(mCurrentTrack);
-		        	artist = track.getArtists()[0].getName();
+		        	if (track.getArtists().length > 0)
+		        		artist = track.getArtists()[0].getName();
 				}
 			}
 			Intent intent = new Intent(MediaRouterPlayService.this, MainActivity.class);
