@@ -33,3 +33,4 @@ proguard/
 # Gradle files
 build/
 .gradle/
+build.xml
