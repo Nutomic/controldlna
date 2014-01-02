@@ -16,6 +16,8 @@ Android Support Library and [Cling](http://4thline.org/projects/cling/) are requ
 
 Binaries for Cling are included in the libs folder.
 
+Alternatively, Cling can be built from source with instructions on [Github](https://github.com/4thline/cling).
+
 ## Icons
 
 All icons are taken from the Android project.
