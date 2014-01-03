@@ -188,7 +188,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 						case NO_MEDIA_PRESENT:
 							mPlaybackState = MediaItemStatus.PLAYBACK_STATE_ERROR;
 							break;
-					    default:
+						default:
 					    }
 						
 					} catch (Exception e) {
@@ -247,6 +247,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 		 */
 		@Override
 		public void play(String uri, String metadata) throws RemoteException {
+			mPlaybackState = MediaItemStatus.PLAYBACK_STATE_BUFFERING;
 			mUpnpService.getControlPoint().execute(new SetAVTransportURI(
 					getService(mCurrentRenderer, "AVTransport"), 
 	    			uri, metadata) {
@@ -263,6 +264,11 @@ public class RemotePlayService extends Service implements RegistryListener {
 					mUpnpService.getControlPoint().execute(
 							new Play(getService(mCurrentRenderer, 
 									"AVTransport")) {
+						
+						@Override
+						public void success(ActionInvocation invocation) {
+							mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PLAYING;
+						}
 						
 						@Override
 						public void failure(ActionInvocation invocation, 
