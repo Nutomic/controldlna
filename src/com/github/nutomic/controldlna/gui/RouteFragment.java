@@ -385,8 +385,10 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		case R.id.playpause:
 			if (mPlaying)
 				s.pause();
-			else
+			else {
 				s.resume();
+				mListView.smoothScrollToPosition(s.getCurrentTrack());
+			}
 			break;
 		case R.id.shuffle:
 			s.toggleShuffleEnabled();
