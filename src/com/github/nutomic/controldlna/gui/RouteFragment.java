@@ -234,8 +234,10 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
             @Override
             public void onRouteAdded(MediaRouter router, RouteInfo route) {
             	for (int i = 0; i < mRouteAdapter.getCount(); i++) {
-            		if (mRouteAdapter.getItem(i).getId().equals(route.getId()))
-            			return;
+            		if (mRouteAdapter.getItem(i).getId().equals(route.getId())) {
+            			mRouteAdapter.remove(mRouteAdapter.getItem(i));
+            			break;
+            		}
             	}
                 mRouteAdapter.add(route);
             }
