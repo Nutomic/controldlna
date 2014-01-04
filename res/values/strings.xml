@@ -2,25 +2,42 @@
 <resources>
 
     <string name="app_name">ControlDLNA</string>
-    <string name="title_route">Route</string>
+    
+    <!-- Server Fragment -->
     <string name="title_server">Server</string>
+	<string name="folder_list_empty">Folder is empty</string>
+    <string name="device_list_empty">No UPNP devices found. 
+        \nNew devices will be added automatically when they are available.</string>
+    
+    <!-- Route Fragment -->
+    <string name="title_route">Route</string>
+	<string name="playlist_empty">Playlist is empty</string>
+    <string name="route_list_empty">No routes found. 
+        \nNew routes will be added automatically when they are available.</string>
+    
+    <!-- Playback controls -->
     <string name="play">Play</string>
     <string name="pause">Pause</string>
-    <string name="exit_renderer">Do you really want to exit the renderer? Playback will be stopped.</string>
     <string name="previous">Previous</string>
     <string name="next">Next</string>
     <string name="shuffle">Shuffle</string>
     <string name="repeat">Repeat</string>
+    
+    <!-- Toasts/Dialogs -->
+    <string name="exit_renderer">Do you really want to exit the renderer? 
+        Playback will be stopped.</string>
     <string name="select_route">Please select a route</string>
-    <string name="album_art">Album Art</string>
-    <string name="route_description">DLNA Playback</string>
     <string name="warning_wifi_not_connected">Wifi needs to be connected for playback</string>
+    
+    <!-- Image alt text -->
+    <string name="album_art">Album Art</string>
+    
+    <!-- MediaRouter strings -->
+    <string name="route_description">DLNA Playback</string>
+	<string name="upnp_route_provider_service">UPNP Route Provider Service</string>
+	
+	<!-- Settings -->
     <string name="auto_enable_wifi">Enable Wifi automatically on start</string>
     <string name="dont_show_dialog_again">"Do not show this dialog again"</string>
-    <string name="device_list_empty">No UPNP devices found. \nNew devices will be added automatically when they are available.</string>
-    <string name="route_list_empty">No routes found. \nNew routes will be added automatically when they are available.</string>
-	<string name="folder_list_etmpy">Folder is empty</string>
-	<string name="playlist_empty">Playlist is empty</string>
-	<string name="upnp_route_provider_service">UPNP Route Provider Service</string>
 	
 </resources>

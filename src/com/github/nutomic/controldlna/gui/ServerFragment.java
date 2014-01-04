@@ -251,7 +251,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 		mCurrentServer = server;
 		getFiles(ROOT_DIRECTORY);
 		TextView emptyView = (TextView) getListView().getEmptyView();
-		emptyView.setText(R.string.folder_list_etmpy);    	
+		emptyView.setText(R.string.folder_list_empty);    	
     }
     /**
      * Opens a new directory and displays it.

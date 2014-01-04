@@ -391,10 +391,12 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			if (mPlaying) {
 				s.pause();
 				mPlayPause.setImageResource(R.drawable.ic_action_play);
+				mPlayPause.setContentDescription(getResources().getString(R.string.play));
 			} else {
 				s.resume();
 				mListView.smoothScrollToPosition(s.getCurrentTrack());
 				mPlayPause.setImageResource(R.drawable.ic_action_pause);
+				mPlayPause.setContentDescription(getResources().getString(R.string.pause));
 			}
 			mPlaying = !mPlaying;
 			break;
@@ -557,10 +559,12 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PENDING) {
 			mPlaying = true;
 			mPlayPause.setImageResource(R.drawable.ic_action_pause);
+			mPlayPause.setContentDescription(getResources().getString(R.string.pause));
 		}
 		else {
 			mPlaying = false;
 			mPlayPause.setImageResource(R.drawable.ic_action_play);
+			mPlayPause.setContentDescription(getResources().getString(R.string.play));
 		}
 		
 		if (mListView.getAdapter() == mPlaylistAdapter) 
