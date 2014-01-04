@@ -90,6 +90,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	private ImageButton mPlayPause;
 	private ImageButton mShuffle;
 	private ImageButton mRepeat;
+	private TextView mCurrentTimeView;
+	private TextView mTotalTimeView;
 	
 	private View mCurrentTrackView;
 	
@@ -186,7 +188,10 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
         
         mPlayPause = (ImageButton) getView().findViewById(R.id.playpause);
         mPlayPause.setOnClickListener(this);
-    	mPlayPause.setImageResource(R.drawable.ic_action_play);    	
+    	mPlayPause.setImageResource(R.drawable.ic_action_play);   
+    	
+    	mCurrentTimeView = (TextView) getView().findViewById(R.id.current_time);
+    	mTotalTimeView = (TextView) getView().findViewById(R.id.total_time);
 
     	getActivity().getApplicationContext().startService(
     			new Intent(getActivity(), MediaRouterPlayService.class));
@@ -321,6 +326,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		mControls.setVisibility(View.VISIBLE);
 		if (mStartPlayingOnSelect != -1) {
 			mMediaRouterPlayService.getService().play(mStartPlayingOnSelect);
+			changePlayPauseState(true);
 			mStartPlayingOnSelect = -1;
 		}
 		TextView emptyView = (TextView) mListView.getEmptyView();
@@ -390,15 +396,12 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		case R.id.playpause:
 			if (mPlaying) {
 				s.pause();
-				mPlayPause.setImageResource(R.drawable.ic_action_play);
-				mPlayPause.setContentDescription(getResources().getString(R.string.play));
+				changePlayPauseState(false);
 			} else {
 				s.resume();
 				mListView.smoothScrollToPosition(s.getCurrentTrack());
-				mPlayPause.setImageResource(R.drawable.ic_action_pause);
-				mPlayPause.setContentDescription(getResources().getString(R.string.pause));
+				changePlayPauseState(true);
 			}
-			mPlaying = !mPlaying;
 			break;
 		case R.id.shuffle:
 			s.toggleShuffleEnabled();
@@ -498,9 +501,10 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		mPlaylistAdapter.add(playlist);
 		mMediaRouterPlayService.getService().setPlaylist(playlist);
 		
-		if (mSelectedRoute != null)
+		if (mSelectedRoute != null) {
 			mMediaRouterPlayService.getService().play(start);
-		else {
+			changePlayPauseState(true);
+		} else {
 			Toast.makeText(getActivity(), R.string.select_route, Toast.LENGTH_SHORT)
 					.show();
 			mStartPlayingOnSelect = start;
@@ -546,29 +550,37 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		int currentTime = (int) status.getContentPosition() / 1000;
 		int totalTime = (int) status.getContentDuration() / 1000;
 		
-		TextView currentTimeView = (TextView) getView().findViewById(R.id.current_time);
-		currentTimeView.setText(generateTimeString(currentTime));
-		TextView totalTimeView = (TextView) getView().findViewById(R.id.total_time);
-		totalTimeView.setText(generateTimeString(totalTime));
+		mCurrentTimeView.setText(generateTimeString(currentTime));
+		mTotalTimeView.setText(generateTimeString(totalTime));
 		
 		mProgressBar.setProgress(currentTime);
 		mProgressBar.setMax(totalTime);
 		
-		if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PLAYING ||
-				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_BUFFERING ||
-				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PENDING) {
-			mPlaying = true;
+		if (status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PLAYING &&
+				status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_BUFFERING &&
+				status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PENDING)
+			changePlayPauseState(false);
+		
+		if (mListView.getAdapter() == mPlaylistAdapter) 
+			enableTrackHighlight();
+	}
+	
+	/**
+	 * Changes the state of mPlayPause button to pause/resume according to 
+	 * current playback state, also sets mPlaying.
+	 * 
+	 * @param playing True if an item is currently being played, false otherwise.
+	 */
+	private void changePlayPauseState(boolean playing) {
+		mPlaying = playing;
+		if (mPlaying) {
 			mPlayPause.setImageResource(R.drawable.ic_action_pause);
 			mPlayPause.setContentDescription(getResources().getString(R.string.pause));
 		}
 		else {
-			mPlaying = false;
 			mPlayPause.setImageResource(R.drawable.ic_action_play);
-			mPlayPause.setContentDescription(getResources().getString(R.string.play));
+			mPlayPause.setContentDescription(getResources().getString(R.string.play));			
 		}
-		
-		if (mListView.getAdapter() == mPlaylistAdapter) 
-			enableTrackHighlight();
 	}
 
 }
