@@ -132,7 +132,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
     /**
      * Selects remote playback route category.
      */
-    public RouteFragment() {		
+    public RouteFragment() {
         MediaRouteSelector mSelector = new MediaRouteSelector.Builder()
                 .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
                 .build();        
@@ -230,10 +230,13 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
     
     @Override
     public Callback onCreateCallback() {
-
         return new MediaRouter.Callback() {
             @Override
             public void onRouteAdded(MediaRouter router, RouteInfo route) {
+            	for (int i = 0; i < mRouteAdapter.getCount(); i++) {
+            		if (mRouteAdapter.getItem(i).getId().equals(route.getId()))
+            			return;
+            	}
                 mRouteAdapter.add(route);
             }
 
