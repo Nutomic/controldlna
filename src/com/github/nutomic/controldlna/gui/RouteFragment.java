@@ -388,12 +388,15 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		final MediaRouterPlayService s = mMediaRouterPlayService.getService();
 		switch (v.getId()) {
 		case R.id.playpause:
-			if (mPlaying)
+			if (mPlaying) {
 				s.pause();
-			else {
+				mPlayPause.setImageResource(R.drawable.ic_action_play);
+			} else {
 				s.resume();
 				mListView.smoothScrollToPosition(s.getCurrentTrack());
+				mPlayPause.setImageResource(R.drawable.ic_action_pause);
 			}
+			mPlaying = !mPlaying;
 			break;
 		case R.id.shuffle:
 			s.toggleShuffleEnabled();

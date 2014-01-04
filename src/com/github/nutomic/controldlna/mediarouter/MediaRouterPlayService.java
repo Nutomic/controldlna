@@ -256,6 +256,8 @@ public class MediaRouterPlayService extends Service {
         intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
         mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
+        mPollingStatus = false;
+        stopForeground(true);
 	}
 	
 	/**
@@ -272,7 +274,6 @@ public class MediaRouterPlayService extends Service {
         mPollingStatus = true;
         new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
         		.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
-
 	}
 	
 	/**
@@ -286,6 +287,8 @@ public class MediaRouterPlayService extends Service {
         intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
         mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
+        mPollingStatus = false;
+        stopForeground(true);
 	}
 	
 	public void seek(int seconds) {
@@ -356,6 +359,7 @@ public class MediaRouterPlayService extends Service {
 	public int getCurrentTrack() {
 		return mCurrentTrack;
 	}
+	
 	/**
 	 * Requests playback information every second, as long as RendererFragment
 	 * is attached or media is playing.
