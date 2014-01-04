@@ -41,7 +41,7 @@
   		<service android:name="com.github.nutomic.controldlna.upnp.RemotePlayService" />
 
         <service android:name="com.github.nutomic.controldlna.upnp.ProviderService"
-                android:label="sample_media_route_provider_service"
+                android:label="@string/upnp_route_provider_service"
                 android:process=":mrp">
             <intent-filter>
                 <action android:name="android.media.MediaRouteProviderService" />

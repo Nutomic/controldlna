@@ -21,5 +21,6 @@
     <string name="route_list_empty">No routes found. \nNew routes will be added automatically when they are available.</string>
 	<string name="folder_list_etmpy">Folder is empty</string>
 	<string name="playlist_empty">Playlist is empty</string>
+	<string name="upnp_route_provider_service">UPNP Route Provider Service</string>
 	
 </resources>
