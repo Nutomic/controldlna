@@ -300,8 +300,10 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	public void onItemClick(AdapterView<?> a, View v, final int position, long id) {
 		if (mListView.getAdapter() == mRouteAdapter)
 			playlistMode(mRouteAdapter.getItem(position));
-		else
+		else {
 			mMediaRouterPlayService.getService().play(position);
+			changePlayPauseState(true);
+		}
 	}
 	
 	/**
@@ -417,6 +419,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
                 	// Single tap.
                     mPreviousTapCount = 0;
                     s.play(s.getCurrentTrack());
+                    changePlayPauseState(true);
                 }
             };
             if (mPreviousTapCount == 1)
@@ -428,7 +431,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
             }
 			break;
 		case R.id.next:
-			s.playNext();
+			boolean stillPlaying = s.playNext();
+			changePlayPauseState(stillPlaying);
 			break;
 		case R.id.repeat:
 			s.toggleRepeatEnabled();

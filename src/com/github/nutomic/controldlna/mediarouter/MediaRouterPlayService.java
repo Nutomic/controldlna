@@ -315,25 +315,35 @@ public class MediaRouterPlayService extends Service {
 	
 	/**
 	 * Plays the track after current in the playlist.
+	 * 
+	 * @return True if another item is played, false if the end 
+	 * of the playlist is reached.
 	 */
-	public void playNext() {
+	public boolean playNext() {
 		if (mCurrentTrack == -1) 
-			return;
+			return false;
 		
-		if (mShuffle)
+		if (mShuffle) {
 			// Play random item.
 			play(new Random().nextInt(mPlaylist.size()));
-		else if (mCurrentTrack + 1 < mPlaylist.size())
+			return true;
+		}
+		else if (mCurrentTrack + 1 < mPlaylist.size()) {
 			// Playlist not over, play next item.
 			play(mCurrentTrack + 1);
-		else if (mRepeat)
+			return true;
+		}
+		else if (mRepeat) {
 			// Playlist over, repeat it.
 			play(0);
+			return true;
+		}
 		else {
 			// Playlist over, stop playback.
 			stop();
 			if (!mBound)
 				stopSelf();
+			return false;
 		}
 	}
 
