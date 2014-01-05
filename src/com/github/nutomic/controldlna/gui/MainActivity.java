@@ -36,7 +36,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -48,10 +47,10 @@ import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
 import android.view.KeyEvent;
+import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.widget.LinearLayout;
 
 import com.github.nutomic.controldlna.R;
 
@@ -140,49 +139,29 @@ public class MainActivity extends ActionBarActivity {
                 .setText(R.string.title_route)
                 .setTabListener(tabListener));  
         
-        ConnectivityManager connManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        ConnectivityManager connManager = (ConnectivityManager) 
+        		getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo wifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-    	final WifiManager wifiManager = (WifiManager) getSystemService(WIFI_SERVICE);
         final SharedPreferences prefs = getSharedPreferences("preferences.db", 0);
 
-        if (!wifi.isConnected() && !prefs.getBoolean("wifi_skip_dialog", false) && 
-        		!prefs.getBoolean("wifi_auto_enable", false)) {
-        	LinearLayout layout = new LinearLayout(this);
-        	layout.setOrientation(LinearLayout.VERTICAL);
-        	
-        	CheckBox cbAutoEnable = new CheckBox(this);
-        	cbAutoEnable.setText(R.string.auto_enable_wifi);
-        	cbAutoEnable.setChecked(prefs.getBoolean("wifi_auto_enable", false));
-        	cbAutoEnable.setOnCheckedChangeListener(new OnCheckedChangeListener() {				
-				@Override
-				public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-					prefs.edit().putBoolean("wifi_auto_enable", isChecked)
-					.commit();
-		        	if (isChecked)
-		        		wifiManager.setWifiEnabled(true);
-				}
-			});
-        	layout.addView(cbAutoEnable);
-        	
-        	CheckBox cbShowOnce = new CheckBox(this);
-        	cbShowOnce.setText(R.string.dont_show_dialog_again);
-        	cbShowOnce.setOnCheckedChangeListener(new OnCheckedChangeListener() {				
-				@Override
-				public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-					prefs.edit().putBoolean("wifi_skip_dialog", isChecked)
+        if (!wifi.isConnected() && !prefs.getBoolean("wifi_skip_dialog", false)) {        	
+        	View checkBoxView = View.inflate(this, R.layout.dialog_wifi_disabled, null);
+        	CheckBox checkBox = (CheckBox) checkBoxView.findViewById(R.id.dont_show_again);
+        	checkBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+
+        	    @Override
+        	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        	    	prefs.edit().putBoolean("wifi_skip_dialog", isChecked)
 							.commit();
-				}
-			});
-        	layout.addView(cbShowOnce);
+        	    }
+        	});
         	
             new AlertDialog.Builder(this)
-            		.setView(layout)
+            		.setView(checkBoxView)
             		.setTitle(R.string.warning_wifi_not_connected)
 					.setPositiveButton(android.R.string.ok, null)
 					.show();
         }
-        else if (!wifiManager.isWifiEnabled() && prefs.getBoolean("wifi_auto_enable", false))
-        	wifiManager.setWifiEnabled(true);  
         
         if (savedInstanceState != null) {
         	FragmentManager fm = getSupportFragmentManager();
