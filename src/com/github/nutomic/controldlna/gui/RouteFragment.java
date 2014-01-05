@@ -559,10 +559,12 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		
 		mProgressBar.setProgress(currentTime);
 		mProgressBar.setMax(totalTime);
-		
-		if (status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PLAYING &&
-				status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_BUFFERING &&
-				status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PENDING)
+
+		if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PLAYING ||
+				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_BUFFERING ||
+				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PENDING)
+			changePlayPauseState(true);
+		else
 			changePlayPauseState(false);
 		
 		if (mListView.getAdapter() == mPlaylistAdapter) 
