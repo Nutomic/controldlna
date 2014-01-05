@@ -56,6 +56,7 @@ import android.support.v7.media.MediaRouter;
 import android.support.v7.media.MediaRouter.ControlRequestCallback;
 import android.util.Pair;
 import android.util.SparseArray;
+import android.widget.Toast;
 
 import com.github.nutomic.controldlna.R;
 
@@ -76,6 +77,9 @@ final class Provider extends MediaRouteProvider {
 	// param: bundle media_item_status
 	// param: int hash
 	public static final int MSG_STATUS_INFO = 3;
+	// Indicates an error in communication between RemotePlayService and renderer.
+	// param: String error
+	public static final int MSG_ERROR = 4;
 	
 	/**
 	 * Allows passing and storing basic information about a device.
@@ -386,7 +390,12 @@ final class Provider extends MediaRouteProvider {
         				pair.first.getStringExtra(MediaControlIntent.EXTRA_ITEM_ID));
         	}
         	pair.second.onResult(status);
+    		break;
+		case MSG_ERROR:
+			Toast.makeText(getContext(), data.getString("error"), Toast.LENGTH_SHORT).show();
+			break;
         }
+			
     }
     
 }

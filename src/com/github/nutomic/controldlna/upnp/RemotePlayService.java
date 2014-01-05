@@ -165,6 +165,10 @@ public class RemotePlayService extends Service implements RegistryListener {
 						LastChange lastChange = new LastChange(
 								new AVTransportLastChangeParser(), 
 								m.get("LastChange").toString());
+						if (lastChange.getEventedValue(0, 
+								AVTransportVariable.TransportState.class) == null)
+							return;
+						
 						switch (lastChange.getEventedValue(0, 
 								AVTransportVariable.TransportState.class)
 										.getValue()) {
@@ -193,6 +197,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 						
 					} catch (Exception e) {
 						Log.w(TAG, "Failed to parse UPNP event", e);
+						sendError("Failed to parse UPNP event");
 					}	
 				}
 	
@@ -206,6 +211,8 @@ public class RemotePlayService extends Service implements RegistryListener {
 				@Override
 				protected void failed(GENASubscription sub, UpnpResponse responseStatus,
 						Exception exception, String defaultMsg) {	
+					Log.w(TAG, "Register Subscription Callback failed: " + defaultMsg, exception);
+					sendError("Register Subscription Callback failed: " + defaultMsg);
 				}
 			};
 			mUpnpService.getControlPoint().execute(mSubscriptionCallback);	
@@ -236,7 +243,8 @@ public class RemotePlayService extends Service implements RegistryListener {
 				@Override
 				public void failure(ActionInvocation invocation, 
 						UpnpResponse operation, String defaultMessage) {
-					Log.w(TAG, "Failed to set new Volume: " + defaultMessage);
+					Log.w(TAG, "Set volume failed: " + defaultMessage);
+					sendError("Set volume failed: " + defaultMessage);
 				}
 			});
 		}
@@ -255,7 +263,8 @@ public class RemotePlayService extends Service implements RegistryListener {
 				@Override
 	            public void failure(ActionInvocation invocation, 
 	            		UpnpResponse operation, String defaultMsg) {
-	                Log.w(TAG, "Playback failed: " + defaultMsg);
+	                Log.w(TAG, "Set URI failed: " + defaultMsg);
+	                sendError("Set URI failed: " + defaultMsg);
 	            }
 	            
 				@SuppressWarnings("rawtypes")
@@ -274,6 +283,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 						public void failure(ActionInvocation invocation, 
 								UpnpResponse operation, String defaultMessage) {
 							Log.w(TAG, "Play failed: " + defaultMessage);
+							sendError("Play failed: " + defaultMessage);
 						}
 					});
 				}
@@ -293,6 +303,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 				public void failure(ActionInvocation invocation, 
 						UpnpResponse operation, String defaultMessage) {
 					Log.w(TAG, "Pause failed, trying stop: " + defaultMessage);
+					sendError("Pause failed, trying stop: " + defaultMessage);
 					// Sometimes stop works even though pause does not.
 					try {
 						stop(sessionId);
@@ -313,7 +324,8 @@ public class RemotePlayService extends Service implements RegistryListener {
 				@SuppressWarnings("rawtypes") 
 				public void failure(ActionInvocation invocation, 
 						UpnpResponse operation, String defaultMessage) {
-					Log.w(TAG, "Play failed: " + defaultMessage);
+					Log.w(TAG, "Resume failed: " + defaultMessage);
+					sendError("Resume failed: " + defaultMessage);
 				}
 			});
 		}
@@ -332,7 +344,8 @@ public class RemotePlayService extends Service implements RegistryListener {
 				public void failure(ActionInvocation invocation,
 						org.teleal.cling.model.message.UpnpResponse operation,
 						String defaultMessage) {
-					Log.w(TAG, "Stop failed: " + defaultMessage);				
+					Log.w(TAG, "Stop failed: " + defaultMessage);
+					sendError("Stop failed: " + defaultMessage);				
 				}
 			});
 		}
@@ -353,6 +366,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 				public void failure(ActionInvocation invocation, 
 						UpnpResponse operation, String defaultMessage) {
 					Log.w(TAG, "Seek failed: " + defaultMessage);
+					sendError("Seek failed: " + defaultMessage);
 				}
 			});			    
 		}
@@ -402,12 +416,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 						
 				    	msg.getData().putBundle("media_item_status", status.build().asBundle());
 				    	msg.getData().putInt("hash", requestHash);
-				    	
-				        try {
-				            mListener.send(msg);
-				        } catch (RemoteException e) {
-				            e.printStackTrace();
-				        }
+				    	sendMessage(msg);			        
 					}
 			});
 		}
@@ -441,6 +450,27 @@ public class RemotePlayService extends Service implements RegistryListener {
 		super.onDestroy();
         unbindService(mUpnpServiceConnection);
         unregisterReceiver(mWifiReceiver);
+	}
+	
+	/**
+	 * Sends msg via Messenger to Provider.
+	 */
+	private void sendMessage(Message msg) {
+		try {
+	        mListener.send(msg);
+	    } catch (RemoteException e) {
+	        e.printStackTrace();
+	    }
+	}
+	
+	/**
+	 * Sends the error as a message via Messenger.
+	 * @param error
+	 */
+	private void sendError(String error) {
+		Message msg = Message.obtain(null, Provider.MSG_ERROR, 0, 0);
+    	msg.getData().putString("error", error);
+    	sendMessage(msg);
 	}
 	
 	/**
@@ -508,6 +538,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 	    			public void failure(ActionInvocation invocation, 
 	    					UpnpResponse operation, String defaultMessage) {
 	    				Log.w(TAG, "Failed to get current Volume: " + defaultMessage);
+	    				sendError("Failed to get current Volume: " + defaultMessage);
 	    			}
 	    			
 	    			@SuppressWarnings("rawtypes")
@@ -527,11 +558,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 	    	        			device.getDetails().getManufacturerDetails().getManufacturer(), 
 	    	        			currentVolume, 
 	    	        			maxVolume));
-	    		        try {
-	    		            mListener.send(msg);
-	    		        } catch (RemoteException e) {
-	    		            e.printStackTrace();
-	    		        }
+	    		        sendMessage(msg);
 	    			}
         		});
         	}
@@ -553,11 +580,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 			String udn = device.getIdentity().getUdn().toString();
 	    	msg.getData().putString("id", udn);
 	    	mDevices.remove(udn);	
-	        try {
-	            mListener.send(msg);
-	        } catch (RemoteException e) {
-	            e.printStackTrace();
-	        }
+	        sendMessage(msg);
 		}
 	}
 
