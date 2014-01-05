@@ -79,9 +79,9 @@ import com.github.nutomic.controldlna.utility.FileArrayAdapter;
  */
 public class ServerFragment extends ListFragment implements OnBackPressedListener {
 	
-	private final String TAG = "ServerFragment";
+	private final static String TAG = "ServerFragment";
 	
-	private final String ROOT_DIRECTORY = "0";
+	private final static String ROOT_DIRECTORY = "0";
 	
 	/**
 	 * ListView adapter for showing a list of DLNA media servers.
@@ -133,7 +133,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     	    		setListAdapter(mFileAdapter);
     	    		getFiles(true);
             	}
-		    	getListView().onRestoreInstanceState(mListState.lastElement());		
+
+		    	getListView().onRestoreInstanceState(mListState.peek());		
         	}
         }
 
@@ -176,9 +177,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
         	mRestoreServer = savedInstanceState.getString("current_server");
         	mCurrentPath.addAll(savedInstanceState.getStringArrayList("path"));
         	mListState.addAll(savedInstanceState.getParcelableArrayList("list_state"));
-        }
-        else 
-            mListState.push(getListView().onSaveInstanceState());
+        } else
+        	mListState.push(getListView().onSaveInstanceState());
     }
     
     /**
@@ -192,7 +192,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     			: "");
     	outState.putStringArrayList("path", new ArrayList<String>(mCurrentPath));
     	mListState.pop();
-    	mListState.push(getListView().onSaveInstanceState()); 
+    	mListState.push(getListView().onSaveInstanceState());
     	outState.putParcelableArrayList("list_state", new ArrayList<Parcelable>(mListState));
     }
     
@@ -200,7 +200,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     public void onPause() {
     	super.onPause();
     	mListState.pop();
-    	mListState.push(getListView().onSaveInstanceState());    	
+    	mListState.push(getListView().onSaveInstanceState());
     }
     
     @Override
@@ -237,10 +237,10 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
      */
     private void serverMode() {
 		setListAdapter(mServerAdapter);
-    	getListView().onRestoreInstanceState(mListState.peek());
 		mCurrentServer = null;
 		TextView emptyView = (TextView) getListView().getEmptyView();
-		emptyView.setText(R.string.device_list_empty);    	
+		emptyView.setText(R.string.device_list_empty);    
+		getListView().onRestoreInstanceState(mListState.pop());
     }
     
     /**
@@ -258,7 +258,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
      */
     private void getFiles(String directory) {
     	mListState.push(getListView().onSaveInstanceState());
-		mCurrentPath.push(directory);
+    	mCurrentPath.push(directory);
     	getFiles(false);
     }
     
@@ -291,7 +291,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 								for (Item i : didl.getItems())
 									mFileAdapter.add(i);
 								if (restoreListState)
-							    	getListView().onRestoreInstanceState(mListState.peek());
+							    	getListView().onRestoreInstanceState(mListState.pop());
 								else
 									getListView().setSelectionFromTop(0, 0);
 							}
@@ -322,7 +322,6 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     		return false;
     	
 		mCurrentPath.pop();
-		mListState.pop();
 		if (mCurrentPath.empty())
 			serverMode();
 		else
@@ -359,15 +358,10 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	            			.getDevice(udn, false) == null) {
 	            		mServerAdapter.deviceRemoved(d);
 	            		if (d.equals(mCurrentServer)) {
+	            			mListState.setSize(2);
 	            			mCurrentPath.clear();
-	            			mListState.setSize(1);
-	                		setListAdapter(mServerAdapter);
-	            	    	getListView().onRestoreInstanceState(mListState.firstElement());
-	                		mCurrentServer = null;
-				    		TextView emptyView = (TextView) getListView().getEmptyView();
-				    		emptyView.setText(R.string.device_list_empty);
+	            			serverMode();
 	            		}
-	            		i--;
 	            	}	        		
 	        	}
 	        }
