@@ -156,7 +156,6 @@ public class MediaRouterPlayService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		
     	mMediaRouter = MediaRouter.getInstance(this);
 		pollStatus();
 	}
@@ -438,4 +437,7 @@ public class MediaRouterPlayService extends Service {
 		return mRepeat;
 	}
 
+	public RouteInfo getCurrentRoute() {
+		return mCurrentRoute;
+	}
 }

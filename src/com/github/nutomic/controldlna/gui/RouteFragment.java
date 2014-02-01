@@ -97,6 +97,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	
 	private boolean mPlaying;
 	
+	private boolean mRestorePlaylistMode;
+	
 	private RouteAdapter mRouteAdapter;
 	
 	private FileArrayAdapter mPlaylistAdapter;
@@ -124,6 +126,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			mPlaylistAdapter.add(mMediaRouterPlayService.getService().getPlaylist());
 			receiveIsPlaying(mMediaRouterPlayService.getService().getCurrentTrack());
 			applyColors();
+			if (mRestorePlaylistMode)
+				playlistMode(mMediaRouterPlayService.getService().getCurrentRoute());
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -203,9 +207,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
         
         if (savedInstanceState != null) {
         	mListView.onRestoreInstanceState(savedInstanceState.getParcelable("list_state"));
-        	if (savedInstanceState.getBoolean("route_selected"))
-        		playlistMode(MediaRouter.getInstance(getActivity())
-        				.getSelectedRoute());
+        	mRestorePlaylistMode  = savedInstanceState.getBoolean("route_selected");
         }
     }
     
