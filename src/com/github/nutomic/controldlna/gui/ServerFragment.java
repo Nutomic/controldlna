@@ -131,6 +131,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
                 		.getDevice(new UDN(mRestoreServer.replace("uuid:", "")), false);
             	if (mCurrentServer != null) {
     	    		setListAdapter(mFileAdapter);
+    	    		// Duplicate the top element because getFiles will remove it.
+    	    		mListState.add(mListState.peek());
     	    		getFiles(true);
             	}
 
@@ -197,13 +199,6 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
     }
     
     @Override
-    public void onPause() {
-    	super.onPause();
-    	mListState.pop();
-    	mListState.push(getListView().onSaveInstanceState());
-    }
-    
-    @Override
     public void onDestroy() {
     	super.onDestroy();
         getActivity().getApplicationContext().unbindService(mUpnpServiceConnection);
@@ -266,7 +261,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
      * Displays the current directory on the ListView.
      * 
      * @param restoreListState True if we are going back up the directory tree, 
-     * 							which means we restore scroll position etc.
+     * 							which means we restore scroll position etc. This pops
+     * 							mListState.
      */
     private void getFiles(final boolean restoreListState) {
     	if (mCurrentServer == null) 
