@@ -27,40 +27,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.upnp;
 
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.teleal.cling.android.AndroidUpnpService;
 import org.teleal.cling.android.AndroidUpnpServiceImpl;
-import org.teleal.cling.controlpoint.SubscriptionCallback;
 import org.teleal.cling.model.action.ActionInvocation;
-import org.teleal.cling.model.gena.CancelReason;
-import org.teleal.cling.model.gena.GENASubscription;
 import org.teleal.cling.model.message.UpnpResponse;
 import org.teleal.cling.model.meta.Device;
 import org.teleal.cling.model.meta.LocalDevice;
 import org.teleal.cling.model.meta.RemoteDevice;
 import org.teleal.cling.model.meta.StateVariableAllowedValueRange;
-import org.teleal.cling.model.state.StateVariableValue;
 import org.teleal.cling.model.types.ServiceType;
 import org.teleal.cling.model.types.UDN;
 import org.teleal.cling.registry.Registry;
 import org.teleal.cling.registry.RegistryListener;
-import org.teleal.cling.support.avtransport.callback.GetPositionInfo;
-import org.teleal.cling.support.avtransport.callback.Pause;
-import org.teleal.cling.support.avtransport.callback.Play;
-import org.teleal.cling.support.avtransport.callback.Seek;
-import org.teleal.cling.support.avtransport.callback.SetAVTransportURI;
-import org.teleal.cling.support.avtransport.callback.Stop;
-import org.teleal.cling.support.avtransport.lastchange.AVTransportLastChangeParser;
-import org.teleal.cling.support.avtransport.lastchange.AVTransportVariable;
-import org.teleal.cling.support.lastchange.LastChange;
-import org.teleal.cling.support.model.PositionInfo;
-import org.teleal.cling.support.model.SeekMode;
 import org.teleal.cling.support.renderingcontrol.callback.GetVolume;
-import org.teleal.cling.support.renderingcontrol.callback.SetVolume;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -76,13 +59,12 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.support.v7.media.MediaItemStatus;
-import android.support.v7.media.MediaItemStatus.Builder;
 import android.util.Log;
 
 
 /**
- * Allows UPNP playback from within different apps by providing a proxy interface.
+ * Allows UPNP playback from different apps by providing a proxy interface.
+ * You can communicate to this service via RemotePlayServiceBinder.
  * 
  * @author Felix Ableitner
  *
@@ -91,9 +73,9 @@ public class RemotePlayService extends Service implements RegistryListener {
 
 	private static final String TAG = "RemotePlayService";
     
-    private Messenger mListener;
+    Messenger mListener;
     
-    private ConcurrentHashMap<String, Device<?, ?, ?>> mDevices = 
+    ConcurrentHashMap<String, Device<?, ?, ?>> mDevices = 
     		new ConcurrentHashMap<String, Device<?, ?, ?>>();
 	
     protected AndroidUpnpService mUpnpService;
@@ -120,320 +102,16 @@ public class RemotePlayService extends Service implements RegistryListener {
         }
     };
     
+
     /**
      * All active binders. The Hashmap value is unused.
      */
-    WeakHashMap<Binder, Boolean> mBinders = new WeakHashMap<Binder, Boolean>();
-	
-	private class Binder extends IRemotePlayService.Stub {
-	    
-	    private Device<?, ?, ?> mCurrentRenderer;
-	    
-	    private int mPlaybackState;
-	    
-	    private boolean mManuallyStopped;
-	    
-		private SubscriptionCallback mSubscriptionCallback;
-
-		@Override
-		public void startSearch(Messenger listener)
-				throws RemoteException {
-	    	mListener = listener;
-		}
-
-		@Override
-		public void selectRenderer(String id) throws RemoteException {
-			mCurrentRenderer = mDevices.get(id);
-			for (Binder b : mBinders.keySet()) {
-				if (b != this && mCurrentRenderer.equals(b.mCurrentRenderer))
-					b.unselectRenderer("");
-			}
-			
-			mSubscriptionCallback = new SubscriptionCallback(
-					mCurrentRenderer.findService(
-			    			new ServiceType("schemas-upnp-org", "AVTransport")), 600) {
-	
-				@SuppressWarnings("rawtypes")
-				@Override
-				protected void established(GENASubscription sub) {
-				}
-	
-				@SuppressWarnings("rawtypes")
-				@Override
-				protected void ended(GENASubscription sub, CancelReason reason,
-						UpnpResponse response) {			
-				}
-	
-				@SuppressWarnings("rawtypes")
-				@Override
-				protected void eventReceived(final GENASubscription sub) {				
-					@SuppressWarnings("unchecked")
-					Map<String, StateVariableValue> m = sub.getCurrentValues();
-					try {
-						LastChange lastChange = new LastChange(
-								new AVTransportLastChangeParser(), 
-								m.get("LastChange").toString());
-						if (lastChange.getEventedValue(0, 
-								AVTransportVariable.TransportState.class) == null)
-							return;
-						
-						switch (lastChange.getEventedValue(0, 
-								AVTransportVariable.TransportState.class)
-										.getValue()) {
-						case PLAYING:
-							mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PLAYING;
-					    	break;
-						case PAUSED_PLAYBACK:
-							mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PAUSED;
-					    	break;
-						case STOPPED:
-							if (mManuallyStopped) {
-								mManuallyStopped = false;
-								mPlaybackState = MediaItemStatus.PLAYBACK_STATE_CANCELED;
-							}
-							else
-								mPlaybackState = MediaItemStatus.PLAYBACK_STATE_FINISHED;							
-							break;
-						case TRANSITIONING:
-							mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PENDING;
-							break;
-						case NO_MEDIA_PRESENT:
-							mPlaybackState = MediaItemStatus.PLAYBACK_STATE_ERROR;
-							break;
-						default:
-					    }
-						
-					} catch (Exception e) {
-						Log.w(TAG, "Failed to parse UPNP event", e);
-						sendError("Failed to parse UPNP event");
-					}	
-				}
-	
-				@SuppressWarnings("rawtypes")
-				@Override
-				protected void eventsMissed(GENASubscription sub, 
-						int numberOfMissedEvents) {	
-				}
-	
-				@SuppressWarnings("rawtypes")
-				@Override
-				protected void failed(GENASubscription sub, UpnpResponse responseStatus,
-						Exception exception, String defaultMsg) {	
-					Log.w(TAG, "Register Subscription Callback failed: " + defaultMsg, exception);
-					sendError("Register Subscription Callback failed: " + defaultMsg);
-				}
-			};
-			mUpnpService.getControlPoint().execute(mSubscriptionCallback);	
-		}
-
-		/**
-		 * Ends selection, stops playback if possible.
-		 */
-		@Override
-		public void unselectRenderer(String sessionId) throws RemoteException {
-			if (mDevices.get(sessionId) != null)
-				stop(sessionId);
-			if (mSubscriptionCallback != null)
-				mSubscriptionCallback.end();
-	    	mCurrentRenderer = null;					
-		}
-
-		/**
-	     * Sets an absolute volume. The value is assumed to be within the valid 
-	     * volume range.
-	     */
-		@Override
-		public void setVolume(int volume) throws RemoteException {
-			mUpnpService.getControlPoint().execute(
-					new SetVolume(getService(mCurrentRenderer, 
-							"RenderingControl"), volume) {
-				
-				@SuppressWarnings("rawtypes")
-				@Override
-				public void failure(ActionInvocation invocation, 
-						UpnpResponse operation, String defaultMessage) {
-					Log.w(TAG, "Set volume failed: " + defaultMessage);
-					sendError("Set volume failed: " + defaultMessage);
-				}
-			});
-		}
-
-		/**
-		 * Sets playback source and metadata, then starts playing on 
-		 * current renderer.
-		 */
-		@Override
-		public void play(String uri, String metadata) throws RemoteException {
-			mPlaybackState = MediaItemStatus.PLAYBACK_STATE_BUFFERING;
-			mUpnpService.getControlPoint().execute(new SetAVTransportURI(
-					getService(mCurrentRenderer, "AVTransport"), 
-	    			uri, metadata) {
-				@SuppressWarnings("rawtypes")
-				@Override
-	            public void failure(ActionInvocation invocation, 
-	            		UpnpResponse operation, String defaultMsg) {
-	                Log.w(TAG, "Set URI failed: " + defaultMsg);
-	                sendError("Set URI failed: " + defaultMsg);
-	            }
-	            
-				@SuppressWarnings("rawtypes")
-				@Override
-	    		public void success(ActionInvocation invocation) {
-					mUpnpService.getControlPoint().execute(
-							new Play(getService(mCurrentRenderer, 
-									"AVTransport")) {
-						
-						@Override
-						public void success(ActionInvocation invocation) {
-							mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PLAYING;
-						}
-						
-						@Override
-						public void failure(ActionInvocation invocation, 
-								UpnpResponse operation, String defaultMessage) {
-							Log.w(TAG, "Play failed: " + defaultMessage);
-							sendError("Play failed: " + defaultMessage);
-						}
-					});
-				}
-	        });
-		}
-		
-		/**
-		 * Pauses playback on current renderer.
-		 */
-		@Override
-		public void pause(final String sessionId) throws RemoteException {
-			mUpnpService.getControlPoint().execute(
-					new Pause(getService(mDevices.get(sessionId), "AVTransport")) {
-				
-				@SuppressWarnings("rawtypes")
-				@Override
-				public void failure(ActionInvocation invocation, 
-						UpnpResponse operation, String defaultMessage) {
-					Log.w(TAG, "Pause failed, trying stop: " + defaultMessage);
-					sendError("Pause failed, trying stop: " + defaultMessage);
-					// Sometimes stop works even though pause does not.
-					try {
-						stop(sessionId);
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-				}
-			});			
-		}
-
-		@Override
-		public void resume(String sessionId) throws RemoteException {
-			mUpnpService.getControlPoint().execute(
-					new Play(getService(mDevices.get(sessionId), 
-							"AVTransport")) {
-						
-				@Override
-				@SuppressWarnings("rawtypes") 
-				public void failure(ActionInvocation invocation, 
-						UpnpResponse operation, String defaultMessage) {
-					Log.w(TAG, "Resume failed: " + defaultMessage);
-					sendError("Resume failed: " + defaultMessage);
-				}
-			});
-		}
-
-		/**
-		 * Stops playback on current renderer.
-		 */
-		@Override
-		public void stop(String sessionId) throws RemoteException {
-			mManuallyStopped = true;
-			mUpnpService.getControlPoint().execute(
-				new Stop(getService(mDevices.get(sessionId), "AVTransport")) {
-				
-				@SuppressWarnings("rawtypes")
-				@Override
-				public void failure(ActionInvocation invocation,
-						org.teleal.cling.model.message.UpnpResponse operation,
-						String defaultMessage) {
-					Log.w(TAG, "Stop failed: " + defaultMessage);
-					sendError("Stop failed: " + defaultMessage);				
-				}
-			});
-		}
-	    
-	    /**
-	     * Seeks to the given absolute time in seconds.
-	     */
-		@Override
-		public void seek(String sessionId, String itemId, long milliseconds) 
-				throws RemoteException {
-			mUpnpService.getControlPoint().execute(new Seek(
-	    			getService(mDevices.get(sessionId), "AVTransport"), 
-	    			SeekMode.REL_TIME, 
-	    			Integer.toString((int) milliseconds / 1000)) {
-				
-				@SuppressWarnings("rawtypes")
-				@Override
-				public void failure(ActionInvocation invocation, 
-						UpnpResponse operation, String defaultMessage) {
-					Log.w(TAG, "Seek failed: " + defaultMessage);
-					sendError("Seek failed: " + defaultMessage);
-				}
-			});			    
-		}
-
-		/**
-		 * Sends a message with current status for the route and item.
-		 * 
-		 * If itemId does not match with the item currently played, 
-		 * MediaItemStatus.PLAYBACK_STATE_INVALIDATED is returned.
-		 * 
-		 * @param sessionId Identifier of the session (equivalent to route) to get info for.
-		 * @param itemId Identifier of the item to get info for.
-		 * @param requestHash Passed back in message to find original request object.
-		 */
-		@Override
-		public void getItemStatus(String sessionId, final String itemId, final int requestHash) 
-				throws RemoteException {
-			mUpnpService.getControlPoint().execute(new GetPositionInfo(
-						getService(mDevices.get(sessionId), "AVTransport")) {
-	
-					@SuppressWarnings("rawtypes")
-					@Override
-					public void failure(ActionInvocation invocation,
-							UpnpResponse operation, String defaultMessage) {
-						Log.w(TAG, "Get position failed: " + defaultMessage);	
-					}
-	
-					@SuppressWarnings("rawtypes")
-					@Override
-					public void received(ActionInvocation invocation, PositionInfo positionInfo) {
-						if (positionInfo.getTrackURI() == null)
-							return;
-						
-						Message msg = Message.obtain(null, Provider.MSG_STATUS_INFO, 0, 0);
-						Builder status = null;
-						
-						if (positionInfo.getTrackURI().equals(itemId)) {
-							status = new MediaItemStatus.Builder(mPlaybackState)
-									.setContentPosition(positionInfo.getTrackElapsedSeconds() * 1000)
-									.setContentDuration(positionInfo.getTrackDurationSeconds() * 1000)
-									.setTimestamp(positionInfo.getAbsCount());
-						}
-						else {
-							status = new MediaItemStatus.Builder(
-									MediaItemStatus.PLAYBACK_STATE_INVALIDATED);
-						}
-						
-				    	msg.getData().putBundle("media_item_status", status.build().asBundle());
-				    	msg.getData().putInt("hash", requestHash);
-				    	sendMessage(msg);			        
-					}
-			});
-		}
-	};
+    WeakHashMap<RemotePlayServiceBinder, Boolean> mBinders = 
+    		new WeakHashMap<RemotePlayServiceBinder, Boolean>();
 	
 	@Override
 	public IBinder onBind(Intent itnent) {
-		Binder b = new Binder();
+		RemotePlayServiceBinder b = new RemotePlayServiceBinder(this);
 		mBinders.put(b, true);
 		return b;
 	}
@@ -466,7 +144,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 	/**
 	 * Sends msg via Messenger to Provider.
 	 */
-	private void sendMessage(Message msg) {
+	void sendMessage(Message msg) {
 		try {
 	        mListener.send(msg);
 	    } catch (RemoteException e) {
@@ -478,7 +156,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 	 * Sends the error as a message via Messenger.
 	 * @param error
 	 */
-	private void sendError(String error) {
+	void sendError(String error) {
 		Message msg = Message.obtain(null, Provider.MSG_ERROR, 0, 0);
     	msg.getData().putString("error", error);
     	sendMessage(msg);
@@ -508,7 +186,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 	            	if (mUpnpService.getControlPoint().getRegistry()
 	            			.getDevice(new UDN(d.getKey()), false) == null) {
 	            		deviceRemoved(d.getValue());
-	            		for (Binder b : mBinders.keySet()) {
+	            		for (RemotePlayServiceBinder b : mBinders.keySet()) {
 	            			if (b.mCurrentRenderer.equals(d.getValue())) {
 	            				b.mSubscriptionCallback.end(); 
 	            				b.mCurrentRenderer = null;
@@ -523,7 +201,7 @@ public class RemotePlayService extends Service implements RegistryListener {
     /**
      * Returns a device service by name for direct queries.
      */
-	private org.teleal.cling.model.meta.Service<?, ?> getService(
+	org.teleal.cling.model.meta.Service<?, ?> getService(
 			Device<?, ?, ?> device, String name) {
 		return device.findService(
     			new ServiceType("schemas-upnp-org", name));
