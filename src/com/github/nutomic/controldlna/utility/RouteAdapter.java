@@ -17,22 +17,22 @@ public class RouteAdapter extends ArrayAdapter<RouteInfo> {
 	public RouteAdapter(Context context) {
 		super(context, R.layout.list_item);
 	}
-	
+
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		if (convertView == null) {
-	        LayoutInflater inflater = (LayoutInflater) getContext()
-	                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-	        convertView = inflater.inflate(R.layout.list_item, parent, false);
+			LayoutInflater inflater = (LayoutInflater) getContext()
+					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			convertView = inflater.inflate(R.layout.list_item, parent, false);
 		}
-		
-        TextView title = (TextView) convertView.findViewById(R.id.title);
-        title.setText(getItem(position).getName());
-        
-        TextView subtitle = (TextView) convertView.findViewById(R.id.subtitle);
-        subtitle.setText(getItem(position).getDescription());
-        
-        return convertView;
+
+		TextView title = (TextView) convertView.findViewById(R.id.title);
+		title.setText(getItem(position).getName());
+
+		TextView subtitle = (TextView) convertView.findViewById(R.id.subtitle);
+		subtitle.setText(getItem(position).getDescription());
+
+		return convertView;
 	}
 
 	/**

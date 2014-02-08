@@ -4,12 +4,12 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
+ * Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
+ * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
+ * Neither the name of the <organization> nor the
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -75,293 +75,290 @@ import com.github.nutomic.controldlna.utility.FileArrayAdapter;
  * directories.
  * 
  * @author Felix Ableitner
- *
+ * 
  */
 public class ServerFragment extends ListFragment implements OnBackPressedListener {
-	
+
 	private final static String TAG = "ServerFragment";
-	
+
 	private final static String ROOT_DIRECTORY = "0";
-	
+
 	/**
 	 * ListView adapter for showing a list of DLNA media servers.
 	 */
 	private DeviceArrayAdapter mServerAdapter;
-	
+
 	/**
-	 * Reference to the media server of which folders are currently shown. 
+	 * Reference to the media server of which folders are currently shown.
 	 * Null if media servers are shown.
 	 */
 	private Device<?, ?, ?> mCurrentServer;
-	
+
 	private String mRestoreServer;
-	
+
 	/**
 	 * ListView adapter for showing a list of files/folders.
 	 */
 	private FileArrayAdapter mFileAdapter;
 
 	/**
-	 * Holds path to current directory on top, paths for higher directories 
+	 * Holds path to current directory on top, paths for higher directories
 	 * behind that.
 	 */
 	private Stack<String> mCurrentPath = new Stack<String>();
-	
+
 	/**
 	 * Holds the scroll position in the list view at each directory level.
 	 */
 	private Stack<Parcelable> mListState = new Stack<Parcelable>();
-	
-    protected AndroidUpnpService mUpnpService;
 
-    private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
+	protected AndroidUpnpService mUpnpService;
 
-    	/**
-    	 * Registers DeviceListener, adds known devices and starts search if requested.
-    	 */
+	private ServiceConnection mUpnpServiceConnection = new ServiceConnection() {
+
+		/**
+		 * Registers DeviceListener, adds known devices and starts search if requested.
+		 */
 		public void onServiceConnected(ComponentName className, IBinder service) {
-            mUpnpService = (AndroidUpnpService) service;
-            mUpnpService.getRegistry().addListener(mServerAdapter);
-            for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices())
-            		mServerAdapter.deviceAdded(d);
-        	mUpnpService.getControlPoint().search();
-        	
-        	if (mRestoreServer != null) {
-            	mCurrentServer = mUpnpService.getControlPoint().getRegistry()
-                		.getDevice(new UDN(mRestoreServer.replace("uuid:", "")), false);
-            	if (mCurrentServer != null) {
-    	    		setListAdapter(mFileAdapter);
-    	    		// Duplicate the top element because getFiles will remove it.
-    	    		mListState.add(mListState.peek());
-    	    		getFiles(true);
-            	}
+			mUpnpService = (AndroidUpnpService) service;
+			mUpnpService.getRegistry().addListener(mServerAdapter);
+			for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices())
+				mServerAdapter.deviceAdded(d);
+			mUpnpService.getControlPoint().search();
 
-		    	getListView().onRestoreInstanceState(mListState.peek());		
-        	}
-        }
+			if (mRestoreServer != null) {
+				mCurrentServer = mUpnpService.getControlPoint().getRegistry()
+						.getDevice(new UDN(mRestoreServer.replace("uuid:", "")), false);
+				if (mCurrentServer != null) {
+					setListAdapter(mFileAdapter);
+					// Duplicate the top element because getFiles will remove it.
+					mListState.add(mListState.peek());
+					getFiles(true);
+				}
 
-        public void onServiceDisconnected(ComponentName className) {
-            mUpnpService = null;
-        }
-    };
-    
+				getListView().onRestoreInstanceState(mListState.peek());
+			}
+		}
+
+		public void onServiceDisconnected(ComponentName className) {
+			mUpnpService = null;
+		}
+	};
+
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 
-        return inflater.inflate(R.layout.server_fragment, null);
+		return inflater.inflate(R.layout.server_fragment, null);
 	};
-    
+
 	/**
-	 * Initializes ListView adapters, launches Cling UPNP service, registers 
+	 * Initializes ListView adapters, launches Cling UPNP service, registers
 	 * wifi state change listener and restores instance state if possible.
 	 */
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-    	super.onActivityCreated(savedInstanceState);
-    	mFileAdapter = new FileArrayAdapter(getActivity());
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		mFileAdapter = new FileArrayAdapter(getActivity());
 
-    	mServerAdapter = new DeviceArrayAdapter(
-    			getActivity(), DeviceArrayAdapter.SERVER);
-        setListAdapter(mServerAdapter);
-        getActivity().getApplicationContext().bindService(
-                new Intent(getActivity(), AndroidUpnpServiceImpl.class),
-                mUpnpServiceConnection,
-                Context.BIND_AUTO_CREATE
-        );
-        
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        getActivity().registerReceiver(mWifiReceiver, filter);
-        
-        if (savedInstanceState != null) {
-        	mRestoreServer = savedInstanceState.getString("current_server");
-        	mCurrentPath.addAll(savedInstanceState.getStringArrayList("path"));
-        	mListState.addAll(savedInstanceState.getParcelableArrayList("list_state"));
-        } else
-        	mListState.push(getListView().onSaveInstanceState());
-    }
-    
-    /**
-     * Stores current server and path/list state stacks.
-     */
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-    	super.onSaveInstanceState(outState);
-    	outState.putString("current_server", (mCurrentServer != null) 
-    			? mCurrentServer.getIdentity().getUdn().toString() 
-    			: "");
-    	outState.putStringArrayList("path", new ArrayList<String>(mCurrentPath));
-    	mListState.pop();
-    	mListState.push(getListView().onSaveInstanceState());
-    	outState.putParcelableArrayList("list_state", new ArrayList<Parcelable>(mListState));
-    }
-    
-    @Override
-    public void onDestroy() {
-    	super.onDestroy();
-        getActivity().getApplicationContext().unbindService(mUpnpServiceConnection);
-        getActivity().unregisterReceiver(mWifiReceiver);
-    }
-    
-    /**
-     * Enters directory browsing mode or enters a deeper level directory.
-     */
-    @Override
-    public void onListItemClick(ListView l, View v, int position, long id) {
-    	if (getListAdapter() == mServerAdapter)
-    		browsingMode(mServerAdapter.getItem(position));
-    	else if (getListAdapter() == mFileAdapter) {
-    		if (mFileAdapter.getItem(position) instanceof Container)
-    			getFiles(((Container) mFileAdapter.getItem(position)).getId());
-    		else {
-    			List<Item> playlist = new ArrayList<Item>();
-    			for (int i = 0; i < mFileAdapter.getCount(); i++) {
-    				if (mFileAdapter.getItem(i) instanceof Item)
-    					playlist.add((Item) mFileAdapter.getItem(i));
-    			}
-    			MainActivity activity = (MainActivity) getActivity();
-    			activity.play(playlist, position);
-    		}
-    	}
-    }
+		mServerAdapter = new DeviceArrayAdapter(
+				getActivity(), DeviceArrayAdapter.SERVER);
+		setListAdapter(mServerAdapter);
+		getActivity().getApplicationContext().bindService(
+				new Intent(getActivity(), AndroidUpnpServiceImpl.class),
+				mUpnpServiceConnection,
+				Context.BIND_AUTO_CREATE
+				);
 
-    /**
-     * Displays available servers in the ListView.
-     */
-    private void serverMode() {
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+		filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+		getActivity().registerReceiver(mWifiReceiver, filter);
+
+		if (savedInstanceState != null) {
+			mRestoreServer = savedInstanceState.getString("current_server");
+			mCurrentPath.addAll(savedInstanceState.getStringArrayList("path"));
+			mListState.addAll(savedInstanceState.getParcelableArrayList("list_state"));
+		} else
+			mListState.push(getListView().onSaveInstanceState());
+	}
+
+	/**
+	 * Stores current server and path/list state stacks.
+	 */
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putString("current_server", (mCurrentServer != null)
+				? mCurrentServer.getIdentity().getUdn().toString()
+						: "");
+		outState.putStringArrayList("path", new ArrayList<String>(mCurrentPath));
+		mListState.pop();
+		mListState.push(getListView().onSaveInstanceState());
+		outState.putParcelableArrayList("list_state", new ArrayList<Parcelable>(mListState));
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		getActivity().getApplicationContext().unbindService(mUpnpServiceConnection);
+		getActivity().unregisterReceiver(mWifiReceiver);
+	}
+
+	/**
+	 * Enters directory browsing mode or enters a deeper level directory.
+	 */
+	@Override
+	public void onListItemClick(ListView l, View v, int position, long id) {
+		if (getListAdapter() == mServerAdapter)
+			browsingMode(mServerAdapter.getItem(position));
+		else if (getListAdapter() == mFileAdapter)
+			if (mFileAdapter.getItem(position) instanceof Container)
+				getFiles(((Container) mFileAdapter.getItem(position)).getId());
+			else {
+				List<Item> playlist = new ArrayList<Item>();
+				for (int i = 0; i < mFileAdapter.getCount(); i++)
+					if (mFileAdapter.getItem(i) instanceof Item)
+						playlist.add((Item) mFileAdapter.getItem(i));
+				MainActivity activity = (MainActivity) getActivity();
+				activity.play(playlist, position);
+			}
+	}
+
+	/**
+	 * Displays available servers in the ListView.
+	 */
+	private void serverMode() {
 		setListAdapter(mServerAdapter);
 		mCurrentServer = null;
 		TextView emptyView = (TextView) getListView().getEmptyView();
-		emptyView.setText(R.string.device_list_empty);    
+		emptyView.setText(R.string.device_list_empty);
 		getListView().onRestoreInstanceState(mListState.pop());
-    }
-    
-    /**
-     * Displays files for server (starting from root).
-     */
-    private void browsingMode(Device<?, ?, ?> server) {
+	}
+
+	/**
+	 * Displays files for server (starting from root).
+	 */
+	private void browsingMode(Device<?, ?, ?> server) {
 		setListAdapter(mFileAdapter);
 		mCurrentServer = server;
 		getFiles(ROOT_DIRECTORY);
 		TextView emptyView = (TextView) getListView().getEmptyView();
-		emptyView.setText(R.string.folder_list_empty);    	
-    }
-    /**
-     * Opens a new directory and displays it.
-     */
-    private void getFiles(String directory) {
-    	mListState.push(getListView().onSaveInstanceState());
-    	mCurrentPath.push(directory);
-    	getFiles(false);
-    }
-    
-    /**
-     * Displays the current directory on the ListView.
-     * 
-     * @param restoreListState True if we are going back up the directory tree, 
-     * 							which means we restore scroll position etc. This pops
-     * 							mListState.
-     */
-    private void getFiles(final boolean restoreListState) {
-    	if (mCurrentServer == null) 
-    		return;
-    	
-    	Service<?, ?> service = mCurrentServer.findService(
-    			new ServiceType("schemas-upnp-org", "ContentDirectory"));
-    	mUpnpService.getControlPoint().execute(new Browse(service, 
+		emptyView.setText(R.string.folder_list_empty);
+	}
+
+	/**
+	 * Opens a new directory and displays it.
+	 */
+	private void getFiles(String directory) {
+		mListState.push(getListView().onSaveInstanceState());
+		mCurrentPath.push(directory);
+		getFiles(false);
+	}
+
+	/**
+	 * Displays the current directory on the ListView.
+	 * 
+	 * @param restoreListState True if we are going back up the directory tree,
+	 * 							which means we restore scroll position etc. This pops
+	 * 							mListState.
+	 */
+	private void getFiles(final boolean restoreListState) {
+		if (mCurrentServer == null)
+			return;
+
+		Service<?, ?> service = mCurrentServer.findService(
+				new ServiceType("schemas-upnp-org", "ContentDirectory"));
+		mUpnpService.getControlPoint().execute(new Browse(service,
 				mCurrentPath.peek(), BrowseFlag.DIRECT_CHILDREN) {
-		
-					@SuppressWarnings("rawtypes")
+
+			@SuppressWarnings("rawtypes")
+			@Override
+			public void received(ActionInvocation actionInvocation,
+					final DIDLContent didl) {
+				getActivity().runOnUiThread(new Runnable() {
+
 					@Override
-					public void received(ActionInvocation actionInvocation, 
-							final DIDLContent didl) {
-						getActivity().runOnUiThread(new Runnable() {
-							
-							@Override
-							public void run() {
-								mFileAdapter.clear();
-								for (Container c : didl.getContainers()) 
-									mFileAdapter.add(c);
-								for (Item i : didl.getItems())
-									mFileAdapter.add(i);
-								if (restoreListState)
-							    	getListView().onRestoreInstanceState(mListState.pop());
-								else
-									getListView().setSelectionFromTop(0, 0);
-							}
-						});	
+					public void run() {
+						mFileAdapter.clear();
+						for (Container c : didl.getContainers())
+							mFileAdapter.add(c);
+						for (Item i : didl.getItems())
+							mFileAdapter.add(i);
+						if (restoreListState)
+							getListView().onRestoreInstanceState(mListState.pop());
+						else
+							getListView().setSelectionFromTop(0, 0);
 					}
-		
-					@Override
-					public void updateStatus(Status status) {
-					}
-		
-					@SuppressWarnings("rawtypes")
-					@Override
-					public void failure(ActionInvocation actionInvocation, 
-							UpnpResponse operation,	String defaultMessage) {
-						Log.w(TAG, "Failed to load directory contents: " + 
-							defaultMessage);
-					}
-					
-				});    	
-    }
-	
-    /**
-     * Handles back button press to traverse directories (while browsing 
-     * directories).
-     */
+				});
+			}
+
+			@Override
+			public void updateStatus(Status status) {
+			}
+
+			@SuppressWarnings("rawtypes")
+			@Override
+			public void failure(ActionInvocation actionInvocation,
+					UpnpResponse operation,	String defaultMessage) {
+				Log.w(TAG, "Failed to load directory contents: " +
+						defaultMessage);
+			}
+
+		});
+	}
+
+	/**
+	 * Handles back button press to traverse directories (while browsing
+	 * directories).
+	 */
 	public boolean onBackPressed() {
-    	if (getListAdapter() == mServerAdapter)
-    		return false;
-    	
+		if (getListAdapter() == mServerAdapter)
+			return false;
+
 		mCurrentPath.pop();
 		if (mCurrentPath.empty())
 			serverMode();
 		else
 			getFiles(true);
-		return true;		
+		return true;
 	}
-	
+
 	/**
-	 * Starts device search on wifi connect, removes unreachable 
+	 * Starts device search on wifi connect, removes unreachable
 	 * devices on wifi disconnect.
 	 */
 	private BroadcastReceiver mWifiReceiver = new BroadcastReceiver() {
 
-	    @Override
-	    public void onReceive(Context context, Intent intent) {     
-	        getActivity();
-			ConnectivityManager connManager = (ConnectivityManager) 
-	        		getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
-	        NetworkInfo wifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-	       
-	        if (wifi.isConnected()) {
-	        	if (mUpnpService != null) {
-	                for (Device<?, ?, ?> d : mUpnpService.getControlPoint()
-	                		.getRegistry().getDevices())
-	                	mServerAdapter.deviceAdded(d);
-		        	mUpnpService.getControlPoint().search();
-	        	}
-	        }
-	        else {
-	        	for (int i = 0; i < mServerAdapter.getCount(); i++) {
-	        		Device<?, ?, ?> d = mServerAdapter.getItem(i);
-	        		UDN udn = new UDN(d.getIdentity().getUdn().toString());
-	            	if (mUpnpService.getControlPoint().getRegistry()
-	            			.getDevice(udn, false) == null) {
-	            		mServerAdapter.deviceRemoved(d);
-	            		if (d.equals(mCurrentServer)) {
-	            			mListState.setSize(2);
-	            			mCurrentPath.clear();
-	            			serverMode();
-	            		}
-	            	}	        		
-	        	}
-	        }
-	    }   
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			getActivity();
+			ConnectivityManager connManager = (ConnectivityManager)
+					getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+			NetworkInfo wifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+
+			if (wifi.isConnected()) {
+				if (mUpnpService != null) {
+					for (Device<?, ?, ?> d : mUpnpService.getControlPoint()
+							.getRegistry().getDevices())
+						mServerAdapter.deviceAdded(d);
+					mUpnpService.getControlPoint().search();
+				}
+			} else
+				for (int i = 0; i < mServerAdapter.getCount(); i++) {
+					Device<?, ?, ?> d = mServerAdapter.getItem(i);
+					UDN udn = new UDN(d.getIdentity().getUdn().toString());
+					if (mUpnpService.getControlPoint().getRegistry()
+							.getDevice(udn, false) == null) {
+						mServerAdapter.deviceRemoved(d);
+						if (d.equals(mCurrentServer)) {
+							mListState.setSize(2);
+							mCurrentPath.clear();
+							serverMode();
+						}
+					}
+				}
+		}
 	};
 
 }

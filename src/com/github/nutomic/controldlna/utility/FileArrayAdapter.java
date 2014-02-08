@@ -4,12 +4,12 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
+ * Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
+ * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
+ * Neither the name of the <organization> nor the
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -51,7 +51,7 @@ import com.github.nutomic.controldlna.R;
  *
  */
 public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
-	
+
 	/**
 	 * Provides sorting of elements by track number.
 	 */
@@ -61,7 +61,7 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 
 			@Override
 			public int compare(DIDLObject lhs, DIDLObject rhs) {
-				if (lhs instanceof MusicTrack && rhs instanceof MusicTrack) 
+				if (lhs instanceof MusicTrack && rhs instanceof MusicTrack)
 					return ((MusicTrack) rhs).getOriginalTrackNumber() -
 							((MusicTrack) lhs).getOriginalTrackNumber();
 				else if (lhs instanceof Item && rhs instanceof Container)
@@ -75,37 +75,37 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 			}
 		});
 	}
-	
+
 	/**
 	 * Returns a view with folder/media title, and artist name (for audio only).
 	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		if (convertView == null) {
-	        LayoutInflater inflater = (LayoutInflater) getContext()
-	                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-	        convertView = inflater.inflate(R.layout.list_item, parent, false);	
+			LayoutInflater inflater = (LayoutInflater) getContext()
+					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			convertView = inflater.inflate(R.layout.list_item, parent, false);
 		}
 		DIDLObject item = getItem(position);
-        TextView title = (TextView) convertView.findViewById(R.id.title);
-        TextView artist = (TextView) convertView.findViewById(R.id.subtitle);
-    	artist.setText("");	
-        RemoteImageView image = (RemoteImageView) convertView.findViewById(R.id.image);
+		TextView title = (TextView) convertView.findViewById(R.id.title);
+		TextView artist = (TextView) convertView.findViewById(R.id.subtitle);
+		artist.setText("");
+		RemoteImageView image = (RemoteImageView) convertView.findViewById(R.id.image);
 		if (item instanceof MusicTrack) {
-	        MusicTrack track = (MusicTrack) item;
-	        String trackNumber = (track.getOriginalTrackNumber() != null) 
-	        		? Integer.toString(track.getOriginalTrackNumber()) + ". "
-	        		: "";
-        	title.setText(trackNumber + item.getTitle());
-        	if (track.getArtists().length > 0)
-        		artist.setText(track.getArtists()[0].getName());
+			MusicTrack track = (MusicTrack) item;
+			String trackNumber = (track.getOriginalTrackNumber() != null)
+					? Integer.toString(track.getOriginalTrackNumber()) + ". "
+							: "";
+			title.setText(trackNumber + item.getTitle());
+			if (track.getArtists().length > 0)
+				artist.setText(track.getArtists()[0].getName());
 		}
-        else
-        	title.setText(item.getTitle());
-		
+		else
+			title.setText(item.getTitle());
+
 		image.setImageUri(item.getFirstPropertyValue(
 				DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
-        return convertView;
+		return convertView;
 	}
 
 	/**
@@ -115,5 +115,5 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 		for (DIDLObject d : playlist)
 			add(d);
 	}
-	
+
 }

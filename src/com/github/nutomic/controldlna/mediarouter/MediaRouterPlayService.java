@@ -4,12 +4,12 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
+ * Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
+ * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
+ * Neither the name of the <organization> nor the
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -70,61 +70,61 @@ import com.github.nutomic.controldlna.utility.LoadImageTask;
 public class MediaRouterPlayService extends Service {
 
 	private static final String TAG = "PlayService";
-	
+
 	private static final int NOTIFICATION_ID = 1;
-	
+
 	private final MediaRouterPlayServiceBinder mBinder = new MediaRouterPlayServiceBinder(this);
-	
+
 	private MediaRouter mMediaRouter;
-	
+
 	/**
 	 * Media items that should be played.
 	 */
 	private List<Item> mPlaylist = new ArrayList<Item>();
-	
+
 	/**
 	 * The track that is currently being played.
 	 */
 	private int mCurrentTrack = -1;
-	
+
 	private boolean mShuffle = false;
-	
+
 	private boolean mRepeat = false;
-	
+
 	private String mItemId;
-	
+
 	private String mSessionId;
-	
-	private WeakReference<RouteFragment> mRouterFragment = 
+
+	private WeakReference<RouteFragment> mRouterFragment =
 			new WeakReference<RouteFragment>(null);
-	
+
 	private boolean mPollingStatus = false;
-	
+
 	private boolean mBound;
-	
+
 	/**
 	 * Route that is currently being played to. May be invalid.
 	 */
 	private RouteInfo mCurrentRoute;
-	
+
 	/*
-	 * Stops foreground mode and notification if the current route 
+	 * Stops foreground mode and notification if the current route
 	 * has been removed.
 	 */
-	private MediaRouter.Callback mRouteRemovedCallback = 
+	private MediaRouter.Callback mRouteRemovedCallback =
 			new MediaRouter.Callback() {
 		@Override
 		public void onRouteRemoved(MediaRouter router, RouteInfo route) {
 			if (route.equals(mCurrentRoute))
 				stopForeground(true);
 		}
-};
-	
+	};
+
 	/**
 	 * Creates a notification after the icon bitmap is loaded.
 	 */
 	private class CreateNotificationTask extends LoadImageTask {
-		
+
 		@Override
 		protected void onPostExecute(Bitmap result) {
 			String title = "";
@@ -132,16 +132,16 @@ public class MediaRouterPlayService extends Service {
 			if (mCurrentTrack < mPlaylist.size()) {
 				title = mPlaylist.get(mCurrentTrack).getTitle();
 				if (mPlaylist.get(mCurrentTrack) instanceof MusicTrack) {
-		        	MusicTrack track = (MusicTrack) mPlaylist.get(mCurrentTrack);
-		        	if (track.getArtists().length > 0)
-		        		artist = track.getArtists()[0].getName();
+					MusicTrack track = (MusicTrack) mPlaylist.get(mCurrentTrack);
+					if (track.getArtists().length > 0)
+						artist = track.getArtists()[0].getName();
 				}
 			}
 			Intent intent = new Intent(MediaRouterPlayService.this, MainActivity.class);
 			intent.setAction("showRouteFragment");
 			Notification notification = new NotificationCompat.Builder(MediaRouterPlayService.this)
-					.setContentIntent(PendingIntent.getActivity(MediaRouterPlayService.this, 0, 
-							intent, 0))
+			.setContentIntent(PendingIntent.getActivity(MediaRouterPlayService.this, 0,
+					intent, 0))
 					.setContentTitle(title)
 					.setContentText(artist)
 					.setLargeIcon(result)
@@ -150,68 +150,68 @@ public class MediaRouterPlayService extends Service {
 			notification.flags |= Notification.FLAG_ONGOING_EVENT;
 			startForeground(NOTIFICATION_ID, notification);
 		}
-		
+
 	}
 
 	@Override
 	public void onCreate() {
 		super.onCreate();
-    	mMediaRouter = MediaRouter.getInstance(this);
+		mMediaRouter = MediaRouter.getInstance(this);
 		pollStatus();
 	}
-	
+
 	@Override
 	public IBinder onBind(Intent intent) {
 		mBound = true;
 		return mBinder;
 	}
-	
+
 	/**
-	 * Stops service after a delay if no media is playing (delay in case the 
+	 * Stops service after a delay if no media is playing (delay in case the
 	 * fragment is recreated for screen rotation).
 	 */
 	@Override
-	public boolean onUnbind(Intent intent) {		
+	public boolean onUnbind(Intent intent) {
 		new Handler().postDelayed(new Runnable() {
 			public void run() {
-		    	if (!mPollingStatus && !mBound)
+				if (!mPollingStatus && !mBound)
 					stopSelf();
-		    }
+			}
 		}, 5000);
 		mBound = false;
 		return super.onUnbind(intent);
 	}
-	
+
 	public void setRouterFragment(RouteFragment rf) {
 		mRouterFragment = new WeakReference<RouteFragment>(rf);
 	}
-	
+
 	public void selectRoute(RouteInfo route) {
 		mMediaRouter.removeCallback(mRouteRemovedCallback);
 		mMediaRouter.selectRoute(route);
-		 MediaRouteSelector selector = new MediaRouteSelector.Builder()
-		         .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
-		         .build();
+		MediaRouteSelector selector = new MediaRouteSelector.Builder()
+		.addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+		.build();
 
-		 mMediaRouter.addCallback(selector, mRouteRemovedCallback, 0);
-		 mCurrentRoute = route;
+		mMediaRouter.addCallback(selector, mRouteRemovedCallback, 0);
+		mCurrentRoute = route;
 	}
-	
+
 	public void sendControlRequest(Intent intent) {
 		mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
 	}
-	
+
 	/**
-	 * Sets current track in renderer to specified item in playlist, then 
+	 * Sets current track in renderer to specified item in playlist, then
 	 * starts playback.
 	 */
-	public void play(int trackNumber) {        
+	public void play(int trackNumber) {
 		if (trackNumber < 0 || trackNumber >= mPlaylist.size())
 			return;
-		
+
 		mCurrentTrack = trackNumber;
 		Item track = mPlaylist.get(trackNumber);
-    	DIDLParser parser = new DIDLParser();
+		DIDLParser parser = new DIDLParser();
 		DIDLContent didl = new DIDLContent();
 		didl.addItem(track);
 		String metadata = "";
@@ -221,88 +221,88 @@ public class MediaRouterPlayService extends Service {
 		catch (Exception e)	{
 			Log.w(TAG, "Metadata generation failed", e);
 		}
-		
-        Intent intent = new Intent(MediaControlIntent.ACTION_PLAY);
-        intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
-        intent.setData(Uri.parse(track.getFirstResource().getValue()));
-        intent.putExtra(MediaControlIntent.EXTRA_ITEM_METADATA, metadata);
-        
-        mMediaRouter.getSelectedRoute().sendControlRequest(intent, 
-        		new ControlRequestCallback() {
-		        	@Override
-		        	public void onResult(Bundle data) {
-		        		mSessionId = data.getString(MediaControlIntent.EXTRA_SESSION_ID);
-		        		mItemId = data.getString(MediaControlIntent.EXTRA_ITEM_ID);
-		                mPollingStatus = true;
-		                
-		                new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
-		                		.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
 
-						if (mRouterFragment.get() != null)
-							mRouterFragment.get().receiveIsPlaying(mCurrentTrack);
-		        	}
-				});
+		Intent intent = new Intent(MediaControlIntent.ACTION_PLAY);
+		intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
+		intent.setData(Uri.parse(track.getFirstResource().getValue()));
+		intent.putExtra(MediaControlIntent.EXTRA_ITEM_METADATA, metadata);
+
+		mMediaRouter.getSelectedRoute().sendControlRequest(intent,
+				new ControlRequestCallback() {
+			@Override
+			public void onResult(Bundle data) {
+				mSessionId = data.getString(MediaControlIntent.EXTRA_SESSION_ID);
+				mItemId = data.getString(MediaControlIntent.EXTRA_ITEM_ID);
+				mPollingStatus = true;
+
+				new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+						.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+
+				if (mRouterFragment.get() != null)
+					mRouterFragment.get().receiveIsPlaying(mCurrentTrack);
+			}
+		});
 	}
-	
+
 	/**
 	 * Sends 'pause' signal to current renderer.
 	 */
 	public void pause() {
 		if (mPlaylist.isEmpty())
 			return;
-		
-        Intent intent = new Intent(MediaControlIntent.ACTION_PAUSE);
-        intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
+
+		Intent intent = new Intent(MediaControlIntent.ACTION_PAUSE);
+		intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
-        mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
-        mPollingStatus = false;
-        stopForeground(true);
+		mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
+		mPollingStatus = false;
+		stopForeground(true);
 	}
-	
+
 	/**
 	 * Sends 'resume' signal to current renderer.
 	 */
 	public void resume() {
 		if (mPlaylist.isEmpty())
 			return;
-		
-        Intent intent = new Intent(MediaControlIntent.ACTION_RESUME);
-        intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
+
+		Intent intent = new Intent(MediaControlIntent.ACTION_RESUME);
+		intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
-        mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);	
-        mPollingStatus = true;
-        new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
-        		.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+		mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
+		mPollingStatus = true;
+		new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+				.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
 	}
-	
+
 	/**
 	 * Sends 'stop' signal to current renderer.
 	 */
 	public void stop() {
 		if (mPlaylist.isEmpty())
 			return;
-		
-        Intent intent = new Intent(MediaControlIntent.ACTION_STOP);
-        intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
+
+		Intent intent = new Intent(MediaControlIntent.ACTION_STOP);
+		intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
-        mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
-        mPollingStatus = false;
-        stopForeground(true);
+		mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
+		mPollingStatus = false;
+		stopForeground(true);
 	}
-	
+
 	public void seek(int seconds) {
 		if (mPlaylist.isEmpty())
 			return;
-		
-        Intent intent = new Intent(MediaControlIntent.ACTION_SEEK);
-        intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
+
+		Intent intent = new Intent(MediaControlIntent.ACTION_SEEK);
+		intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
 		intent.putExtra(MediaControlIntent.EXTRA_ITEM_ID, mItemId);
-		intent.putExtra(MediaControlIntent.EXTRA_ITEM_CONTENT_POSITION, 
+		intent.putExtra(MediaControlIntent.EXTRA_ITEM_CONTENT_POSITION,
 				(long) seconds * 1000);
-        mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);		
+		mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
 	}
-	
+
 	/**
 	 * Sets a new playlist and starts playing.
 	 * 
@@ -311,17 +311,17 @@ public class MediaRouterPlayService extends Service {
 	public void setPlaylist(List<Item> playlist) {
 		mPlaylist = playlist;
 	}
-	
+
 	/**
 	 * Plays the track after current in the playlist.
 	 * 
-	 * @return True if another item is played, false if the end 
+	 * @return True if another item is played, false if the end
 	 * of the playlist is reached.
 	 */
 	public boolean playNext() {
-		if (mCurrentTrack == -1) 
+		if (mCurrentTrack == -1)
 			return false;
-		
+
 		if (mShuffle) {
 			// Play random item.
 			play(new Random().nextInt(mPlaylist.size()));
@@ -346,21 +346,21 @@ public class MediaRouterPlayService extends Service {
 		}
 	}
 
-	
+
 	/**
 	 * Plays the track before current in the playlist.
 	 */
 	public void playPrevious() {
 		if (mCurrentTrack == -1)
 			return;
-		
+
 		if (mShuffle)
 			// Play random item.
 			play(new Random().nextInt(mPlaylist.size()));
 		else
 			play(mCurrentTrack - 1);
 	}
-	
+
 	/**
 	 * Returns index of the track that is currently played (zero-based).
 	 * @return
@@ -368,7 +368,7 @@ public class MediaRouterPlayService extends Service {
 	public int getCurrentTrack() {
 		return mCurrentTrack;
 	}
-	
+
 	/**
 	 * Requests playback information every second, as long as RendererFragment
 	 * is attached or media is playing.
@@ -379,60 +379,60 @@ public class MediaRouterPlayService extends Service {
 			i.setAction(MediaControlIntent.ACTION_GET_STATUS);
 			i.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
 			i.putExtra(MediaControlIntent.EXTRA_ITEM_ID, mItemId);
-			mMediaRouter.getSelectedRoute().sendControlRequest(i, 
+			mMediaRouter.getSelectedRoute().sendControlRequest(i,
 					new ControlRequestCallback() {
-						@Override
-						public void onResult(Bundle data) {
-							MediaItemStatus status = MediaItemStatus.fromBundle(data);
-							if (status == null)
-								return;
-							
-							if (mRouterFragment.get() != null)
-								mRouterFragment.get().receivePlaybackStatus(status);
-							if (status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PENDING &&
-									status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_BUFFERING &&
-											status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PLAYING)
-								stopForeground(true);
-							
-							if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED)
-								playNext();
-						}
-					});
+				@Override
+				public void onResult(Bundle data) {
+					MediaItemStatus status = MediaItemStatus.fromBundle(data);
+					if (status == null)
+						return;
+
+					if (mRouterFragment.get() != null)
+						mRouterFragment.get().receivePlaybackStatus(status);
+					if (status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PENDING &&
+							status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_BUFFERING &&
+							status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PLAYING)
+						stopForeground(true);
+
+					if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED)
+						playNext();
+				}
+			});
 		}
-		
+
 		new Handler().postDelayed(new Runnable() {
-		
+
 			@Override
 			public void run() {
 				pollStatus();
-				}
+			}
 		}, 1000);
-	}	
-	
+	}
+
 	public void increaseVolume() {
-		mMediaRouter.getSelectedRoute().requestUpdateVolume(1);	
+		mMediaRouter.getSelectedRoute().requestUpdateVolume(1);
 	}
-	
+
 	public void decreaseVolume() {
-		mMediaRouter.getSelectedRoute().requestUpdateVolume(-1);	
+		mMediaRouter.getSelectedRoute().requestUpdateVolume(-1);
 	}
-	
+
 	public List<Item> getPlaylist() {
 		return mPlaylist;
 	}
-	
+
 	public void toggleShuffleEnabled() {
 		mShuffle = !mShuffle;
 	}
-	
+
 	public boolean getShuffleEnabled() {
 		return mShuffle;
 	}
-	
+
 	public void toggleRepeatEnabled() {
 		mRepeat = !mRepeat;
 	}
-	
+
 	public boolean getRepeatEnabled() {
 		return mRepeat;
 	}
@@ -440,4 +440,5 @@ public class MediaRouterPlayService extends Service {
 	public RouteInfo getCurrentRoute() {
 		return mCurrentRoute;
 	}
+
 }

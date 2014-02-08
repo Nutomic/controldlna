@@ -4,12 +4,12 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
+ * Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
+ * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
+ * Neither the name of the <organization> nor the
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -41,7 +41,7 @@ import android.widget.ImageView;
  *
  */
 public class RemoteImageView extends ImageView {
-	
+
 	/**
 	 * Assigns the icon as image drawable when it is loaded.
 	 * 
@@ -49,28 +49,28 @@ public class RemoteImageView extends ImageView {
 	 *
 	 */
 	private class AssignImageTask extends LoadImageTask {
-	
-	    @Override
-	    protected void onPostExecute(Bitmap bm) {
-	    	if (bm != null)
-				setImageBitmap(bm);	   
-	    	else
+
+		@Override
+		protected void onPostExecute(Bitmap bm) {
+			if (bm != null)
+				setImageBitmap(bm);
+			else
 				setImageDrawable(null);
-	    }
-		
+		}
+
 	};
-	
+
 	public RemoteImageView(Context context) {
 		super(context);
 	}
-	
+
 	public RemoteImageView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-    }
-	
+		super(context, attrs);
+	}
+
 	public RemoteImageView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-    }
+		super(context, attrs, defStyle);
+	}
 
 	/**
 	 * Sets the URI where the image should be loaded from, loads and assigns it.
@@ -79,5 +79,5 @@ public class RemoteImageView extends ImageView {
 		setImageDrawable(null);
 		new AssignImageTask().execute(uri);
 	}
-	
+
 }

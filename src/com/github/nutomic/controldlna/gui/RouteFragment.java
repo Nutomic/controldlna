@@ -4,12 +4,12 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
+ * Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
+ * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
+ * Neither the name of the <organization> nor the
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -73,18 +73,18 @@ import com.github.nutomic.controldlna.utility.FileArrayAdapter;
 import com.github.nutomic.controldlna.utility.RouteAdapter;
 
 /**
- * Controls media playback by showing a list of routes, and after selecting one, 
+ * Controls media playback by showing a list of routes, and after selecting one,
  * the current playlist and playback controls.
  * 
  * @author Felix Ableitner
  *
  */
-public class RouteFragment extends MediaRouteDiscoveryFragment implements 
-		OnBackPressedListener, OnItemClickListener, OnClickListener, 
+public class RouteFragment extends MediaRouteDiscoveryFragment implements
+		OnBackPressedListener, OnItemClickListener, OnClickListener,
 		OnSeekBarChangeListener, OnScrollListener {
-	
+
 	private ListView mListView;
-	
+
 	private View mControls;
 	private SeekBar mProgressBar;
 	private ImageButton mPlayPause;
@@ -92,32 +92,32 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	private ImageButton mRepeat;
 	private TextView mCurrentTimeView;
 	private TextView mTotalTimeView;
-	
+
 	private View mCurrentTrackView;
-	
+
 	private boolean mPlaying;
-	
+
 	private boolean mRestorePlaylistMode;
-	
+
 	private RouteAdapter mRouteAdapter;
-	
+
 	private FileArrayAdapter mPlaylistAdapter;
-	
+
 	private RouteInfo mSelectedRoute;
-	
+
 	/**
-	 * Count of the number of taps on the previous button within the 
+	 * Count of the number of taps on the previous button within the
 	 * doubletap interval.
 	 */
 	private int mPreviousTapCount = 0;
-	
+
 	/**
 	 * If true, the item at this position will be played as soon as a route is selected.
 	 */
 	private int mStartPlayingOnSelect = -1;
 
 	private MediaRouterPlayServiceBinder mMediaRouterPlayService;
-	
+
 	private ServiceConnection mPlayServiceConnection = new ServiceConnection() {
 
 		public void onServiceConnected(ComponentName className, IBinder service) {
@@ -128,173 +128,172 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			applyColors();
 			if (mRestorePlaylistMode)
 				playlistMode(mMediaRouterPlayService.getService().getCurrentRoute());
-        }
+		}
 
-        public void onServiceDisconnected(ComponentName className) {
-            mMediaRouterPlayService = null;
-        }
-    };
-    
-    /**
-     * Selects remote playback route category.
-     */
-    public RouteFragment() {
-        MediaRouteSelector mSelector = new MediaRouteSelector.Builder()
-                .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
-                .build();        
-        setRouteSelector(mSelector);
+		public void onServiceDisconnected(ComponentName className) {
+			mMediaRouterPlayService = null;
+		}
+	};
+
+	/**
+	 * Selects remote playback route category.
+	 */
+	public RouteFragment() {
+		MediaRouteSelector mSelector = new MediaRouteSelector.Builder()
+		.addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+		.build();
+		setRouteSelector(mSelector);
 	}
-    
+
 	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 
-        return inflater.inflate(R.layout.route_fragment, null);
+		return inflater.inflate(R.layout.route_fragment, null);
 	};
-	
+
 	/**
 	 * Initializes views, connects to service, adds default route.
 	 */
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-    	super.onActivityCreated(savedInstanceState);
-    	
-    	mRouteAdapter = new RouteAdapter(getActivity());
-    	mRouteAdapter.add(MediaRouter.getInstance(getActivity()).getRoutes());
-    	mRouteAdapter.remove(MediaRouter.getInstance(getActivity()).getDefaultRoute());
-    	mPlaylistAdapter = new FileArrayAdapter(getActivity());
-    	
-    	mListView = (ListView) getView().findViewById(R.id.listview);
-        mListView.setAdapter(mRouteAdapter);
-        mListView.setOnItemClickListener(this);
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+
+		mRouteAdapter = new RouteAdapter(getActivity());
+		mRouteAdapter.add(MediaRouter.getInstance(getActivity()).getRoutes());
+		mRouteAdapter.remove(MediaRouter.getInstance(getActivity()).getDefaultRoute());
+		mPlaylistAdapter = new FileArrayAdapter(getActivity());
+
+		mListView = (ListView) getView().findViewById(R.id.listview);
+		mListView.setAdapter(mRouteAdapter);
+		mListView.setOnItemClickListener(this);
 		mListView.setOnScrollListener(this);
 		mListView.setEmptyView(getView().findViewById(android.R.id.empty));
-		
-        mControls = getView().findViewById(R.id.controls);
-        mProgressBar = (SeekBar) getView().findViewById(R.id.progressBar);
-        mProgressBar.setOnSeekBarChangeListener(this);
-        
-        mShuffle = (ImageButton) getView().findViewById(R.id.shuffle);
-        mShuffle.setImageResource(R.drawable.ic_action_shuffle);
-        mShuffle.setOnClickListener(this);
-        
-        ImageButton previous = (ImageButton) getView().findViewById(R.id.previous);
-        previous.setImageResource(R.drawable.ic_action_previous);
-    	previous.setOnClickListener(this);
-        
-        ImageButton next = (ImageButton) getView().findViewById(R.id.next);
-        next.setImageResource(R.drawable.ic_action_next);
-    	next.setOnClickListener(this);
-        
-        mRepeat = (ImageButton) getView().findViewById(R.id.repeat);
-        mRepeat.setImageResource(R.drawable.ic_action_repeat);
-        mRepeat.setOnClickListener(this);
-        
-        mPlayPause = (ImageButton) getView().findViewById(R.id.playpause);
-        mPlayPause.setOnClickListener(this);
-    	mPlayPause.setImageResource(R.drawable.ic_action_play);   
-    	
-    	mCurrentTimeView = (TextView) getView().findViewById(R.id.current_time);
-    	mTotalTimeView = (TextView) getView().findViewById(R.id.total_time);
 
-    	getActivity().getApplicationContext().startService(
-    			new Intent(getActivity(), MediaRouterPlayService.class));
-        getActivity().getApplicationContext().bindService(
-	            new Intent(getActivity(), MediaRouterPlayService.class),
-	            mPlayServiceConnection,
-	            Context.BIND_AUTO_CREATE
-        );
-        
-        if (savedInstanceState != null) {
-        	mListView.onRestoreInstanceState(savedInstanceState.getParcelable("list_state"));
-        	mRestorePlaylistMode  = savedInstanceState.getBoolean("route_selected");
-        }
-    }
-    
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-    	super.onSaveInstanceState(outState);
- 
-    	outState.putBoolean("route_selected", mSelectedRoute != null);
-    	outState.putParcelable("list_state", mListView.onSaveInstanceState());
-    }
-    
-    @Override
-    public void onDestroy() {
-    	super.onDestroy();
-    	getActivity().getApplicationContext().unbindService(mPlayServiceConnection);
-    }
+		mControls = getView().findViewById(R.id.controls);
+		mProgressBar = (SeekBar) getView().findViewById(R.id.progressBar);
+		mProgressBar.setOnSeekBarChangeListener(this);
 
-    /**
-     * Starts active route discovery (which is automatically stopped on 
-     * fragment stop by parent class).
-     */
-    @Override
-    public int onPrepareCallbackFlags() {
-        return  MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY 
-                | MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN;
-    }
-    
-    @Override
-    public Callback onCreateCallback() {
-        return new MediaRouter.Callback() {
-            @Override
-            public void onRouteAdded(MediaRouter router, RouteInfo route) {
-            	for (int i = 0; i < mRouteAdapter.getCount(); i++) {
-            		if (mRouteAdapter.getItem(i).getId().equals(route.getId())) {
-            			mRouteAdapter.remove(mRouteAdapter.getItem(i));
-            			break;
-            		}
-            	}
-                mRouteAdapter.add(route);
-            }
+		mShuffle = (ImageButton) getView().findViewById(R.id.shuffle);
+		mShuffle.setImageResource(R.drawable.ic_action_shuffle);
+		mShuffle.setOnClickListener(this);
 
-            @Override
-            public void onRouteChanged(MediaRouter router, RouteInfo route) {
-                mRouteAdapter.notifyDataSetChanged();
-            }
+		ImageButton previous = (ImageButton) getView().findViewById(R.id.previous);
+		previous.setImageResource(R.drawable.ic_action_previous);
+		previous.setOnClickListener(this);
 
-            @Override
-            public void onRouteRemoved(MediaRouter router, RouteInfo route) {
-            	mRouteAdapter.remove(route);
-            	if (route.equals(mSelectedRoute)) {
-            		mPlaying = false;
-                	onBackPressed();
-            	}
-            }
+		ImageButton next = (ImageButton) getView().findViewById(R.id.next);
+		next.setImageResource(R.drawable.ic_action_next);
+		next.setOnClickListener(this);
 
-            @Override
-            public void onRouteSelected(MediaRouter router, RouteInfo route) {
-            }
+		mRepeat = (ImageButton) getView().findViewById(R.id.repeat);
+		mRepeat.setImageResource(R.drawable.ic_action_repeat);
+		mRepeat.setOnClickListener(this);
 
-            @Override
-            public void onRouteUnselected(MediaRouter router, RouteInfo route) {
-            }
+		mPlayPause = (ImageButton) getView().findViewById(R.id.playpause);
+		mPlayPause.setOnClickListener(this);
+		mPlayPause.setImageResource(R.drawable.ic_action_play);
 
-            @Override
-            public void onRouteVolumeChanged(MediaRouter router, RouteInfo route) {
-            }
+		mCurrentTimeView = (TextView) getView().findViewById(R.id.current_time);
+		mTotalTimeView = (TextView) getView().findViewById(R.id.total_time);
 
-            @Override
-            public void onRoutePresentationDisplayChanged(
-                    MediaRouter router, RouteInfo route) {
-            }
+		getActivity().getApplicationContext().startService(
+				new Intent(getActivity(), MediaRouterPlayService.class));
+		getActivity().getApplicationContext().bindService(
+				new Intent(getActivity(), MediaRouterPlayService.class),
+				mPlayServiceConnection,
+				Context.BIND_AUTO_CREATE
+				);
 
-            @Override
-            public void onProviderAdded(MediaRouter router, ProviderInfo provider) {
-            }
+		if (savedInstanceState != null) {
+			mListView.onRestoreInstanceState(savedInstanceState.getParcelable("list_state"));
+			mRestorePlaylistMode  = savedInstanceState.getBoolean("route_selected");
+		}
+	}
 
-            @Override
-            public void onProviderRemoved(MediaRouter router, ProviderInfo provider) {
-            }
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
 
-            @Override
-            public void onProviderChanged(MediaRouter router, ProviderInfo provider) {
-            }
-        };
-        
-    }
-	
+		outState.putBoolean("route_selected", mSelectedRoute != null);
+		outState.putParcelable("list_state", mListView.onSaveInstanceState());
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		getActivity().getApplicationContext().unbindService(mPlayServiceConnection);
+	}
+
+	/**
+	 * Starts active route discovery (which is automatically stopped on
+	 * fragment stop by parent class).
+	 */
+	@Override
+	public int onPrepareCallbackFlags() {
+		return  MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY
+				| MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN;
+	}
+
+	@Override
+	public Callback onCreateCallback() {
+		return new MediaRouter.Callback() {
+			@Override
+			public void onRouteAdded(MediaRouter router, RouteInfo route) {
+				for (int i = 0; i < mRouteAdapter.getCount(); i++)
+					if (mRouteAdapter.getItem(i).getId().equals(route.getId())) {
+						mRouteAdapter.remove(mRouteAdapter.getItem(i));
+						break;
+					}
+				mRouteAdapter.add(route);
+			}
+
+			@Override
+			public void onRouteChanged(MediaRouter router, RouteInfo route) {
+				mRouteAdapter.notifyDataSetChanged();
+			}
+
+			@Override
+			public void onRouteRemoved(MediaRouter router, RouteInfo route) {
+				mRouteAdapter.remove(route);
+				if (route.equals(mSelectedRoute)) {
+					mPlaying = false;
+					onBackPressed();
+				}
+			}
+
+			@Override
+			public void onRouteSelected(MediaRouter router, RouteInfo route) {
+			}
+
+			@Override
+			public void onRouteUnselected(MediaRouter router, RouteInfo route) {
+			}
+
+			@Override
+			public void onRouteVolumeChanged(MediaRouter router, RouteInfo route) {
+			}
+
+			@Override
+			public void onRoutePresentationDisplayChanged(
+					MediaRouter router, RouteInfo route) {
+			}
+
+			@Override
+			public void onProviderAdded(MediaRouter router, ProviderInfo provider) {
+			}
+
+			@Override
+			public void onProviderRemoved(MediaRouter router, ProviderInfo provider) {
+			}
+
+			@Override
+			public void onProviderChanged(MediaRouter router, ProviderInfo provider) {
+			}
+		};
+
+	}
+
 	/**
 	 * Selects a route or starts playback (depending on current ListAdapter).
 	 */
@@ -307,7 +306,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			changePlayPauseState(true);
 		}
 	}
-	
+
 	/**
 	 * Displays UPNP devices in the ListView.
 	 */
@@ -319,7 +318,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		TextView emptyView = (TextView) mListView.getEmptyView();
 		emptyView.setText(R.string.route_list_empty);
 	}
-	
+
 	/**
 	 * Displays playlist for route in the ListView.
 	 */
@@ -334,25 +333,25 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			mStartPlayingOnSelect = -1;
 		}
 		TextView emptyView = (TextView) mListView.getEmptyView();
-		emptyView.setText(R.string.playlist_empty);		
+		emptyView.setText(R.string.playlist_empty);
 	}
-	
+
 	/**
 	 * Sets colored background on the item that is currently playing.
 	 */
 	private void enableTrackHighlight() {
 		if (mListView.getAdapter() == mRouteAdapter || mMediaRouterPlayService == null || !isVisible())
 			return;
-		
+
 		disableTrackHighlight();
 		mCurrentTrackView = mListView.getChildAt(mMediaRouterPlayService.getService()
 				.getCurrentTrack()
 				- mListView.getFirstVisiblePosition() + mListView.getHeaderViewsCount());
 		if (mCurrentTrackView != null)
 			mCurrentTrackView.setBackgroundColor(
-					getResources().getColor(R.color.currently_playing_background));	
+					getResources().getColor(R.color.currently_playing_background));
 	}
-	
+
 	/**
 	 * Removes highlight from the item that was last highlighted.
 	 */
@@ -367,25 +366,24 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	@Override
 	public boolean onBackPressed() {
 		if (mListView.getAdapter() == mPlaylistAdapter) {
-			if (mPlaying) {
+			if (mPlaying)
 				new AlertDialog.Builder(getActivity())
-						.setMessage(R.string.exit_renderer)
-						.setPositiveButton(android.R.string.yes, 
-								new DialogInterface.OnClickListener() {
-					
-									@Override
-									public void onClick(DialogInterface dialog, 
-											int which) {
-										mMediaRouterPlayService.getService().stop();
-							    		deviceListMode();
-									}
-								})
-						.setNegativeButton(android.R.string.no, null)
-						.show();
-			}
+			.setMessage(R.string.exit_renderer)
+			.setPositiveButton(android.R.string.yes,
+					new DialogInterface.OnClickListener() {
+
+				@Override
+				public void onClick(DialogInterface dialog,
+						int which) {
+					mMediaRouterPlayService.getService().stop();
+					deviceListMode();
+				}
+			})
+			.setNegativeButton(android.R.string.no, null)
+			.show();
 			else
 				deviceListMode();
-	        return true;
+			return true;
 		}
 		return false;
 	}
@@ -413,24 +411,24 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			break;
 		case R.id.previous:
 			mPreviousTapCount++;
-            Handler handler = new Handler();
-            Runnable r = new Runnable() {
+			Handler handler = new Handler();
+			Runnable r = new Runnable() {
 
-                @Override
-                public void run() {
-                	// Single tap.
-                    mPreviousTapCount = 0;
-                    s.play(s.getCurrentTrack());
-                    changePlayPauseState(true);
-                }
-            };
-            if (mPreviousTapCount == 1)
-                handler.postDelayed(r, ViewConfiguration.getDoubleTapTimeout());
-            else if(mPreviousTapCount == 2) {
-            	// Double tap.
-            	mPreviousTapCount = 0;
-            	s.playPrevious();
-            }
+				@Override
+				public void run() {
+					// Single tap.
+					mPreviousTapCount = 0;
+					s.play(s.getCurrentTrack());
+					changePlayPauseState(true);
+				}
+			};
+			if (mPreviousTapCount == 1)
+				handler.postDelayed(r, ViewConfiguration.getDoubleTapTimeout());
+			else if(mPreviousTapCount == 2) {
+				// Double tap.
+				mPreviousTapCount = 0;
+				s.playPrevious();
+			}
 			break;
 		case R.id.next:
 			boolean stillPlaying = s.playNext();
@@ -440,9 +438,9 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			s.toggleRepeatEnabled();
 			applyColors();
 			break;
-		}		
+		}
 	}
-	
+
 	/**
 	 * Enables or disables highlighting on shuffle/repeat buttons (depending
 	 * if they are enabled or disabled).
@@ -451,20 +449,20 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		MediaRouterPlayService s = mMediaRouterPlayService.getService();
 		int highlight = getResources().getColor(R.color.button_highlight);
 		int transparent = getResources().getColor(android.R.color.transparent);
-		
-		mShuffle.setColorFilter((s.getShuffleEnabled()) 
+
+		mShuffle.setColorFilter((s.getShuffleEnabled())
 				? highlight
-				: transparent);		
-		mRepeat.setColorFilter((s.getRepeatEnabled()) 
+						: transparent);
+		mRepeat.setColorFilter((s.getRepeatEnabled())
 				? highlight
-				: transparent);
+						: transparent);
 	}
 
 	/**
 	 * Sends manual seek on progress bar to renderer.
 	 */
 	@Override
-	public void onProgressChanged(SeekBar seekBar, int progress, 
+	public void onProgressChanged(SeekBar seekBar, int progress,
 			boolean fromUser) {
 		if (fromUser)
 			mMediaRouterPlayService.getService().seek(progress);
@@ -490,11 +488,11 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	public void onScrollStateChanged(AbsListView arg0, int arg1) {
 		enableTrackHighlight();
 	}
-	
+
 	public void increaseVolume() {
 		mMediaRouterPlayService.getService().increaseVolume();
 	}
-	
+
 	public void decreaseVolume() {
 		mMediaRouterPlayService.getService().decreaseVolume();
 	}
@@ -506,13 +504,13 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		mPlaylistAdapter.clear();
 		mPlaylistAdapter.add(playlist);
 		mMediaRouterPlayService.getService().setPlaylist(playlist);
-		
+
 		if (mSelectedRoute != null) {
 			mMediaRouterPlayService.getService().play(start);
 			changePlayPauseState(true);
 		} else {
 			Toast.makeText(getActivity(), R.string.select_route, Toast.LENGTH_SHORT)
-					.show();
+			.show();
 			mStartPlayingOnSelect = start;
 		}
 	}
@@ -525,17 +523,17 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	 */
 	private String generateTimeString(int time) {
 		assert(time >= 0);
-		int seconds = (int) time % 60;
-		int minutes = (int) time / 60;
+		int seconds = time % 60;
+		int minutes = time / 60;
 		if (minutes > 99)
 			return "99:99";
 		else
-			return Integer.toString(minutes) + ":" + 
-					((seconds > 9) 
-							? seconds 
+			return Integer.toString(minutes) + ":" +
+			((seconds > 9)
+					? seconds
 							: "0" + Integer.toString(seconds));
 	}
-	
+
 	/**
 	 * Sent by MediaRouterPlayService when playback of a new track is started.
 	 * 
@@ -544,7 +542,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	public void receiveIsPlaying(int track) {
 		mListView.smoothScrollToPosition(track);
 	}
-	
+
 	/**
 	 * Receives information from MediaRouterPlayService about playback status.
 	 */
@@ -552,13 +550,13 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		// Views may not exist if fragment was just created/destroyed.
 		if (getView() == null)
 			return;
-		
+
 		int currentTime = (int) status.getContentPosition() / 1000;
 		int totalTime = (int) status.getContentDuration() / 1000;
-		
+
 		mCurrentTimeView.setText(generateTimeString(currentTime));
 		mTotalTimeView.setText(generateTimeString(totalTime));
-		
+
 		mProgressBar.setProgress(currentTime);
 		mProgressBar.setMax(totalTime);
 
@@ -568,13 +566,13 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			changePlayPauseState(true);
 		else
 			changePlayPauseState(false);
-		
-		if (mListView.getAdapter() == mPlaylistAdapter) 
+
+		if (mListView.getAdapter() == mPlaylistAdapter)
 			enableTrackHighlight();
 	}
-	
+
 	/**
-	 * Changes the state of mPlayPause button to pause/resume according to 
+	 * Changes the state of mPlayPause button to pause/resume according to
 	 * current playback state, also sets mPlaying.
 	 * 
 	 * @param playing True if an item is currently being played, false otherwise.
@@ -587,7 +585,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		}
 		else {
 			mPlayPause.setImageResource(R.drawable.ic_action_play);
-			mPlayPause.setContentDescription(getResources().getString(R.string.play));			
+			mPlayPause.setContentDescription(getResources().getString(R.string.play));
 		}
 	}
 

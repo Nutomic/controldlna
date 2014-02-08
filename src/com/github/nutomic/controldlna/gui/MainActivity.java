@@ -4,12 +4,12 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
+ * Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
+ * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
+ * Neither the name of the <organization> nor the
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -61,66 +61,66 @@ import com.github.nutomic.controldlna.R;
  *
  */
 public class MainActivity extends ActionBarActivity {
-    
+
 	/**
 	 * Interface which allows listening to "back" button presses.
 	 */
-    public interface OnBackPressedListener {
-		boolean onBackPressed();    	
-    }
-	
-    FragmentStatePagerAdapter mSectionsPagerAdapter = 
-    		new FragmentStatePagerAdapter(getSupportFragmentManager()) {
+	public interface OnBackPressedListener {
+		boolean onBackPressed();
+	}
 
-    	@Override
-    	public Fragment getItem(int position) {
-    		switch (position) {
-    		case 0: return mServerFragment;
-    		case 1: return mRouteFragment;
-    		default: return null;
-    		}
-    	}
+	FragmentStatePagerAdapter mSectionsPagerAdapter =
+			new FragmentStatePagerAdapter(getSupportFragmentManager()) {
 
-    	@Override
-    	public int getCount() {
-    		return 2;
-    	}
-    	
-    };
+		@Override
+		public Fragment getItem(int position) {
+			switch (position) {
+			case 0: return mServerFragment;
+			case 1: return mRouteFragment;
+			default: return null;
+			}
+		}
 
-    private ServerFragment mServerFragment;
-    
-    private RouteFragment mRouteFragment;
-    
-    ViewPager mViewPager;
+		@Override
+		public int getCount() {
+			return 2;
+		}
 
-    /**
-     * Initializes tab navigation. If wifi is not connected, 
-     * shows a warning dialog.
-     */
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState); 
-        final ActionBar actionBar = getSupportActionBar();
+	};
 
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-        actionBar.setDisplayShowTitleEnabled(false);
-        actionBar.setDisplayShowHomeEnabled(false);
-        setContentView(R.layout.activity_main);
-        
-        mViewPager = (ViewPager) findViewById(R.id.pager);
-        mViewPager.setAdapter(mSectionsPagerAdapter);
-        mViewPager.setOnPageChangeListener(
-        		new ViewPager.SimpleOnPageChangeListener() {
-                    @Override
-                    public void onPageSelected(int position) {
-                    	actionBar.setSelectedNavigationItem(position);
-                    }
-                });
+	private ServerFragment mServerFragment;
 
-        TabListener tabListener = new ActionBar.TabListener() {
-            public void onTabSelected(ActionBar.Tab tab, FragmentTransaction ft) {
-                mViewPager.setCurrentItem(tab.getPosition());
-            }
+	private RouteFragment mRouteFragment;
+
+	ViewPager mViewPager;
+
+	/**
+	 * Initializes tab navigation. If wifi is not connected,
+	 * shows a warning dialog.
+	 */
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		final ActionBar actionBar = getSupportActionBar();
+
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+		actionBar.setDisplayShowTitleEnabled(false);
+		actionBar.setDisplayShowHomeEnabled(false);
+		setContentView(R.layout.activity_main);
+
+		mViewPager = (ViewPager) findViewById(R.id.pager);
+		mViewPager.setAdapter(mSectionsPagerAdapter);
+		mViewPager.setOnPageChangeListener(
+				new ViewPager.SimpleOnPageChangeListener() {
+					@Override
+					public void onPageSelected(int position) {
+						actionBar.setSelectedNavigationItem(position);
+					}
+				});
+
+		TabListener tabListener = new ActionBar.TabListener() {
+			public void onTabSelected(ActionBar.Tab tab, FragmentTransaction ft) {
+				mViewPager.setCurrentItem(tab.getPosition());
+			}
 
 			@Override
 			public void onTabReselected(Tab arg0, FragmentTransaction arg1) {
@@ -129,112 +129,112 @@ public class MainActivity extends ActionBarActivity {
 			@Override
 			public void onTabUnselected(Tab arg0, FragmentTransaction arg1) {
 			}
-        };
+		};
 
-        actionBar.addTab(actionBar.newTab()
-                .setText(R.string.title_server)
-                .setTabListener(tabListener));
-        actionBar.addTab(actionBar.newTab()
-                .setText(R.string.title_route)
-                .setTabListener(tabListener));  
-        
-        ConnectivityManager connManager = (ConnectivityManager) 
-        		getSystemService(CONNECTIVITY_SERVICE);
-        NetworkInfo wifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        final SharedPreferences prefs = getSharedPreferences("preferences.db", 0);
+		actionBar.addTab(actionBar.newTab()
+				.setText(R.string.title_server)
+				.setTabListener(tabListener));
+		actionBar.addTab(actionBar.newTab()
+				.setText(R.string.title_route)
+				.setTabListener(tabListener));
 
-        if (!wifi.isConnected() && !prefs.getBoolean("wifi_skip_dialog", false)) {        	
-        	View checkBoxView = View.inflate(this, R.layout.dialog_wifi_disabled, null);
-        	CheckBox checkBox = (CheckBox) checkBoxView.findViewById(R.id.dont_show_again);
-        	checkBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+		ConnectivityManager connManager = (ConnectivityManager)
+				getSystemService(CONNECTIVITY_SERVICE);
+		NetworkInfo wifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+		final SharedPreferences prefs = getSharedPreferences("preferences.db", 0);
 
-        	    @Override
-        	    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        	    	prefs.edit().putBoolean("wifi_skip_dialog", isChecked)
-							.commit();
-        	    }
-        	});
-        	
-            new AlertDialog.Builder(this)
-            		.setView(checkBoxView)
-            		.setTitle(R.string.warning_wifi_not_connected)
-					.setPositiveButton(android.R.string.ok, null)
-					.show();
-        }
-        
-        if (savedInstanceState != null) {
-        	FragmentManager fm = getSupportFragmentManager();
-        	mServerFragment = (ServerFragment) fm.getFragment(
-                    savedInstanceState, ServerFragment.class.getName());
-        	mRouteFragment = (RouteFragment) fm.getFragment(
-                    savedInstanceState, RouteFragment.class.getName());
-        	mViewPager.setCurrentItem(savedInstanceState.getInt("currentTab"));
-        }
-        else {
-            mServerFragment = new ServerFragment();
-            mRouteFragment = new RouteFragment();
-        }
-        onNewIntent(getIntent());
-    }
-    
-    /**
-     * Displays the RouteFragment immediately (instead of ServerFragment). 
-     */
+		if (!wifi.isConnected() && !prefs.getBoolean("wifi_skip_dialog", false)) {
+			View checkBoxView = View.inflate(this, R.layout.dialog_wifi_disabled, null);
+			CheckBox checkBox = (CheckBox) checkBoxView.findViewById(R.id.dont_show_again);
+			checkBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+
+				@Override
+				public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+					prefs.edit().putBoolean("wifi_skip_dialog", isChecked)
+					.commit();
+				}
+			});
+
+			new AlertDialog.Builder(this)
+			.setView(checkBoxView)
+			.setTitle(R.string.warning_wifi_not_connected)
+			.setPositiveButton(android.R.string.ok, null)
+			.show();
+		}
+
+		if (savedInstanceState != null) {
+			FragmentManager fm = getSupportFragmentManager();
+			mServerFragment = (ServerFragment) fm.getFragment(
+					savedInstanceState, ServerFragment.class.getName());
+			mRouteFragment = (RouteFragment) fm.getFragment(
+					savedInstanceState, RouteFragment.class.getName());
+			mViewPager.setCurrentItem(savedInstanceState.getInt("currentTab"));
+		}
+		else {
+			mServerFragment = new ServerFragment();
+			mRouteFragment = new RouteFragment();
+		}
+		onNewIntent(getIntent());
+	}
+
+	/**
+	 * Displays the RouteFragment immediately (instead of ServerFragment).
+	 */
 	@Override
 	protected void onNewIntent(Intent intent) {
 		if (intent.getAction().equals("showRouteFragment"))
-	        mViewPager.setCurrentItem(1);
+			mViewPager.setCurrentItem(1);
 	}
 
-    /**
-     * Saves fragments.
-     */
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-    	super.onSaveInstanceState(outState);
-    	FragmentManager fm = getSupportFragmentManager();
-    	fm.putFragment(outState, ServerFragment.class.getName(), mServerFragment);
-    	fm.putFragment(outState, RouteFragment.class.getName(), mRouteFragment);
-    	outState.putInt("currentTab", mViewPager.getCurrentItem());
-    }
-    
-    /**
-     * Forwards back press to active Fragment (unless the fragment is
-     * showing its root view).
-     */
-    @Override
-    public void onBackPressed() {
-        OnBackPressedListener currentFragment = (OnBackPressedListener)
-                        mSectionsPagerAdapter.getItem(mViewPager.getCurrentItem());
-        if (!currentFragment.onBackPressed())
-        	super.onBackPressed();
-    }
-    
-    /**
-     * Changes volume on key press (via RouteFragment).
-     */
-    @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        switch (event.getKeyCode()) {
-        case KeyEvent.KEYCODE_VOLUME_UP:
-            if (event.getAction() == KeyEvent.ACTION_DOWN)
-            	mRouteFragment.increaseVolume();
-            return true;
-        case KeyEvent.KEYCODE_VOLUME_DOWN:
-            if (event.getAction() == KeyEvent.ACTION_DOWN)
-            	mRouteFragment.decreaseVolume();
-            return true;
-        default:
-            return super.dispatchKeyEvent(event);
-        }
-    }
+	/**
+	 * Saves fragments.
+	 */
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		FragmentManager fm = getSupportFragmentManager();
+		fm.putFragment(outState, ServerFragment.class.getName(), mServerFragment);
+		fm.putFragment(outState, RouteFragment.class.getName(), mRouteFragment);
+		outState.putInt("currentTab", mViewPager.getCurrentItem());
+	}
 
-    /**
-     * Starts playing the playlist from item start (via RouteFragment).
-     */
+	/**
+	 * Forwards back press to active Fragment (unless the fragment is
+	 * showing its root view).
+	 */
+	@Override
+	public void onBackPressed() {
+		OnBackPressedListener currentFragment = (OnBackPressedListener)
+				mSectionsPagerAdapter.getItem(mViewPager.getCurrentItem());
+		if (!currentFragment.onBackPressed())
+			super.onBackPressed();
+	}
+
+	/**
+	 * Changes volume on key press (via RouteFragment).
+	 */
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		switch (event.getKeyCode()) {
+		case KeyEvent.KEYCODE_VOLUME_UP:
+			if (event.getAction() == KeyEvent.ACTION_DOWN)
+				mRouteFragment.increaseVolume();
+			return true;
+		case KeyEvent.KEYCODE_VOLUME_DOWN:
+			if (event.getAction() == KeyEvent.ACTION_DOWN)
+				mRouteFragment.decreaseVolume();
+			return true;
+		default:
+			return super.dispatchKeyEvent(event);
+		}
+	}
+
+	/**
+	 * Starts playing the playlist from item start (via RouteFragment).
+	 */
 	public void play(List<Item> playlist, int start) {
-        mViewPager.setCurrentItem(1);
+		mViewPager.setCurrentItem(1);
 		mRouteFragment.play(playlist, start);
 	}
-    
+
 }

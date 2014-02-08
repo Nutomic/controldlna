@@ -4,12 +4,12 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
+ * Redistributions of source code must retain the above copyright
       notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
+ * Redistributions in binary form must reproduce the above copyright
       notice, this list of conditions and the following disclaimer in the
       documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
+ * Neither the name of the <organization> nor the
       names of its contributors may be used to endorse or promote products
       derived from this software without specific prior written permission.
 
@@ -46,28 +46,28 @@ import android.util.Log;
  *
  */
 public class LoadImageTask extends AsyncTask<URI, Void, Bitmap> {
-	
+
 	private static final String TAG = "LoadImageTask";
 
-    @Override
-    protected Bitmap doInBackground(URI... uri) {
-    	if (uri[0] == null)
-    		return null;
-    	
+	@Override
+	protected Bitmap doInBackground(URI... uri) {
+		if (uri[0] == null)
+			return null;
+
 		Bitmap bm = null;
-	    try {
-	        URLConnection conn = new URL(uri[0].toString())
-	        		.openConnection();
-	        conn.connect();
-	        InputStream is = conn.getInputStream();
-	        BufferedInputStream bis = new BufferedInputStream(is);
-	        bm = BitmapFactory.decodeStream(bis);
-	        bis.close();
-	        is.close();
-	    } catch (IOException e) {
-	        Log.w(TAG, "Failed to load artwork image", e);
-	    }	
-        return bm;
-    }
+		try {
+			URLConnection conn = new URL(uri[0].toString())
+			.openConnection();
+			conn.connect();
+			InputStream is = conn.getInputStream();
+			BufferedInputStream bis = new BufferedInputStream(is);
+			bm = BitmapFactory.decodeStream(bis);
+			bis.close();
+			is.close();
+		} catch (IOException e) {
+			Log.w(TAG, "Failed to load artwork image", e);
+		}
+		return bm;
+	}
 
 }
