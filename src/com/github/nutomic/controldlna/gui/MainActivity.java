@@ -100,7 +100,6 @@ public class MainActivity extends ActionBarActivity {
      */
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState); 
-        onNewIntent(getIntent());
         final ActionBar actionBar = getSupportActionBar();
 
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -175,6 +174,7 @@ public class MainActivity extends ActionBarActivity {
             mServerFragment = new ServerFragment();
             mRouteFragment = new RouteFragment();
         }
+        onNewIntent(getIntent());
     }
     
     /**
