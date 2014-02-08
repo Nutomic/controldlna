@@ -29,6 +29,7 @@ package com.github.nutomic.controldlna.upnp;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.teleal.cling.android.AndroidUpnpService;
@@ -94,12 +95,6 @@ public class RemotePlayService extends Service implements RegistryListener {
     
     private ConcurrentHashMap<String, Device<?, ?, ?>> mDevices = 
     		new ConcurrentHashMap<String, Device<?, ?, ?>>();
-    
-    private Device<?, ?, ?> mCurrentRenderer;
-    
-    private int mPlaybackState;
-    
-    private boolean mManuallyStopped;
 	
     protected AndroidUpnpService mUpnpService;
 
@@ -124,13 +119,21 @@ public class RemotePlayService extends Service implements RegistryListener {
             mUpnpService = null;
         }
     };
-
+    
     /**
-     * Receives events from current renderer.
+     * All active binders. The Hashmap value is unused.
      */
-	private SubscriptionCallback mSubscriptionCallback;
+    WeakHashMap<Binder, Boolean> mBinders = new WeakHashMap<Binder, Boolean>();
 	
-	private final IRemotePlayService.Stub mBinder = new IRemotePlayService.Stub() {
+	private class Binder extends IRemotePlayService.Stub {
+	    
+	    private Device<?, ?, ?> mCurrentRenderer;
+	    
+	    private int mPlaybackState;
+	    
+	    private boolean mManuallyStopped;
+	    
+		private SubscriptionCallback mSubscriptionCallback;
 
 		@Override
 		public void startSearch(Messenger listener)
@@ -141,6 +144,11 @@ public class RemotePlayService extends Service implements RegistryListener {
 		@Override
 		public void selectRenderer(String id) throws RemoteException {
 			mCurrentRenderer = mDevices.get(id);
+			for (Binder b : mBinders.keySet()) {
+				if (b != this && mCurrentRenderer.equals(b.mCurrentRenderer))
+					b.unselectRenderer("");
+			}
+			
 			mSubscriptionCallback = new SubscriptionCallback(
 					mCurrentRenderer.findService(
 			    			new ServiceType("schemas-upnp-org", "AVTransport")), 600) {
@@ -225,7 +233,8 @@ public class RemotePlayService extends Service implements RegistryListener {
 		public void unselectRenderer(String sessionId) throws RemoteException {
 			if (mDevices.get(sessionId) != null)
 				stop(sessionId);
-	    	mSubscriptionCallback.end();
+			if (mSubscriptionCallback != null)
+				mSubscriptionCallback.end();
 	    	mCurrentRenderer = null;					
 		}
 
@@ -424,7 +433,9 @@ public class RemotePlayService extends Service implements RegistryListener {
 	
 	@Override
 	public IBinder onBind(Intent itnent) {
-		return mBinder;
+		Binder b = new Binder();
+		mBinders.put(b, true);
+		return b;
 	}
 	
 	/**
@@ -497,8 +508,12 @@ public class RemotePlayService extends Service implements RegistryListener {
 	            	if (mUpnpService.getControlPoint().getRegistry()
 	            			.getDevice(new UDN(d.getKey()), false) == null) {
 	            		deviceRemoved(d.getValue());
-	            		if (d.getValue().equals(mCurrentRenderer))
-	            			mCurrentRenderer = null;
+	            		for (Binder b : mBinders.keySet()) {
+	            			if (b.mCurrentRenderer.equals(d.getValue())) {
+	            				b.mSubscriptionCallback.end(); 
+	            				b.mCurrentRenderer = null;
+	            			}
+	            		}
 	            	}	        		
 	        	}
 	        }
