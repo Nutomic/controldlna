@@ -373,6 +373,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 				public void onClick(DialogInterface dialog,
 						int which) {
 					mMediaRouterPlayService.getService().stop();
+					changePlayPauseState(false);
 					deviceListMode();
 				}
 			})
