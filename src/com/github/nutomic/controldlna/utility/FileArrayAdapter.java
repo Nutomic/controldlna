@@ -27,11 +27,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.utility;
 
-import java.util.Comparator;
 import java.util.List;
 
 import org.teleal.cling.support.model.DIDLObject;
-import org.teleal.cling.support.model.container.Container;
 import org.teleal.cling.support.model.item.Item;
 import org.teleal.cling.support.model.item.MusicTrack;
 
@@ -45,35 +43,15 @@ import android.widget.TextView;
 import com.github.nutomic.controldlna.R;
 
 /**
- * Allows displaying UPNP media server directory contents in a ListView.
+ * ArrayAdapter specialization for UPNP server directory contents.
  * 
  * @author Felix Ableitner
  *
  */
 public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 
-	/**
-	 * Provides sorting of elements by track number.
-	 */
 	public FileArrayAdapter(Context context) {
 		super(context, R.layout.list_item);
-		sort(new Comparator<DIDLObject>() {
-
-			@Override
-			public int compare(DIDLObject lhs, DIDLObject rhs) {
-				if (lhs instanceof MusicTrack && rhs instanceof MusicTrack)
-					return ((MusicTrack) rhs).getOriginalTrackNumber() -
-							((MusicTrack) lhs).getOriginalTrackNumber();
-				else if (lhs instanceof Item && rhs instanceof Container)
-					return 1;
-				else if (rhs instanceof Item && lhs instanceof Container)
-					return -1;
-				else if (lhs instanceof Container && rhs instanceof Container)
-					return lhs.getTitle().compareTo(rhs.getTitle());
-				else
-					return 0;
-			}
-		});
 	}
 
 	/**
