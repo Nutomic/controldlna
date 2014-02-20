@@ -1,14 +1,16 @@
 ## Description
 
-A DLNA/UPNP control point for Android.
+ControlDLNA is a DLNA and UPNP control point app for your phone.
 
-It supports playback of audio and media files from any UPNP media server to any UPNP media renderer. Additionally, playing from or to other apps via the MediaRouter API is also supported.
+It lets you play audio and video from any DLNA or UPNP compatible  server in the local network to a DLNA or UPNP renderer.
 
-The app requires Android 2.2 (Gingerbread) and higher.
+Additionally, other apps can utilize the MediaRouter API to play their media on a remote device.
+
+Android 2.2 (Gingerbread) or higher is required.
 
 [Download](http://f-droid.org/repository/browse/?fdid=com.github.nutomic.controldlna)
 
-Note about permissions: All permissions are required for UPNP. The app does not connect to the internet at all.
+Note about permissions: All permissions are required for UPNP (for the necessary wifi access). The app does not connect to the internet at all.
 
 ## Building
 
@@ -20,7 +22,7 @@ Alternatively, Cling can be built from source with instructions on [Github](http
 
 ## Icons
 
-All icons are taken from the Android project.
+All icons are taken from AOSP.
 
 ## License
 
