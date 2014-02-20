@@ -29,6 +29,7 @@ package com.github.nutomic.controldlna.utility;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Comparator;
 
 import org.teleal.cling.model.meta.Device;
 import org.teleal.cling.model.meta.LocalDevice;
@@ -115,8 +116,17 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 
 			@Override
 			public void run() {
-				if (device.getType().getType().equals(mDeviceType))
+				if (device.getType().getType().equals(mDeviceType)) {
 					add(device);
+					sort(new Comparator<Device<?, ?, ?>>() {
+
+						@Override
+						public int compare(Device<?, ?, ?> lhs,
+								Device<?, ?, ?> rhs) {
+							return lhs.getDisplayString().compareTo(rhs.getDisplayString());
+						}
+					});
+				}
 			}
 		});
 	}
