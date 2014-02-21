@@ -80,8 +80,8 @@ import com.github.nutomic.controldlna.utility.RouteAdapter;
  *
  */
 public class RouteFragment extends MediaRouteDiscoveryFragment implements
-		OnBackPressedListener, OnItemClickListener, OnClickListener,
-		OnSeekBarChangeListener, OnScrollListener {
+OnBackPressedListener, OnItemClickListener, OnClickListener,
+OnSeekBarChangeListener, OnScrollListener {
 
 	private ListView mListView;
 
@@ -122,7 +122,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			mMediaRouterPlayService = (MediaRouterPlayServiceBinder) service;
 			mMediaRouterPlayService.getService().setRouterFragment(RouteFragment.this);
 			mPlaylistAdapter.add(mMediaRouterPlayService.getService().getPlaylist());
-			receiveIsPlaying(mMediaRouterPlayService.getService().getCurrentTrack());
+			scrollToCurrent();
 			applyColors();
 			RouteInfo currentRoute = mMediaRouterPlayService.getService().getCurrentRoute();
 			if (currentRoute != null)
@@ -399,7 +399,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 				changePlayPauseState(false);
 			} else {
 				s.resume();
-				mListView.smoothScrollToPosition(s.getCurrentTrack());
+				scrollToCurrent();
 				changePlayPauseState(true);
 			}
 			break;
@@ -533,15 +533,6 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	}
 
 	/**
-	 * Sent by MediaRouterPlayService when playback of a new track is started.
-	 * 
-	 * @param track Index of the track in the playlist.
-	 */
-	public void receiveIsPlaying(int track) {
-		mListView.smoothScrollToPosition(track);
-	}
-
-	/**
 	 * Receives information from MediaRouterPlayService about playback status.
 	 */
 	public void receivePlaybackStatus(MediaItemStatus status) {
@@ -585,6 +576,15 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 			mPlayPause.setImageResource(R.drawable.ic_action_play);
 			mPlayPause.setContentDescription(getResources().getString(R.string.play));
 		}
+	}
+
+
+	/**
+	 * When in playlist mode, scrolls to the item that is currently playing.
+	 */
+	public void scrollToCurrent() {
+		mListView.smoothScrollToPosition(
+				mMediaRouterPlayService.getService().getCurrentTrack());
 	}
 
 }

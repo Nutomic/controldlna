@@ -182,8 +182,10 @@ public class MainActivity extends ActionBarActivity {
 	 */
 	@Override
 	protected void onNewIntent(Intent intent) {
-		if (intent.getAction().equals("showRouteFragment"))
+		if (intent.getAction().equals("showRouteFragment")) {
 			mViewPager.setCurrentItem(1);
+			mRouteFragment.scrollToCurrent();
+		}
 	}
 
 	/**

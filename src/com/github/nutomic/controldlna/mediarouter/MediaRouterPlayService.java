@@ -239,7 +239,7 @@ public class MediaRouterPlayService extends Service {
 						.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
 
 				if (mRouterFragment.get() != null)
-					mRouterFragment.get().receiveIsPlaying(mCurrentTrack);
+					mRouterFragment.get().scrollToCurrent();
 			}
 		});
 	}
