@@ -394,7 +394,8 @@ public class MediaRouterPlayService extends Service {
 							status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PLAYING)
 						stopForeground(true);
 
-					if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED)
+					if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED ||
+							status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_CANCELED)
 						playNext();
 				}
 			});

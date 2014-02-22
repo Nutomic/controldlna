@@ -73,8 +73,6 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 
 	private int mPlaybackState;
 
-	private boolean mManuallyStopped;
-
 	SubscriptionCallback mSubscriptionCallback;
 
 	private RemotePlayService mRps;
@@ -134,12 +132,7 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 								mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PAUSED;
 								break;
 							case STOPPED:
-								if (mManuallyStopped) {
-									mManuallyStopped = false;
-									mPlaybackState = MediaItemStatus.PLAYBACK_STATE_CANCELED;
-								}
-								else
-									mPlaybackState = MediaItemStatus.PLAYBACK_STATE_FINISHED;
+								mPlaybackState = MediaItemStatus.PLAYBACK_STATE_FINISHED;
 								break;
 							case TRANSITIONING:
 								mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PENDING;
@@ -291,7 +284,6 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 	 */
 	@Override
 	public void stop(String sessionId) throws RemoteException {
-		mManuallyStopped = true;
 		mRps.mUpnpService.getControlPoint().execute(
 				new Stop(mRps.getService(mRps.mDevices.get(sessionId), "AVTransport")) {
 
