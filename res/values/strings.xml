@@ -35,7 +35,6 @@
     <string name="album_art">Album Art</string>
     
     <!-- MediaRouter strings -->
-    <string name="route_description">DLNA Playback</string>
 	<string name="upnp_route_provider_service">UPNP Route Provider Service</string>
 	
 </resources>

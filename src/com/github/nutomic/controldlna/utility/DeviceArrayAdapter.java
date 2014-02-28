@@ -51,7 +51,7 @@ import com.github.nutomic.controldlna.R;
 /**
  * Displays the devices that are inserted through the RegistryListener (either
  * of type RENDERER or SERVER).
- * 
+ *
  * @author Felix Ableitner
  *
  */
@@ -84,10 +84,10 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			convertView = inflater.inflate(R.layout.list_item, parent, false);
 		}
-		TextView tv = (TextView) convertView.findViewById(R.id.title);
-		RemoteImageView image =
-				(RemoteImageView) convertView.findViewById(R.id.image);
-		tv.setText(getItem(position).getDetails().getFriendlyName());
+		TextView title = (TextView) convertView.findViewById(R.id.title);
+		TextView subtitle = (TextView) convertView.findViewById(R.id.subtitle);
+		title.setText(getItem(position).getDetails().getFriendlyName());
+		subtitle.setText(getItem(position).getDisplayString());
 
 		if (getItem(position).hasIcons()) {
 			URI uri = getItem(position).getIcons()[0].getUri();
@@ -98,7 +98,9 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 				} catch (URISyntaxException e) {
 					Log.w(TAG, "Failed to get device icon URI", e);
 				}
-			image.setImageUri(uri);
+			RemoteImageView icon =
+					(RemoteImageView) convertView.findViewById(R.id.image);
+			icon.setImageUri(uri);
 		}
 
 		return convertView;

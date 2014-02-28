@@ -238,10 +238,11 @@ public class RemotePlayService extends Service implements RegistryListener {
 						}
 
 						Message msg = Message.obtain(null, Provider.MSG_RENDERER_ADDED, 0, 0);
+
 						msg.getData().putParcelable("device", new Provider.Device(
 								device.getIdentity().getUdn().toString(),
+								device.getDetails().getFriendlyName(),
 								device.getDisplayString(),
-								device.getDetails().getManufacturerDetails().getManufacturer(),
 								currentVolume,
 								maxVolume));
 						sendMessage(msg);

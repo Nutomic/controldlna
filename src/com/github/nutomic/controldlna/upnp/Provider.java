@@ -58,11 +58,9 @@ import android.util.Pair;
 import android.util.SparseArray;
 import android.widget.Toast;
 
-import com.github.nutomic.controldlna.R;
-
 /**
  * Allows playing to a DLNA renderer from a remote app.
- * 
+ *
  * @author Felix Ableitner
  */
 final class Provider extends MediaRouteProvider {
@@ -228,10 +226,8 @@ final class Provider extends MediaRouteProvider {
 		Builder builder = new Builder();
 		for (Entry<String, Device> d : mDevices.entrySet()) {
 			MediaRouteDescriptor routeDescriptor = new MediaRouteDescriptor.Builder(
-					d.getValue().id,
-					d.getValue().name)
-			.setDescription(getContext().getResources()
-					.getString(R.string.route_description))
+							d.getValue().id, d.getValue().name)
+					.setDescription(d.getValue().description)
 					.addControlFilters(CONTROL_FILTERS)
 					.setPlaybackType(MediaRouter.RouteInfo.PLAYBACK_TYPE_REMOTE)
 					.setVolumeHandling(MediaRouter.RouteInfo.PLAYBACK_VOLUME_VARIABLE)
