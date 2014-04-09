@@ -75,7 +75,7 @@ import com.github.nutomic.controldlna.utility.RouteAdapter;
 /**
  * Controls media playback by showing a list of routes, and after selecting one,
  * the current playlist and playback controls.
- * 
+ *
  * @author Felix Ableitner
  *
  */
@@ -212,7 +212,6 @@ OnSeekBarChangeListener, OnScrollListener {
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 
-		outState.putBoolean("route_selected", mSelectedRoute != null);
 		outState.putParcelable("list_state", mListView.onSaveInstanceState());
 	}
 
@@ -515,7 +514,7 @@ OnSeekBarChangeListener, OnScrollListener {
 
 	/**
 	 * Generates a time string in the format mm:ss from a time value in seconds.
-	 * 
+	 *
 	 * @param time Time value in seconds (non-negative).
 	 * @return Formatted time string.
 	 */
@@ -563,7 +562,7 @@ OnSeekBarChangeListener, OnScrollListener {
 	/**
 	 * Changes the state of mPlayPause button to pause/resume according to
 	 * current playback state, also sets mPlaying.
-	 * 
+	 *
 	 * @param playing True if an item is currently being played, false otherwise.
 	 */
 	private void changePlayPauseState(boolean playing) {
