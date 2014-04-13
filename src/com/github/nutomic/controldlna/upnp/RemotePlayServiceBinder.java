@@ -27,7 +27,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.upnp;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.teleal.cling.controlpoint.SubscriptionCallback;
 import org.teleal.cling.model.action.ActionInvocation;
@@ -50,6 +53,7 @@ import org.teleal.cling.support.model.PositionInfo;
 import org.teleal.cling.support.model.SeekMode;
 import org.teleal.cling.support.renderingcontrol.callback.SetVolume;
 
+import android.annotation.SuppressLint;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
@@ -324,13 +328,16 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 	/**
 	 * Seeks to the given absolute time in seconds.
 	 */
+	@SuppressLint("SimpleDateFormat")
 	@Override
 	public void seek(String sessionId, String itemId, long milliseconds)
 			throws RemoteException {
+		SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+		df.setTimeZone(TimeZone.getTimeZone("UTC"));
 		mRps.mUpnpService.getControlPoint().execute(new Seek(
 				mRps.getService(mRps.mDevices.get(sessionId), "AVTransport"),
 				SeekMode.REL_TIME,
-				Integer.toString((int) milliseconds / 1000)) {
+				df.format(new Date(milliseconds))) {
 
 			@SuppressWarnings("rawtypes")
 			@Override
@@ -339,6 +346,7 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 				Log.w(TAG, "Seek failed: " + defaultMessage);
 				mRps.sendError("Seek failed: " + defaultMessage);
 			}
+
 		});
 	}
 
