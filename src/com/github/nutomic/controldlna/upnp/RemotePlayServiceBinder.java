@@ -243,7 +243,6 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 
 											@Override
 											public void success(ActionInvocation invocation) {
-												Log.d(TAG, "play success");
 												mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PLAYING;
 												mStartingPlayback = false;
 											}
@@ -369,20 +368,17 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 			@SuppressWarnings("rawtypes")
 			@Override
 			public void received(ActionInvocation invocation, PositionInfo positionInfo) {
-				if (positionInfo.getTrackURI() == null)
-					return;
 
 				Message msg = Message.obtain(null, Provider.MSG_STATUS_INFO, 0, 0);
 				Builder status = null;
 
-				if (positionInfo.getTrackURI().equals(itemId))
+				if (positionInfo.getTrackURI() != null && positionInfo.getTrackURI().equals(itemId))
 					status = new MediaItemStatus.Builder(mPlaybackState)
-				.setContentPosition(positionInfo.getTrackElapsedSeconds() * 1000)
-				.setContentDuration(positionInfo.getTrackDurationSeconds() * 1000)
-				.setTimestamp(positionInfo.getAbsCount());
+							.setContentPosition(positionInfo.getTrackElapsedSeconds() * 1000)
+							.setContentDuration(positionInfo.getTrackDurationSeconds() * 1000)
+							.setTimestamp(positionInfo.getAbsCount());
 				else
-					status = new MediaItemStatus.Builder(
-							MediaItemStatus.PLAYBACK_STATE_INVALIDATED);
+					status = new MediaItemStatus.Builder(mPlaybackState);
 
 				msg.getData().putBundle("media_item_status", status.build().asBundle());
 				msg.getData().putInt("hash", requestHash);
