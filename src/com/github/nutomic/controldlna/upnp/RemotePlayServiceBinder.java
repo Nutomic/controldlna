@@ -59,9 +59,9 @@ import android.util.Log;
 
 /**
  * Binder for RemotePlayService. Provides a direct interface to a specific route.
- * 
+ *
  * Clients should use the MediaRouter api through Provider.
- * 
+ *
  * @author Felix Ableitner
  *
  */
@@ -77,6 +77,7 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 
 	private RemotePlayService mRps;
 
+	private boolean mStartingPlayback = false;
 	public RemotePlayServiceBinder(RemotePlayService rps) {
 		mRps = rps;
 	}
@@ -118,7 +119,7 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 					LastChange lastChange = new LastChange(
 							new AVTransportLastChangeParser(),
 							m.get("LastChange").toString());
-					if (lastChange.getEventedValue(0,
+					if (mStartingPlayback || lastChange.getEventedValue(0,
 							AVTransportVariable.TransportState.class) == null)
 						return;
 
@@ -203,40 +204,63 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 	 * current renderer.
 	 */
 	@Override
-	public void play(String uri, String metadata) throws RemoteException {
+	public void play(final String uri, final String metadata) throws RemoteException {
+		mStartingPlayback = true;
 		mPlaybackState = MediaItemStatus.PLAYBACK_STATE_BUFFERING;
-		mRps.mUpnpService.getControlPoint().execute(new SetAVTransportURI(
-				mRps.getService(mCurrentRenderer, "AVTransport"),
-				uri, metadata) {
-			@SuppressWarnings("rawtypes")
-			@Override
-			public void failure(ActionInvocation invocation,
-					UpnpResponse operation, String defaultMsg) {
-				Log.w(TAG, "Set URI failed: " + defaultMsg);
-				mRps.sendError("Set URI failed: " + defaultMsg);
-			}
+		mRps.mUpnpService.getControlPoint().execute(
+				new Stop(mRps.getService(mCurrentRenderer, "AVTransport")) {
 
-			@SuppressWarnings("rawtypes")
-			@Override
-			public void success(ActionInvocation invocation) {
-				mRps.mUpnpService.getControlPoint().execute(
-						new Play(mRps.getService(mCurrentRenderer,
-								"AVTransport")) {
+					@SuppressWarnings("rawtypes")
+					@Override
+					public void failure(ActionInvocation invocation,
+							org.teleal.cling.model.message.UpnpResponse operation,
+							String defaultMessage) {
+						Log.w(TAG, "Stop failed: " + defaultMessage);
+						mRps.sendError("Stop failed: " + defaultMessage);
+						mStartingPlayback = false;
+					}
+
+					@SuppressWarnings("rawtypes")
+					@Override
+					public void success(ActionInvocation invocation) {
+						mRps.mUpnpService.getControlPoint().execute(new SetAVTransportURI(
+								mRps.getService(mCurrentRenderer, "AVTransport"),
+								uri, metadata) {
+							@Override
+							public void failure(ActionInvocation invocation,
+									UpnpResponse operation, String defaultMsg) {
+								Log.w(TAG, "Set URI failed: " + defaultMsg);
+								mRps.sendError("Set URI failed: " + defaultMsg);
+								mStartingPlayback = false;
+							}
 
 							@Override
 							public void success(ActionInvocation invocation) {
-								mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PLAYING;
-							}
+								// Can't use resume here as we don't have the session id to call.
+								mRps.mUpnpService.getControlPoint().execute(
+										new Play(mRps.getService(mCurrentRenderer,
+												"AVTransport")) {
 
-							@Override
-							public void failure(ActionInvocation invocation,
-									UpnpResponse operation, String defaultMessage) {
-								Log.w(TAG, "Play failed: " + defaultMessage);
-								mRps.sendError("Play failed: " + defaultMessage);
+											@Override
+											public void success(ActionInvocation invocation) {
+												Log.d(TAG, "play success");
+												mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PLAYING;
+												mStartingPlayback = false;
+											}
+
+											@Override
+											public void failure(ActionInvocation invocation,
+													UpnpResponse operation, String defaultMessage) {
+												Log.w(TAG, "Play failed: " + defaultMessage);
+												mRps.sendError("Play failed: " + defaultMessage);
+												mStartingPlayback = false;
+											}
+								});
 							}
 						});
-			}
-		});
+					}
+				});
+
 	}
 
 	/**
@@ -321,10 +345,10 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 
 	/**
 	 * Sends a message with current status for the route and item.
-	 * 
+	 *
 	 * If itemId does not match with the item currently played,
 	 * MediaItemStatus.PLAYBACK_STATE_INVALIDATED is returned.
-	 * 
+	 *
 	 * @param sessionId Identifier of the session (equivalent to route) to get info for.
 	 * @param itemId Identifier of the item to get info for.
 	 * @param requestHash Passed back in message to find original request object.
