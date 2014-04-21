@@ -582,8 +582,10 @@ OnSeekBarChangeListener, OnScrollListener {
 	 * When in playlist mode, scrolls to the item that is currently playing.
 	 */
 	public void scrollToCurrent() {
-		mListView.smoothScrollToPosition(
-				mMediaRouterPlayService.getService().getCurrentTrack());
+		if (mMediaRouterPlayService != null) {
+			mListView.smoothScrollToPosition(
+					mMediaRouterPlayService.getService().getCurrentTrack());
+		}
 	}
 
 }
