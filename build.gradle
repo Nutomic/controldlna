@@ -10,10 +10,18 @@ buildscript {
 
 apply plugin: 'android'
 
+repositories {
+    mavenCentral()
+    maven {
+        url "http://4thline.org/m2"
+    }
+}
+
 dependencies {
-	compile fileTree('libs/')
     compile 'com.android.support:appcompat-v7:18.0.+'
     compile 'com.android.support:mediarouter-v7:18.0.+'
+    compile 'org.teleal.cling:cling-core:1.0.5'
+    compile 'org.teleal.cling:cling-support:1.0.5'
 }
 
 android {
