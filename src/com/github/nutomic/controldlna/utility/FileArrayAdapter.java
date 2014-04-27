@@ -27,10 +27,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.utility;
 
-import java.util.List;
+import java.net.URI;
+import java.util.List; 
 
 import org.teleal.cling.support.model.DIDLObject;
+import org.teleal.cling.support.model.item.AudioItem;
+import org.teleal.cling.support.model.item.ImageItem;
 import org.teleal.cling.support.model.item.Item;
+import org.teleal.cling.support.model.item.PlaylistItem;
+import org.teleal.cling.support.model.item.VideoItem;
 import org.teleal.cling.support.model.item.MusicTrack;
 
 import android.content.Context;
@@ -39,12 +44,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+import android.util.Log;
 
 import com.github.nutomic.controldlna.R;
 
 /**
  * ArrayAdapter specialization for UPNP server directory contents.
- * 
+ *
  * @author Felix Ableitner
  *
  */
@@ -68,7 +74,6 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 		TextView title = (TextView) convertView.findViewById(R.id.title);
 		TextView artist = (TextView) convertView.findViewById(R.id.subtitle);
 		artist.setText("");
-		RemoteImageView image = (RemoteImageView) convertView.findViewById(R.id.image);
 		if (item instanceof MusicTrack) {
 			MusicTrack track = (MusicTrack) item;
 			String trackNumber = (track.getOriginalTrackNumber() != null)
@@ -81,8 +86,27 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 		else
 			title.setText(item.getTitle());
 
-		image.setImageUri(item.getFirstPropertyValue(
-				DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+		RemoteImageView image = (RemoteImageView) convertView.findViewById(R.id.image);
+		URI icon = item.getFirstPropertyValue(
+				DIDLObject.Property.UPNP.ALBUM_ART_URI.class);
+		if (icon != null) {
+			image.setImageUri(icon);
+		}
+		else {
+			int resId;
+			if (item instanceof AudioItem)
+				resId = R.drawable.ic_doc_audio_am;
+			else if (item instanceof VideoItem)
+				resId = R.drawable.ic_doc_video_am;
+			else if (item instanceof ImageItem)
+				resId = R.drawable.ic_doc_image;
+			else if (item instanceof PlaylistItem)
+				resId = R.drawable.ic_doc_album;
+			else
+				resId = R.drawable.ic_root_folder_am;
+			image.setImageResource(resId);
+		}
+
 		return convertView;
 	}
 

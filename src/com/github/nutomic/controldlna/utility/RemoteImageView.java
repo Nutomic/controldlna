@@ -54,8 +54,6 @@ public class RemoteImageView extends ImageView {
 		protected void onPostExecute(Bitmap bm) {
 			if (bm != null)
 				setImageBitmap(bm);
-			else
-				setImageDrawable(null);
 		}
 
 	};
