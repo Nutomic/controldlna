@@ -14,11 +14,7 @@ Note about permissions: All permissions are required for UPNP (for the necessary
 
 ## Building
 
-Android Support Library and [Cling](http://4thline.org/projects/cling/) are required for building. 
-
-Binaries for Cling are included in the libs folder.
-
-Alternatively, Cling can be built from source with instructions on [Github](https://github.com/4thline/cling).
+To build, install Gradle (make sure it has support for Android builds), and then simply run `gradle assembleDebug` or `gradle assembleRelease` The apk will be placed in `build/apk`.
 
 ## Icons
 
