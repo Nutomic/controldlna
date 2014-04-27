@@ -114,17 +114,18 @@ OnSeekBarChangeListener, OnScrollListener {
 	 */
 	private int mStartPlayingOnSelect = -1;
 
-	private MediaRouterPlayServiceBinder mMediaRouterPlayService;
+	private MediaRouterPlayService mMediaRouterPlayService;
 
 	private ServiceConnection mPlayServiceConnection = new ServiceConnection() {
 
 		public void onServiceConnected(ComponentName className, IBinder service) {
-			mMediaRouterPlayService = (MediaRouterPlayServiceBinder) service;
-			mMediaRouterPlayService.getService().setRouterFragment(RouteFragment.this);
-			mPlaylistAdapter.add(mMediaRouterPlayService.getService().getPlaylist());
+			MediaRouterPlayServiceBinder binder = (MediaRouterPlayServiceBinder) service;
+			mMediaRouterPlayService = binder.getService();
+			mMediaRouterPlayService.setRouterFragment(RouteFragment.this);
+			mPlaylistAdapter.add(mMediaRouterPlayService.getPlaylist());
 			scrollToCurrent();
 			applyColors();
-			RouteInfo currentRoute = mMediaRouterPlayService.getService().getCurrentRoute();
+			RouteInfo currentRoute = mMediaRouterPlayService.getCurrentRoute();
 			if (currentRoute != null)
 				playlistMode(currentRoute);
 		}
@@ -139,8 +140,8 @@ OnSeekBarChangeListener, OnScrollListener {
 	 */
 	public RouteFragment() {
 		MediaRouteSelector mSelector = new MediaRouteSelector.Builder()
-		.addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
-		.build();
+				.addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+				.build();
 		setRouteSelector(mSelector);
 	}
 
@@ -212,6 +213,7 @@ OnSeekBarChangeListener, OnScrollListener {
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 
+		//outState.putBoolean("route_selected", mSelectedRoute != null);
 		outState.putParcelable("list_state", mListView.onSaveInstanceState());
 	}
 
@@ -298,7 +300,7 @@ OnSeekBarChangeListener, OnScrollListener {
 		if (mListView.getAdapter() == mRouteAdapter)
 			playlistMode(mRouteAdapter.getItem(position));
 		else {
-			mMediaRouterPlayService.getService().play(position);
+			mMediaRouterPlayService.play(position);
 			changePlayPauseState(true);
 		}
 	}
@@ -320,11 +322,11 @@ OnSeekBarChangeListener, OnScrollListener {
 	 */
 	private void playlistMode(RouteInfo route) {
 		mSelectedRoute = route;
-		mMediaRouterPlayService.getService().selectRoute(mSelectedRoute);
+		mMediaRouterPlayService.selectRoute(mSelectedRoute);
 		mListView.setAdapter(mPlaylistAdapter);
 		mControls.setVisibility(View.VISIBLE);
 		if (mStartPlayingOnSelect != -1) {
-			mMediaRouterPlayService.getService().play(mStartPlayingOnSelect);
+			mMediaRouterPlayService.play(mStartPlayingOnSelect);
 			changePlayPauseState(true);
 			mStartPlayingOnSelect = -1;
 		}
@@ -340,8 +342,7 @@ OnSeekBarChangeListener, OnScrollListener {
 			return;
 
 		disableTrackHighlight();
-		mCurrentTrackView = mListView.getChildAt(mMediaRouterPlayService.getService()
-				.getCurrentTrack()
+		mCurrentTrackView = mListView.getChildAt(mMediaRouterPlayService.getCurrentTrack()
 				- mListView.getFirstVisiblePosition() + mListView.getHeaderViewsCount());
 		if (mCurrentTrackView != null)
 			mCurrentTrackView.setBackgroundColor(
@@ -371,7 +372,7 @@ OnSeekBarChangeListener, OnScrollListener {
 				@Override
 				public void onClick(DialogInterface dialog,
 						int which) {
-					mMediaRouterPlayService.getService().stop();
+					mMediaRouterPlayService.stop();
 					changePlayPauseState(false);
 					deviceListMode();
 				}
@@ -390,20 +391,19 @@ OnSeekBarChangeListener, OnScrollListener {
 	 */
 	@Override
 	public void onClick(View v) {
-		final MediaRouterPlayService s = mMediaRouterPlayService.getService();
 		switch (v.getId()) {
 		case R.id.playpause:
 			if (mPlaying) {
-				s.pause();
+				mMediaRouterPlayService.pause();
 				changePlayPauseState(false);
 			} else {
-				s.resume();
+				mMediaRouterPlayService.resume();
 				scrollToCurrent();
 				changePlayPauseState(true);
 			}
 			break;
 		case R.id.shuffle:
-			s.toggleShuffleEnabled();
+			mMediaRouterPlayService.toggleShuffleEnabled();
 			applyColors();
 			break;
 		case R.id.previous:
@@ -415,7 +415,7 @@ OnSeekBarChangeListener, OnScrollListener {
 				public void run() {
 					// Single tap.
 					mPreviousTapCount = 0;
-					s.play(s.getCurrentTrack());
+					mMediaRouterPlayService.play(mMediaRouterPlayService.getCurrentTrack());
 					changePlayPauseState(true);
 				}
 			};
@@ -424,15 +424,15 @@ OnSeekBarChangeListener, OnScrollListener {
 			else if(mPreviousTapCount == 2) {
 				// Double tap.
 				mPreviousTapCount = 0;
-				s.playPrevious();
+				mMediaRouterPlayService.playPrevious();
 			}
 			break;
 		case R.id.next:
-			boolean stillPlaying = s.playNext();
+			boolean stillPlaying = mMediaRouterPlayService.playNext();
 			changePlayPauseState(stillPlaying);
 			break;
 		case R.id.repeat:
-			s.toggleRepeatEnabled();
+			mMediaRouterPlayService.toggleRepeatEnabled();
 			applyColors();
 			break;
 		}
@@ -443,16 +443,15 @@ OnSeekBarChangeListener, OnScrollListener {
 	 * if they are enabled or disabled).
 	 */
 	private void applyColors() {
-		MediaRouterPlayService s = mMediaRouterPlayService.getService();
 		int highlight = getResources().getColor(R.color.button_highlight);
 		int transparent = getResources().getColor(android.R.color.transparent);
 
-		mShuffle.setColorFilter((s.getShuffleEnabled())
+		mShuffle.setColorFilter((mMediaRouterPlayService.getShuffleEnabled())
 				? highlight
-						: transparent);
-		mRepeat.setColorFilter((s.getRepeatEnabled())
+				: transparent);
+		mRepeat.setColorFilter((mMediaRouterPlayService.getRepeatEnabled())
 				? highlight
-						: transparent);
+				: transparent);
 	}
 
 	/**
@@ -462,7 +461,7 @@ OnSeekBarChangeListener, OnScrollListener {
 	public void onProgressChanged(SeekBar seekBar, int progress,
 			boolean fromUser) {
 		if (fromUser)
-			mMediaRouterPlayService.getService().seek(progress);
+			mMediaRouterPlayService.seek(progress);
 	}
 
 	@Override
@@ -487,11 +486,11 @@ OnSeekBarChangeListener, OnScrollListener {
 	}
 
 	public void increaseVolume() {
-		mMediaRouterPlayService.getService().increaseVolume();
+		mMediaRouterPlayService.increaseVolume();
 	}
 
 	public void decreaseVolume() {
-		mMediaRouterPlayService.getService().decreaseVolume();
+		mMediaRouterPlayService.decreaseVolume();
 	}
 
 	/**
@@ -500,10 +499,10 @@ OnSeekBarChangeListener, OnScrollListener {
 	public void play(List<Item> playlist, int start) {
 		mPlaylistAdapter.clear();
 		mPlaylistAdapter.add(playlist);
-		mMediaRouterPlayService.getService().setPlaylist(playlist);
+		mMediaRouterPlayService.setPlaylist(playlist);
 
 		if (mSelectedRoute != null) {
-			mMediaRouterPlayService.getService().play(start);
+			mMediaRouterPlayService.play(start);
 			changePlayPauseState(true);
 		} else {
 			Toast.makeText(getActivity(), R.string.select_route, Toast.LENGTH_SHORT)
@@ -584,7 +583,7 @@ OnSeekBarChangeListener, OnScrollListener {
 	public void scrollToCurrent() {
 		if (mMediaRouterPlayService != null) {
 			mListView.smoothScrollToPosition(
-					mMediaRouterPlayService.getService().getCurrentTrack());
+					mMediaRouterPlayService.getCurrentTrack());
 		}
 	}
 
