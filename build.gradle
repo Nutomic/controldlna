@@ -9,6 +9,7 @@ buildscript {
 }
 
 apply plugin: 'android'
+apply plugin: 'eclipse'
 
 repositories {
     mavenCentral()
@@ -27,6 +28,12 @@ dependencies {
 android {
     compileSdkVersion 19
     buildToolsVersion "19.0.1"
+
+    buildTypes {
+        debug {
+            packageNameSuffix ".debug"
+        }
+    }
 
     sourceSets {
         main {
