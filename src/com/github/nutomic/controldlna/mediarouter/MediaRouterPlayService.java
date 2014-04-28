@@ -109,7 +109,7 @@ public class MediaRouterPlayService extends Service {
 
 	/*
 	 * Stops foreground mode and notification if the current route
-	 * has been removed.
+	 * has been removed. If the service is not bound, stops it.
 	 */
 	private MediaRouter.Callback mRouteRemovedCallback =
 			new MediaRouter.Callback() {
@@ -117,6 +117,9 @@ public class MediaRouterPlayService extends Service {
 		public void onRouteRemoved(MediaRouter router, RouteInfo route) {
 			if (route.equals(mCurrentRoute))
 				stopForeground(true);
+
+			if (!mBound)
+				stopSelf();
 		}
 	};
 
@@ -172,12 +175,8 @@ public class MediaRouterPlayService extends Service {
 	 */
 	@Override
 	public boolean onUnbind(Intent intent) {
-		new Handler().postDelayed(new Runnable() {
-			public void run() {
-				if (!mPollingStatus && !mBound)
-					stopSelf();
-			}
-		}, 5000);
+		if (!mPollingStatus)
+			stopSelf();
 		mBound = false;
 		return super.onUnbind(intent);
 	}
@@ -342,6 +341,7 @@ public class MediaRouterPlayService extends Service {
 			stop();
 			if (!mBound)
 				stopSelf();
+			mPollingStatus = false;
 			return false;
 		}
 	}
