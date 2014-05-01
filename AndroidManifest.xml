@@ -43,7 +43,13 @@
         
         <activity
             android:name=".gui.PreferencesActivity"
-            android:label="@string/settings_title" />
+            android:label="@string/settings_title" >
+
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.github.nutomic.controldlna.gui.MainActivity" />
+
+        </activity>
             
 		<service android:name="org.teleal.cling.android.AndroidUpnpServiceImpl" />
   		
