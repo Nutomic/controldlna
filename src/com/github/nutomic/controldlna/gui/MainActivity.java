@@ -32,11 +32,15 @@ import java.util.List;
 import org.teleal.cling.support.model.item.Item;
 
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -139,29 +143,28 @@ public class MainActivity extends ActionBarActivity {
 				.setText(R.string.title_route)
 				.setTabListener(tabListener));
 
-		ConnectivityManager connManager = (ConnectivityManager)
-				getSystemService(CONNECTIVITY_SERVICE);
-		NetworkInfo wifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-		final SharedPreferences prefs = getSharedPreferences("preferences.db", 0);
+        final WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        if (!wifi.isWifiEnabled()){
+            String value = PreferenceManager.getDefaultSharedPreferences(this)
+                    .getString(PreferencesActivity.KEY_ENABLE_WIFI_ON_START, "ask");
+            if (value.equals("yes")) {
+                wifi.setWifiEnabled(true);
+            }
+            else if (value.equals("ask")) {
+                new AlertDialog.Builder(this)
+                        .setMessage(R.string.enable_wifi_dialog)
+                        .setPositiveButton(android.R.string.yes,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        wifi.setWifiEnabled(true);
+                                    }
+                                })
+                        .setNegativeButton(android.R.string.no, null)
+                        .show();
+            }
+        }
 
-		if (!wifi.isConnected() && !prefs.getBoolean("wifi_skip_dialog", false)) {
-			View checkBoxView = View.inflate(this, R.layout.dialog_wifi_disabled, null);
-			CheckBox checkBox = (CheckBox) checkBoxView.findViewById(R.id.dont_show_again);
-			checkBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-
-				@Override
-				public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-					prefs.edit().putBoolean("wifi_skip_dialog", isChecked)
-					.commit();
-				}
-			});
-
-			new AlertDialog.Builder(this)
-			.setView(checkBoxView)
-			.setTitle(R.string.warning_wifi_not_connected)
-			.setPositiveButton(android.R.string.ok, null)
-			.show();
-		}
 
 		if (savedInstanceState != null) {
 			FragmentManager fm = getSupportFragmentManager();

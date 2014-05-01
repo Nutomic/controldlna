@@ -39,8 +39,9 @@ public class RouteAdapter extends ArrayAdapter<RouteInfo> {
 	 * Replacement for addAll, which is not implemented on lower API levels.
 	 */
 	public void add(List<RouteInfo> routes) {
-		for (RouteInfo r : routes)
+		for (RouteInfo r : routes) {
 			add(r);
+        }
 	}
 
 }

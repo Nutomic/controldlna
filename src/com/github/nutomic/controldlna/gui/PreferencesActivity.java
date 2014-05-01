@@ -28,24 +28,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.github.nutomic.controldlna.gui;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
 
 import com.github.nutomic.controldlna.R;
 
-public class PreferencesActivity extends PreferenceActivity {
+public class PreferencesActivity extends PreferenceActivity
+        implements SharedPreferences.OnSharedPreferenceChangeListener {
 
+    public static final String KEY_ENABLE_WIFI_ON_START = "enable_wifi_on_start";
     public static final String KEY_INCOMING_PHONE_CALL_PAUSE = "incoming_phone_call_pause";
     private static final String KEY_CONTACT_DEV = "contact_dev";
 
+    private ListPreference mEnableWifiOnStart;
     private Preference mContactDev;
 
+    /**
+     * Initializes preferences from xml.
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,14 +62,21 @@ public class PreferencesActivity extends PreferenceActivity {
         // There is currently no way to get ActionBar in PreferenceActivity on pre-honeycomb with
         // compatibility library, so we'll have to do a version check.
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                getActionBar().setDisplayHomeAsUpEnabled(true);
+            getActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .registerOnSharedPreferenceChangeListener(this);
         addPreferencesFromResource(R.xml.preferences);
         final PreferenceScreen screen = getPreferenceScreen();
+        mEnableWifiOnStart = (ListPreference) screen.findPreference(KEY_ENABLE_WIFI_ON_START);
+        mEnableWifiOnStart.setSummary(mEnableWifiOnStart.getEntry());
         mContactDev = screen.findPreference(KEY_CONTACT_DEV);
     }
 
+    /**
+     * Navigates up from activity on ActionBar back click.
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -72,6 +88,9 @@ public class PreferencesActivity extends PreferenceActivity {
         }
     }
 
+    /**
+     * Sends mail intent on contact dev preference click.
+     */
     @Override
     public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen,
                                          Preference preference) {
@@ -82,6 +101,15 @@ public class PreferencesActivity extends PreferenceActivity {
             return true;
         }
         return super.onPreferenceTreeClick(preferenceScreen, preference);
+    }
+
+    /**
+     * Updates summary of list preference (from current item).
+     */
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(KEY_ENABLE_WIFI_ON_START)) {
+            mEnableWifiOnStart.setSummary(mEnableWifiOnStart.getEntry());
+        }
     }
     
 }

@@ -27,9 +27,8 @@
     <string name="exit_renderer">Do you really want to exit the renderer? 
         Playback will be stopped.</string>
     <string name="select_route">Please select a route</string>
-    <string name="warning_wifi_not_connected">Wifi needs to be connected for playback</string>
-    <string name="dont_show_dialog_again">"Do not show this dialog again"</string>
-    <string name="warning">Warning</string>
+    <string name="enable_wifi_dialog">Wifi needs to be connected for playback.
+        Do you want to enable it now?</string>
     
     <!-- Image alt text -->
     <string name="album_art">Album Art</string>
@@ -42,6 +41,16 @@
 	
 	<!-- Title for the SettingsActivity -->
 	<string name="settings_title">Preferences</string>
+
+    <!-- Title for preference to enable wifi on start -->
+    <string name="enable_wifi_title">Automatically enable Wifi on start</string>
+
+    <!-- Values for preference to auto-enable wifi on start -->
+    <string-array name="enable_wifi_value_titles">
+        <item>yes</item>
+        <item>no</item>
+        <item>ask</item>
+    </string-array>
 
     <!-- Title for the pause playback on call preference -->
     <string name="incoming_phone_call_pause">Pause playback on incoming phone call</string>

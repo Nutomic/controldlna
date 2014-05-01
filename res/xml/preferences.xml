@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <ListPreference
+        android:key="enable_wifi_on_start"
+        android:title="@string/enable_wifi_title"
+        android:entries="@array/enable_wifi_value_titles"
+        android:entryValues="@array/enable_wifi_values"
+        android:defaultValue="ask"/>
+
     <CheckBoxPreference
         android:key="incoming_phone_call_pause"
         android:title="@string/incoming_phone_call_pause"
