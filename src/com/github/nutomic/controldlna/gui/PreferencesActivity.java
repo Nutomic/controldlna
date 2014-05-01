@@ -41,6 +41,7 @@ import com.github.nutomic.controldlna.R;
 
 public class PreferencesActivity extends PreferenceActivity {
 
+    public static final String KEY_INCOMING_PHONE_CALL_PAUSE = "incoming_phone_call_pause";
     private static final String KEY_CONTACT_DEV = "contact_dev";
 
     private Preference mContactDev;

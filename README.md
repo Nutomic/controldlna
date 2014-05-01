@@ -10,7 +10,7 @@ Android 2.2 (Gingerbread) or higher is required.
 
 [Download](http://f-droid.org/repository/browse/?fdid=com.github.nutomic.controldlna)
 
-Note about permissions: All permissions are required for UPNP (for the necessary wifi access). The app does not connect to the internet at all.
+Permissions: READ_PHONE_STATE is required to pause playback on phone call. All other permissions are required for UPnP functionality. ControlDLNA does not access the internet.
 
 ## Building
 

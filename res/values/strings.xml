@@ -42,6 +42,9 @@
 	
 	<!-- Title for the SettingsActivity -->
 	<string name="settings_title">Preferences</string>
+
+    <!-- Title for the pause playback on call preference -->
+    <string name="incoming_phone_call_pause">Pause playback on incoming phone call</string>
 	
 	<!-- Title for the contact developer preference -->
 	<string name="contact_dev_title">Contact Developer</string>

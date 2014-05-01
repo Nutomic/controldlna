@@ -41,12 +41,14 @@ import org.teleal.cling.support.model.item.MusicTrack;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.media.MediaControlIntent;
 import android.support.v7.media.MediaItemStatus;
@@ -54,10 +56,13 @@ import android.support.v7.media.MediaRouteSelector;
 import android.support.v7.media.MediaRouter;
 import android.support.v7.media.MediaRouter.ControlRequestCallback;
 import android.support.v7.media.MediaRouter.RouteInfo;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.github.nutomic.controldlna.R;
 import com.github.nutomic.controldlna.gui.MainActivity;
+import com.github.nutomic.controldlna.gui.PreferencesActivity;
 import com.github.nutomic.controldlna.gui.RouteFragment;
 import com.github.nutomic.controldlna.utility.LoadImageTask;
 
@@ -144,7 +149,7 @@ public class MediaRouterPlayService extends Service {
 			intent.setAction("showRouteFragment");
 			Notification notification = new NotificationCompat.Builder(MediaRouterPlayService.this)
 			.setContentIntent(PendingIntent.getActivity(MediaRouterPlayService.this, 0,
-					intent, 0))
+                    intent, 0))
 					.setContentTitle(title)
 					.setContentText(artist)
 					.setLargeIcon(result)
@@ -156,11 +161,47 @@ public class MediaRouterPlayService extends Service {
 
 	}
 
+    /**
+     * Listens for incoming phone calls and pauses playback then.
+     */
+    private class PhoneCallListener extends PhoneStateListener {
+
+        private boolean mPausedForCall = false;
+
+        @Override
+        public void onCallStateChanged(int state, String incomingNumber) {
+
+            if (!PreferenceManager.getDefaultSharedPreferences(MediaRouterPlayService.this)
+                    .getBoolean(PreferencesActivity.KEY_INCOMING_PHONE_CALL_PAUSE, true)) {
+                return;
+            }
+
+            if (TelephonyManager.CALL_STATE_RINGING == state ||
+                    TelephonyManager.CALL_STATE_OFFHOOK == state) {
+                // phone ringing or call active
+                pause();
+                mPausedForCall = true;
+            }
+
+            if (mPausedForCall && TelephonyManager.CALL_STATE_IDLE == state) {
+                // run when class initial and phone call ended
+                resume();
+                mPausedForCall = false;
+            }
+        }
+    }
+
 	@Override
 	public void onCreate() {
 		super.onCreate();
 		mMediaRouter = MediaRouter.getInstance(this);
 		pollStatus();
+
+        PhoneCallListener phoneListener = new PhoneCallListener();
+        TelephonyManager telephonyManager = (TelephonyManager) this
+                .getSystemService(Context.TELEPHONY_SERVICE);
+        telephonyManager.listen(phoneListener,
+                PhoneStateListener.LISTEN_CALL_STATE);
 	}
 
 	@Override
