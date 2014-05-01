@@ -46,7 +46,10 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -103,8 +106,6 @@ public class MainActivity extends ActionBarActivity {
 		final ActionBar actionBar = getSupportActionBar();
 
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-		actionBar.setDisplayShowTitleEnabled(false);
-		actionBar.setDisplayShowHomeEnabled(false);
 		setContentView(R.layout.activity_main);
 
 		mViewPager = (ViewPager) findViewById(R.id.pager);
@@ -177,7 +178,25 @@ public class MainActivity extends ActionBarActivity {
 		onNewIntent(getIntent());
 	}
 
-	/**
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.preferences:
+                Intent i = new Intent(this, PreferencesActivity.class);
+                startActivity(i);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /**
 	 * Displays the RouteFragment immediately (instead of ServerFragment).
 	 */
 	@Override

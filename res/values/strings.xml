@@ -37,4 +37,13 @@
     <!-- MediaRouter strings -->
 	<string name="upnp_route_provider_service">UPNP Route Provider Service</string>
 	
+	<!-- Developer contact mail with '@', '.' replaced -->
+	<string name="contact_mail" translatable="false">controldlna%1$snutomic%2$scom</string>
+	
+	<!-- Title for the SettingsActivity -->
+	<string name="settings_title">Preferences</string>
+	
+	<!-- Title for the contact developer preference -->
+	<string name="contact_dev_title">Contact Developer</string>
+	
 </resources>
