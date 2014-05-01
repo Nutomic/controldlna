@@ -183,7 +183,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 							.getDevice(new UDN(d.getKey()), false) == null) {
 						deviceRemoved(d.getValue());
 						for (RemotePlayServiceBinder b : mBinders.keySet())
-							if (b.mCurrentRenderer.equals(d.getValue())) {
+							if (b.mCurrentRenderer != null && b.mCurrentRenderer.equals(d.getValue())) {
 								b.mSubscriptionCallback.end();
 								b.mCurrentRenderer = null;
 							}
