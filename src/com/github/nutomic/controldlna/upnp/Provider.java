@@ -210,7 +210,7 @@ final class Provider extends MediaRouteProvider {
 	@Override
 	public void onDiscoveryRequestChanged(MediaRouteDiscoveryRequest request) {
 		try {
-			if (request != null && request.isActiveScan())
+			if (request != null && request.isActiveScan() && mIRemotePlayService != null)
 				mIRemotePlayService.startSearch(mListener);
 		} catch (RemoteException e) {
 			e.printStackTrace();
