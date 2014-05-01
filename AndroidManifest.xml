@@ -65,6 +65,13 @@
                 <action android:name="android.media.MediaRouteProviderService" />
             </intent-filter>
         </service>
+
+        <service android:name=".localroute.ProviderService"
+            android:process=":mrp">
+            <intent-filter>
+                <action android:name="android.media.MediaRouteProviderService" />
+            </intent-filter>
+        </service>
         
     </application>    
 
