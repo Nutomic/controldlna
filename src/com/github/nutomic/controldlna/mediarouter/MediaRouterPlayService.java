@@ -126,7 +126,16 @@ public class MediaRouterPlayService extends Service {
 			if (!mBound && !mPollingStatus)
 				stopSelf();
 		}
-	};
+
+        @Override
+        public void onRouteAdded(MediaRouter router, RouteInfo route) {
+            if (route.getId().equals(mCurrentRoute.getId())) {
+                selectRoute(route);
+                new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+                        .getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+            }
+        }
+    };
 
 	/**
 	 * Creates a notification after the icon bitmap is loaded.
