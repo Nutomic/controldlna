@@ -216,10 +216,13 @@ public class MainActivity extends ActionBarActivity {
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		FragmentManager fm = getSupportFragmentManager();
-		fm.putFragment(outState, ServerFragment.class.getName(), mServerFragment);
-		fm.putFragment(outState, RouteFragment.class.getName(), mRouteFragment);
-		outState.putInt("currentTab", mViewPager.getCurrentItem());
+        // Avoid crash if called during startup.
+        if (mServerFragment != null && mRouteFragment != null) {
+            FragmentManager fm = getSupportFragmentManager();
+            fm.putFragment(outState, ServerFragment.class.getName(), mServerFragment);
+            fm.putFragment(outState, RouteFragment.class.getName(), mRouteFragment);
+            outState.putInt("currentTab", mViewPager.getCurrentItem());
+        }
 	}
 
 	/**
