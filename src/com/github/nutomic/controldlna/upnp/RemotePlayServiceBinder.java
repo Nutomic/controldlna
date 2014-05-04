@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.upnp;
 
+import java.lang.NumberFormatException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -380,20 +381,17 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 				Message msg = Message.obtain(null, Provider.MSG_STATUS_INFO, 0, 0);
 				Builder status = null;
 
+                status = new MediaItemStatus.Builder(mPlaybackState);
 				if (positionInfo.getTrackURI() != null && positionInfo.getTrackURI().equals(itemId)) {
                     try {
-                        status = new MediaItemStatus.Builder(mPlaybackState)
-                                .setContentPosition(positionInfo.getTrackElapsedSeconds() * 1000)
+                        status.setContentPosition(positionInfo.getTrackElapsedSeconds() * 1000)
                                 .setContentDuration(positionInfo.getTrackDurationSeconds() * 1000)
                                 .setTimestamp(positionInfo.getAbsCount());
                     }
                     catch (NumberFormatException e) {
-                        status = new MediaItemStatus.Builder(mPlaybackState);
                         Log.d(TAG, "Failed to read track position or duration", e);
                     }
                 }
-				else
-					status = new MediaItemStatus.Builder(mPlaybackState);
 
 				msg.getData().putBundle("media_item_status", status.build().asBundle());
 				msg.getData().putInt("hash", requestHash);
