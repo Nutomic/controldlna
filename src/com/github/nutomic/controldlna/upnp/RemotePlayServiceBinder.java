@@ -380,11 +380,18 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 				Message msg = Message.obtain(null, Provider.MSG_STATUS_INFO, 0, 0);
 				Builder status = null;
 
-				if (positionInfo.getTrackURI() != null && positionInfo.getTrackURI().equals(itemId))
-					status = new MediaItemStatus.Builder(mPlaybackState)
-							.setContentPosition(positionInfo.getTrackElapsedSeconds() * 1000)
-							.setContentDuration(positionInfo.getTrackDurationSeconds() * 1000)
-							.setTimestamp(positionInfo.getAbsCount());
+				if (positionInfo.getTrackURI() != null && positionInfo.getTrackURI().equals(itemId)) {
+                    try {
+                        status = new MediaItemStatus.Builder(mPlaybackState)
+                                .setContentPosition(positionInfo.getTrackElapsedSeconds() * 1000)
+                                .setContentDuration(positionInfo.getTrackDurationSeconds() * 1000)
+                                .setTimestamp(positionInfo.getAbsCount());
+                    }
+                    catch (NumberFormatException e) {
+                        status = new MediaItemStatus.Builder(mPlaybackState);
+                        Log.d(TAG, "Failed to read track position or duration", e);
+                    }
+                }
 				else
 					status = new MediaItemStatus.Builder(mPlaybackState);
 
