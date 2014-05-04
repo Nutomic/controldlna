@@ -49,6 +49,7 @@ import android.support.v7.media.MediaRouter;
 import android.support.v7.media.MediaRouter.Callback;
 import android.support.v7.media.MediaRouter.ProviderInfo;
 import android.support.v7.media.MediaRouter.RouteInfo;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -123,7 +124,6 @@ OnSeekBarChangeListener, OnScrollListener {
 			mMediaRouterPlayService = binder.getService();
 			mMediaRouterPlayService.setRouterFragment(RouteFragment.this);
 			mPlaylistAdapter.add(mMediaRouterPlayService.getPlaylist());
-			scrollToCurrent();
 			applyColors();
 			RouteInfo currentRoute = mMediaRouterPlayService.getCurrentRoute();
 			if (currentRoute != null)
@@ -332,6 +332,12 @@ OnSeekBarChangeListener, OnScrollListener {
 		}
 		TextView emptyView = (TextView) mListView.getEmptyView();
 		emptyView.setText(R.string.playlist_empty);
+        mListView.post(new Runnable() {
+            @Override
+            public void run() {
+                scrollToCurrent();
+            }
+        });
 	}
 
 	/**
