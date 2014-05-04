@@ -244,6 +244,10 @@ OnSeekBarChangeListener, OnScrollListener {
 						break;
 					}
 				mRouteAdapter.add(route);
+
+                RouteInfo current = mMediaRouterPlayService.getCurrentRoute();
+                if (current != null && route.getId().equals(current.getId()))
+                    playlistMode(current);
 			}
 
 			@Override
@@ -512,7 +516,7 @@ OnSeekBarChangeListener, OnScrollListener {
 			changePlayPauseState(true);
 		} else {
 			Toast.makeText(getActivity(), R.string.select_route, Toast.LENGTH_SHORT)
-			.show();
+			        .show();
 			mStartPlayingOnSelect = start;
 		}
 	}
