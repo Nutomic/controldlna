@@ -123,7 +123,7 @@ public class MediaRouterPlayService extends Service {
 			if (route.equals(mCurrentRoute))
 				stopForeground(true);
 
-			if (!mBound)
+			if (!mBound && !mPollingStatus)
 				stopSelf();
 		}
 	};
