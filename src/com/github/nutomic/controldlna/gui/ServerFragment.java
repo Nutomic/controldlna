@@ -5,13 +5,13 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
  * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+	  notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
  * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -26,24 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 package com.github.nutomic.controldlna.gui;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
-
-import org.teleal.cling.android.AndroidUpnpService;
-import org.teleal.cling.android.AndroidUpnpServiceImpl;
-import org.teleal.cling.model.action.ActionInvocation;
-import org.teleal.cling.model.message.UpnpResponse;
-import org.teleal.cling.model.meta.Device;
-import org.teleal.cling.model.meta.Service;
-import org.teleal.cling.model.types.ServiceType;
-import org.teleal.cling.model.types.UDN;
-import org.teleal.cling.support.contentdirectory.callback.Browse;
-import org.teleal.cling.support.model.BrowseFlag;
-import org.teleal.cling.support.model.DIDLContent;
-import org.teleal.cling.support.model.container.Container;
-import org.teleal.cling.support.model.item.Item;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -70,12 +52,30 @@ import com.github.nutomic.controldlna.gui.MainActivity.OnBackPressedListener;
 import com.github.nutomic.controldlna.utility.DeviceArrayAdapter;
 import com.github.nutomic.controldlna.utility.FileArrayAdapter;
 
+import org.teleal.cling.android.AndroidUpnpService;
+import org.teleal.cling.android.AndroidUpnpServiceImpl;
+import org.teleal.cling.model.action.ActionInvocation;
+import org.teleal.cling.model.message.UpnpResponse;
+import org.teleal.cling.model.meta.Device;
+import org.teleal.cling.model.meta.Service;
+import org.teleal.cling.model.types.ServiceType;
+import org.teleal.cling.model.types.UDN;
+import org.teleal.cling.support.contentdirectory.callback.Browse;
+import org.teleal.cling.support.model.BrowseFlag;
+import org.teleal.cling.support.model.DIDLContent;
+import org.teleal.cling.support.model.container.Container;
+import org.teleal.cling.support.model.item.Item;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
+
 /**
  * Shows a list of media servers, upon selecting one, allows browsing their
  * directories.
- * 
+ *
  * @author Felix Ableitner
- * 
+ *
  */
 public class ServerFragment extends ListFragment implements OnBackPressedListener {
 
@@ -106,6 +106,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	 * behind that.
 	 */
 	private Stack<String> mCurrentPath = new Stack<String>();
+
+	private TextView mEmptyView;
 
 	/**
 	 * Holds the scroll position in the list view at each directory level.
@@ -148,7 +150,6 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-
 		return inflater.inflate(R.layout.server_fragment, null);
 	};
 
@@ -166,21 +167,23 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 		setListAdapter(mServerAdapter);
 		getActivity().getApplicationContext().bindService(
 				new Intent(getActivity(), AndroidUpnpServiceImpl.class),
-				mUpnpServiceConnection,
-				Context.BIND_AUTO_CREATE
-				);
+				mUpnpServiceConnection,	Context.BIND_AUTO_CREATE);
 
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
 		filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
 		getActivity().registerReceiver(mWifiReceiver, filter);
 
+		mEmptyView = (TextView) getListView().getEmptyView();
+
 		if (savedInstanceState != null) {
 			mRestoreServer = savedInstanceState.getString("current_server");
 			mCurrentPath.addAll(savedInstanceState.getStringArrayList("path"));
 			mListState.addAll(savedInstanceState.getParcelableArrayList("list_state"));
-		} else
+		}
+		else {
 			mListState.push(getListView().onSaveInstanceState());
+		}
 	}
 
 	/**
@@ -191,7 +194,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 		super.onSaveInstanceState(outState);
 		outState.putString("current_server", (mCurrentServer != null)
 				? mCurrentServer.getIdentity().getUdn().toString()
-						: "");
+				: "");
 		outState.putStringArrayList("path", new ArrayList<String>(mCurrentPath));
 		mListState.pop();
 		mListState.push(getListView().onSaveInstanceState());
@@ -210,19 +213,23 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	 */
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		if (getListAdapter() == mServerAdapter)
+		if (getListAdapter() == mServerAdapter) {
 			browsingMode(mServerAdapter.getItem(position));
-		else if (getListAdapter() == mFileAdapter)
+		}
+		else if (getListAdapter() == mFileAdapter) {
 			if (mFileAdapter.getItem(position) instanceof Container)
 				getFiles(((Container) mFileAdapter.getItem(position)).getId());
 			else {
 				List<Item> playlist = new ArrayList<Item>();
-				for (int i = 0; i < mFileAdapter.getCount(); i++)
-					if (mFileAdapter.getItem(i) instanceof Item)
+				for (int i = 0; i < mFileAdapter.getCount(); i++) {
+					if (mFileAdapter.getItem(i) instanceof Item) {
 						playlist.add((Item) mFileAdapter.getItem(i));
+					}
+				}
 				MainActivity activity = (MainActivity) getActivity();
 				activity.play(playlist, position);
 			}
+		}
 	}
 
 	/**
@@ -231,8 +238,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	private void serverMode() {
 		setListAdapter(mServerAdapter);
 		mCurrentServer = null;
-		TextView emptyView = (TextView) getListView().getEmptyView();
-		emptyView.setText(R.string.device_list_empty);
+		mEmptyView.setText(R.string.device_list_empty);
 		getListView().onRestoreInstanceState(mListState.pop());
 	}
 
@@ -243,8 +249,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 		setListAdapter(mFileAdapter);
 		mCurrentServer = server;
 		getFiles(ROOT_DIRECTORY);
-		TextView emptyView = (TextView) getListView().getEmptyView();
-		emptyView.setText(R.string.folder_list_empty);
+		mEmptyView.setText(R.string.folder_list_empty);
 	}
 
 	/**
@@ -258,7 +263,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 
 	/**
 	 * Displays the current directory on the ListView.
-	 * 
+	 *
 	 * @param restoreListState True if we are going back up the directory tree,
 	 * 							which means we restore scroll position etc. This pops
 	 * 							mListState.
@@ -281,14 +286,18 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 					@Override
 					public void run() {
 						mFileAdapter.clear();
-						for (Container c : didl.getContainers())
+						for (Container c : didl.getContainers()) {
 							mFileAdapter.add(c);
-						for (Item i : didl.getItems())
+						}
+						for (Item i : didl.getItems()) {
 							mFileAdapter.add(i);
-						if (restoreListState)
+						}
+						if (restoreListState) {
 							getListView().onRestoreInstanceState(mListState.pop());
-						else
+						}
+						else {
 							getListView().setSelectionFromTop(0, 0);
+						}
 					}
 				});
 			}
@@ -317,10 +326,12 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 			return false;
 
 		mCurrentPath.pop();
-		if (mCurrentPath.empty())
+		if (mCurrentPath.empty()) {
 			serverMode();
-		else
+		}
+		else {
 			getFiles(true);
+		}
 		return true;
 	}
 
@@ -340,11 +351,13 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 			if (wifi.isConnected()) {
 				if (mUpnpService != null) {
 					for (Device<?, ?, ?> d : mUpnpService.getControlPoint()
-							.getRegistry().getDevices())
+							.getRegistry().getDevices()) {
 						mServerAdapter.deviceAdded(d);
+					}
 					mUpnpService.getControlPoint().search();
 				}
-			} else
+			}
+			else {
 				for (int i = 0; i < mServerAdapter.getCount(); i++) {
 					Device<?, ?, ?> d = mServerAdapter.getItem(i);
 					UDN udn = new UDN(d.getIdentity().getUdn().toString());
@@ -358,6 +371,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 						}
 					}
 				}
+			}
 		}
 	};
 

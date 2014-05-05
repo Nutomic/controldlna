@@ -5,13 +5,13 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
  * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+	  notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
  * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -26,17 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 package com.github.nutomic.controldlna.mediarouter;
-
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
-import org.teleal.cling.support.contentdirectory.DIDLParser;
-import org.teleal.cling.support.model.DIDLContent;
-import org.teleal.cling.support.model.DIDLObject;
-import org.teleal.cling.support.model.item.Item;
-import org.teleal.cling.support.model.item.MusicTrack;
 
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -66,9 +55,20 @@ import com.github.nutomic.controldlna.gui.PreferencesActivity;
 import com.github.nutomic.controldlna.gui.RouteFragment;
 import com.github.nutomic.controldlna.utility.LoadImageTask;
 
+import org.teleal.cling.support.contentdirectory.DIDLParser;
+import org.teleal.cling.support.model.DIDLContent;
+import org.teleal.cling.support.model.DIDLObject;
+import org.teleal.cling.support.model.item.Item;
+import org.teleal.cling.support.model.item.MusicTrack;
+
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 /**
  * Background service that handles media playback to a single UPNP media renderer.
- * 
+ *
  * @author Felix Ableitner
  *
  */
@@ -120,22 +120,24 @@ public class MediaRouterPlayService extends Service {
 			new MediaRouter.Callback() {
 		@Override
 		public void onRouteRemoved(MediaRouter router, RouteInfo route) {
-			if (route.equals(mCurrentRoute))
+			if (route.equals(mCurrentRoute)) {
 				stopForeground(true);
+			}
 
-			if (!mBound && !mPollingStatus)
+			if (!mBound && !mPollingStatus) {
 				stopSelf();
+			}
 		}
 
-        @Override
-        public void onRouteAdded(MediaRouter router, RouteInfo route) {
-            if (route.getId().equals(mCurrentRoute.getId())) {
-                selectRoute(route);
-                new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
-                        .getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
-            }
-        }
-    };
+		@Override
+		public void onRouteAdded(MediaRouter router, RouteInfo route) {
+			if (route.getId().equals(mCurrentRoute.getId())) {
+				selectRoute(route);
+				new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+						.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+			}
+		}
+	};
 
 	/**
 	 * Creates a notification after the icon bitmap is loaded.
@@ -150,15 +152,16 @@ public class MediaRouterPlayService extends Service {
 				title = mPlaylist.get(mCurrentTrack).getTitle();
 				if (mPlaylist.get(mCurrentTrack) instanceof MusicTrack) {
 					MusicTrack track = (MusicTrack) mPlaylist.get(mCurrentTrack);
-					if (track.getArtists().length > 0)
+					if (track.getArtists().length > 0) {
 						artist = track.getArtists()[0].getName();
+					}
 				}
 			}
 			Intent intent = new Intent(MediaRouterPlayService.this, MainActivity.class);
 			intent.setAction("showRouteFragment");
 			Notification notification = new NotificationCompat.Builder(MediaRouterPlayService.this)
-			.setContentIntent(PendingIntent.getActivity(MediaRouterPlayService.this, 0,
-                    intent, 0))
+					.setContentIntent(PendingIntent.getActivity(MediaRouterPlayService.this, 0,
+							intent, 0))
 					.setContentTitle(title)
 					.setContentText(artist)
 					.setLargeIcon(result)
@@ -170,35 +173,35 @@ public class MediaRouterPlayService extends Service {
 
 	}
 
-    /**
-     * Listens for incoming phone calls and pauses playback then.
-     */
-    private class PhoneCallListener extends PhoneStateListener {
+	/**
+	 * Listens for incoming phone calls and pauses playback then.
+	 */
+	private class PhoneCallListener extends PhoneStateListener {
 
-        private boolean mPausedForCall = false;
+		private boolean mPausedForCall = false;
 
-        @Override
-        public void onCallStateChanged(int state, String incomingNumber) {
+		@Override
+		public void onCallStateChanged(int state, String incomingNumber) {
 
-            if (!PreferenceManager.getDefaultSharedPreferences(MediaRouterPlayService.this)
-                    .getBoolean(PreferencesActivity.KEY_INCOMING_PHONE_CALL_PAUSE, true)) {
-                return;
-            }
+			if (!PreferenceManager.getDefaultSharedPreferences(MediaRouterPlayService.this)
+					.getBoolean(PreferencesActivity.KEY_INCOMING_PHONE_CALL_PAUSE, true)) {
+				return;
+			}
 
-            if (TelephonyManager.CALL_STATE_RINGING == state ||
-                    TelephonyManager.CALL_STATE_OFFHOOK == state) {
-                // phone ringing or call active
-                pause();
-                mPausedForCall = true;
-            }
+			if (TelephonyManager.CALL_STATE_RINGING == state ||
+					TelephonyManager.CALL_STATE_OFFHOOK == state) {
+				// phone ringing or call active
+				pause();
+				mPausedForCall = true;
+			}
 
-            if (mPausedForCall && TelephonyManager.CALL_STATE_IDLE == state) {
-                // run when class initial and phone call ended
-                resume();
-                mPausedForCall = false;
-            }
-        }
-    }
+			if (mPausedForCall && TelephonyManager.CALL_STATE_IDLE == state) {
+				// run when class initial and phone call ended
+				resume();
+				mPausedForCall = false;
+			}
+		}
+	}
 
 	@Override
 	public void onCreate() {
@@ -206,11 +209,10 @@ public class MediaRouterPlayService extends Service {
 		mMediaRouter = MediaRouter.getInstance(this);
 		pollStatus();
 
-        PhoneCallListener phoneListener = new PhoneCallListener();
-        TelephonyManager telephonyManager = (TelephonyManager) this
-                .getSystemService(Context.TELEPHONY_SERVICE);
-        telephonyManager.listen(phoneListener,
-                PhoneStateListener.LISTEN_CALL_STATE);
+		PhoneCallListener phoneListener = new PhoneCallListener();
+		TelephonyManager telephonyManager =
+				(TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
+		telephonyManager.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE);
 	}
 
 	@Override
@@ -225,8 +227,9 @@ public class MediaRouterPlayService extends Service {
 	 */
 	@Override
 	public boolean onUnbind(Intent intent) {
-		if (!mPollingStatus)
+		if (!mPollingStatus) {
 			stopSelf();
+		}
 		mBound = false;
 		return super.onUnbind(intent);
 	}
@@ -239,8 +242,8 @@ public class MediaRouterPlayService extends Service {
 		mMediaRouter.removeCallback(mRouteRemovedCallback);
 		mMediaRouter.selectRoute(route);
 		MediaRouteSelector selector = new MediaRouteSelector.Builder()
-		.addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
-		.build();
+				.addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+				.build();
 
 		mMediaRouter.addCallback(selector, mRouteRemovedCallback, 0);
 		mCurrentRoute = route;
@@ -287,8 +290,9 @@ public class MediaRouterPlayService extends Service {
 				new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
 						.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
 
-				if (mRouterFragment.get() != null)
+				if (mRouterFragment.get() != null) {
 					mRouterFragment.get().scrollToCurrent();
+				}
 			}
 		});
 	}
@@ -347,23 +351,25 @@ public class MediaRouterPlayService extends Service {
 		intent.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
 		intent.putExtra(MediaControlIntent.EXTRA_ITEM_ID, mItemId);
-		intent.putExtra(MediaControlIntent.EXTRA_ITEM_CONTENT_POSITION,
-				(long) seconds * 1000);
+		intent.putExtra(MediaControlIntent.EXTRA_ITEM_CONTENT_POSITION, (long) seconds * 1000);
 		mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
 	}
 
 	/**
 	 * Sets a new playlist and starts playing.
-	 * 
+	 *
 	 * @param playlist The media files in the playlist.
 	 */
 	public void setPlaylist(List<Item> playlist) {
+
+
+
 		mPlaylist = playlist;
 	}
 
 	/**
 	 * Plays the track after current in the playlist.
-	 * 
+	 *
 	 * @return True if another item is played, false if the end
 	 * of the playlist is reached.
 	 */
@@ -389,8 +395,9 @@ public class MediaRouterPlayService extends Service {
 		else {
 			// Playlist over, stop playback.
 			stop();
-			if (!mBound)
+			if (!mBound) {
 				stopSelf();
+			}
 			mPollingStatus = false;
 			return false;
 		}
@@ -404,11 +411,13 @@ public class MediaRouterPlayService extends Service {
 		if (mCurrentTrack == -1)
 			return;
 
-		if (mShuffle)
+		if (mShuffle) {
 			// Play random item.
 			play(new Random().nextInt(mPlaylist.size()));
-		else
+		}
+		else {
 			play(mCurrentTrack - 1);
+		}
 	}
 
 	/**
@@ -437,16 +446,19 @@ public class MediaRouterPlayService extends Service {
 					if (status == null)
 						return;
 
-					if (mRouterFragment.get() != null)
+					if (mRouterFragment.get() != null) {
 						mRouterFragment.get().receivePlaybackStatus(status);
+					}
 					if (status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PENDING &&
 							status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_BUFFERING &&
-							status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PLAYING)
+							status.getPlaybackState() != MediaItemStatus.PLAYBACK_STATE_PLAYING) {
 						stopForeground(true);
+					}
 
 					if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED ||
-							status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_CANCELED)
+							status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_CANCELED) {
 						playNext();
+					}
 				}
 			});
 		}

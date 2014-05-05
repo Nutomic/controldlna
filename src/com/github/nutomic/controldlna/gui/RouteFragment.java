@@ -5,13 +5,13 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
  * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+	  notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
  * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -26,10 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 package com.github.nutomic.controldlna.gui;
-
-import java.util.List;
-
-import org.teleal.cling.support.model.item.Item;
 
 import android.app.AlertDialog;
 import android.content.ComponentName;
@@ -49,7 +45,6 @@ import android.support.v7.media.MediaRouter;
 import android.support.v7.media.MediaRouter.Callback;
 import android.support.v7.media.MediaRouter.ProviderInfo;
 import android.support.v7.media.MediaRouter.RouteInfo;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -73,6 +68,10 @@ import com.github.nutomic.controldlna.mediarouter.MediaRouterPlayServiceBinder;
 import com.github.nutomic.controldlna.utility.FileArrayAdapter;
 import com.github.nutomic.controldlna.utility.RouteAdapter;
 
+import org.teleal.cling.support.model.item.Item;
+
+import java.util.List;
+
 /**
  * Controls media playback by showing a list of routes, and after selecting one,
  * the current playlist and playback controls.
@@ -81,8 +80,8 @@ import com.github.nutomic.controldlna.utility.RouteAdapter;
  *
  */
 public class RouteFragment extends MediaRouteDiscoveryFragment implements
-OnBackPressedListener, OnItemClickListener, OnClickListener,
-OnSeekBarChangeListener, OnScrollListener {
+		OnBackPressedListener, OnItemClickListener, OnClickListener,
+		OnSeekBarChangeListener, OnScrollListener {
 
 	private ListView mListView;
 
@@ -93,6 +92,7 @@ OnSeekBarChangeListener, OnScrollListener {
 	private ImageButton mRepeat;
 	private TextView mCurrentTimeView;
 	private TextView mTotalTimeView;
+	private TextView mEmptyView;
 
 	private View mCurrentTrackView;
 
@@ -126,8 +126,9 @@ OnSeekBarChangeListener, OnScrollListener {
 			mPlaylistAdapter.add(mMediaRouterPlayService.getPlaylist());
 			applyColors();
 			RouteInfo currentRoute = mMediaRouterPlayService.getCurrentRoute();
-			if (currentRoute != null)
+			if (currentRoute != null) {
 				playlistMode(currentRoute);
+			}
 		}
 
 		public void onServiceDisconnected(ComponentName className) {
@@ -168,7 +169,9 @@ OnSeekBarChangeListener, OnScrollListener {
 		mListView.setAdapter(mRouteAdapter);
 		mListView.setOnItemClickListener(this);
 		mListView.setOnScrollListener(this);
-		mListView.setEmptyView(getView().findViewById(android.R.id.empty));
+
+		mEmptyView = (TextView) getView().findViewById(android.R.id.empty);
+		mListView.setEmptyView(mEmptyView);
 
 		mControls = getView().findViewById(R.id.controls);
 		mProgressBar = (SeekBar) getView().findViewById(R.id.progressBar);
@@ -201,19 +204,17 @@ OnSeekBarChangeListener, OnScrollListener {
 				new Intent(getActivity(), MediaRouterPlayService.class));
 		getActivity().getApplicationContext().bindService(
 				new Intent(getActivity(), MediaRouterPlayService.class),
-				mPlayServiceConnection,
-				Context.BIND_AUTO_CREATE
-				);
+				mPlayServiceConnection, Context.BIND_AUTO_CREATE);
 
-		if (savedInstanceState != null)
+		if (savedInstanceState != null) {
 			mListView.onRestoreInstanceState(savedInstanceState.getParcelable("list_state"));
+		}
 	}
 
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 
-		//outState.putBoolean("route_selected", mSelectedRoute != null);
 		outState.putParcelable("list_state", mListView.onSaveInstanceState());
 	}
 
@@ -229,8 +230,8 @@ OnSeekBarChangeListener, OnScrollListener {
 	 */
 	@Override
 	public int onPrepareCallbackFlags() {
-		return  MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY
-				| MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN;
+		return  MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY |
+				MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN;
 	}
 
 	@Override
@@ -238,16 +239,18 @@ OnSeekBarChangeListener, OnScrollListener {
 		return new MediaRouter.Callback() {
 			@Override
 			public void onRouteAdded(MediaRouter router, RouteInfo route) {
-				for (int i = 0; i < mRouteAdapter.getCount(); i++)
+				for (int i = 0; i < mRouteAdapter.getCount(); i++) {
 					if (mRouteAdapter.getItem(i).getId().equals(route.getId())) {
 						mRouteAdapter.remove(mRouteAdapter.getItem(i));
 						break;
 					}
+				}
 				mRouteAdapter.add(route);
 
-                RouteInfo current = mMediaRouterPlayService.getCurrentRoute();
-                if (current != null && route.getId().equals(current.getId()))
-                    playlistMode(current);
+				RouteInfo current = mMediaRouterPlayService.getCurrentRoute();
+				if (current != null && route.getId().equals(current.getId())) {
+					playlistMode(current);
+				}
 			}
 
 			@Override
@@ -301,8 +304,9 @@ OnSeekBarChangeListener, OnScrollListener {
 	 */
 	@Override
 	public void onItemClick(AdapterView<?> a, View v, final int position, long id) {
-		if (mListView.getAdapter() == mRouteAdapter)
+		if (mListView.getAdapter() == mRouteAdapter) {
 			playlistMode(mRouteAdapter.getItem(position));
+		}
 		else {
 			mMediaRouterPlayService.play(position);
 			changePlayPauseState(true);
@@ -317,8 +321,7 @@ OnSeekBarChangeListener, OnScrollListener {
 		mListView.setAdapter(mRouteAdapter);
 		disableTrackHighlight();
 		mSelectedRoute = null;
-		TextView emptyView = (TextView) mListView.getEmptyView();
-		emptyView.setText(R.string.route_list_empty);
+		mEmptyView.setText(R.string.route_list_empty);
 	}
 
 	/**
@@ -334,37 +337,39 @@ OnSeekBarChangeListener, OnScrollListener {
 			changePlayPauseState(true);
 			mStartPlayingOnSelect = -1;
 		}
-		TextView emptyView = (TextView) mListView.getEmptyView();
-		emptyView.setText(R.string.playlist_empty);
-        mListView.post(new Runnable() {
-            @Override
-            public void run() {
-                scrollToCurrent();
-            }
-        });
+		mEmptyView.setText(R.string.playlist_empty);
+		mListView.post(new Runnable() {
+			@Override
+			public void run() {
+				scrollToCurrent();
+			}
+		});
 	}
 
 	/**
 	 * Sets colored background on the item that is currently playing.
 	 */
 	private void enableTrackHighlight() {
-		if (mListView.getAdapter() == mRouteAdapter || mMediaRouterPlayService == null || !isVisible())
+		if (mListView.getAdapter() == mRouteAdapter ||
+				mMediaRouterPlayService == null || !isVisible())
 			return;
 
 		disableTrackHighlight();
 		mCurrentTrackView = mListView.getChildAt(mMediaRouterPlayService.getCurrentTrack()
 				- mListView.getFirstVisiblePosition() + mListView.getHeaderViewsCount());
-		if (mCurrentTrackView != null)
+		if (mCurrentTrackView != null) {
 			mCurrentTrackView.setBackgroundColor(
 					getResources().getColor(R.color.currently_playing_background));
+		}
 	}
 
 	/**
 	 * Removes highlight from the item that was last highlighted.
 	 */
 	private void disableTrackHighlight() {
-		if (mCurrentTrackView != null)
+		if (mCurrentTrackView != null) {
 			mCurrentTrackView.setBackgroundColor(Color.TRANSPARENT);
+		}
 	}
 
 	/**
@@ -373,24 +378,25 @@ OnSeekBarChangeListener, OnScrollListener {
 	@Override
 	public boolean onBackPressed() {
 		if (mListView.getAdapter() == mPlaylistAdapter) {
-			if (mPlaying)
+			if (mPlaying) {
 				new AlertDialog.Builder(getActivity())
-			.setMessage(R.string.exit_renderer)
-			.setPositiveButton(android.R.string.yes,
-					new DialogInterface.OnClickListener() {
-
-				@Override
-				public void onClick(DialogInterface dialog,
-						int which) {
-					mMediaRouterPlayService.stop();
-					changePlayPauseState(false);
-					deviceListMode();
-				}
-			})
-			.setNegativeButton(android.R.string.no, null)
-			.show();
-			else
+						.setMessage(R.string.exit_renderer)
+						.setPositiveButton(android.R.string.yes,
+								new DialogInterface.OnClickListener() {
+							@Override
+									public void onClick(DialogInterface dialog,
+														int which) {
+										mMediaRouterPlayService.stop();
+										changePlayPauseState(false);
+										deviceListMode();
+									}
+								})
+						.setNegativeButton(android.R.string.no, null)
+						.show();
+			}
+			else {
 				deviceListMode();
+			}
 			return true;
 		}
 		return false;
@@ -470,8 +476,9 @@ OnSeekBarChangeListener, OnScrollListener {
 	@Override
 	public void onProgressChanged(SeekBar seekBar, int progress,
 			boolean fromUser) {
-		if (fromUser)
+		if (fromUser) {
 			mMediaRouterPlayService.seek(progress);
+		}
 	}
 
 	@Override
@@ -514,9 +521,10 @@ OnSeekBarChangeListener, OnScrollListener {
 		if (mSelectedRoute != null) {
 			mMediaRouterPlayService.play(start);
 			changePlayPauseState(true);
-		} else {
+		}
+		else {
 			Toast.makeText(getActivity(), R.string.select_route, Toast.LENGTH_SHORT)
-			        .show();
+					.show();
 			mStartPlayingOnSelect = start;
 		}
 	}
@@ -528,16 +536,17 @@ OnSeekBarChangeListener, OnScrollListener {
 	 * @return Formatted time string.
 	 */
 	private String generateTimeString(int time) {
-		assert(time >= 0);
 		int seconds = time % 60;
 		int minutes = time / 60;
-		if (minutes > 99)
+		if (minutes > 99) {
 			return "99:99";
-		else
+		}
+		else {
 			return Integer.toString(minutes) + ":" +
-			((seconds > 9)
-					? seconds
+					((seconds > 9)
+							? seconds
 							: "0" + Integer.toString(seconds));
+		}
 	}
 
 	/**
@@ -559,13 +568,16 @@ OnSeekBarChangeListener, OnScrollListener {
 
 		if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PLAYING ||
 				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_BUFFERING ||
-				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PENDING)
+				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PENDING) {
 			changePlayPauseState(true);
-		else
+		}
+		else {
 			changePlayPauseState(false);
+		}
 
-		if (mListView.getAdapter() == mPlaylistAdapter)
+		if (mListView.getAdapter() == mPlaylistAdapter) {
 			enableTrackHighlight();
+		}
 	}
 
 	/**

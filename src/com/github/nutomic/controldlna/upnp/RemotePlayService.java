@@ -5,13 +5,13 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
  * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+	  notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
  * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -64,7 +64,7 @@ import android.util.Log;
 /**
  * Allows UPNP playback from different apps by providing a proxy interface.
  * You can communicate to this service via RemotePlayServiceBinder.
- * 
+ *
  * @author Felix Ableitner
  *
  */
@@ -87,11 +87,14 @@ public class RemotePlayService extends Service implements RegistryListener {
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			mUpnpService = (AndroidUpnpService) service;
 			mUpnpService.getRegistry().addListener(RemotePlayService.this);
-			for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices())
-				if (d instanceof LocalDevice)
+			for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices()) {
+				if (d instanceof LocalDevice) {
 					localDeviceAdded(mUpnpService.getRegistry(), (LocalDevice) d);
-				else
+				}
+				else {
 					remoteDeviceAdded(mUpnpService.getRegistry(), (RemoteDevice) d);
+				}
+			}
 			mUpnpService.getControlPoint().search();
 		}
 
@@ -119,11 +122,8 @@ public class RemotePlayService extends Service implements RegistryListener {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		bindService(
-				new Intent(this, AndroidUpnpServiceImpl.class),
-				mUpnpServiceConnection,
-				Context.BIND_AUTO_CREATE
-				);
+		bindService(new Intent(this, AndroidUpnpServiceImpl.class),
+				mUpnpServiceConnection,	Context.BIND_AUTO_CREATE);
 
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
@@ -144,7 +144,8 @@ public class RemotePlayService extends Service implements RegistryListener {
 	void sendMessage(Message msg) {
 		try {
 			mListener.send(msg);
-		} catch (RemoteException e) {
+		}
+		catch (RemoteException e) {
 			e.printStackTrace();
 		}
 	}
@@ -173,21 +174,28 @@ public class RemotePlayService extends Service implements RegistryListener {
 
 			if (wifi.isConnected()) {
 				if (mUpnpService != null) {
-					for (Device<?, ?, ?> d : mUpnpService.getControlPoint().getRegistry().getDevices())
+					for (Device<?, ?, ?> d :
+							mUpnpService.getControlPoint().getRegistry().getDevices()) {
 						deviceAdded(d);
+					}
 					mUpnpService.getControlPoint().search();
 				}
-			} else
-				for (Entry<String, Device<?, ?, ?>> d : mDevices.entrySet())
+			}
+			else {
+				for (Entry<String, Device<?, ?, ?>> d : mDevices.entrySet()) {
 					if (mUpnpService.getControlPoint().getRegistry()
 							.getDevice(new UDN(d.getKey()), false) == null) {
 						deviceRemoved(d.getValue());
-						for (RemotePlayServiceBinder b : mBinders.keySet())
-							if (b.mCurrentRenderer != null && b.mCurrentRenderer.equals(d.getValue())) {
+						for (RemotePlayServiceBinder b : mBinders.keySet()) {
+							if (b.mCurrentRenderer != null &&
+									b.mCurrentRenderer.equals(d.getValue())) {
 								b.mSubscriptionCallback.end();
 								b.mCurrentRenderer = null;
 							}
+						}
 					}
+				}
+			}
 		}
 	};
 
@@ -196,8 +204,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 	 */
 	org.teleal.cling.model.meta.Service<?, ?> getService(
 			Device<?, ?, ?> device, String name) {
-		return device.findService(
-				new ServiceType("schemas-upnp-org", name));
+		return device.findService(new ServiceType("schemas-upnp-org", name));
 	}
 
 	/**
@@ -207,8 +214,7 @@ public class RemotePlayService extends Service implements RegistryListener {
 		if (mDevices.containsValue(device))
 			return;
 
-		final org.teleal.cling.model.meta.Service<?, ?> rc =
-				getService(device, "RenderingControl");
+		final org.teleal.cling.model.meta.Service<?, ?> rc = getService(device, "RenderingControl");
 		if (rc == null || mListener == null)
 			return;
 
@@ -233,7 +239,8 @@ public class RemotePlayService extends Service implements RegistryListener {
 						int maxVolume = 100;
 						if (rc.getStateVariable("Volume") != null) {
 							StateVariableAllowedValueRange volumeRange =
-									rc.getStateVariable("Volume").getTypeDetails().getAllowedValueRange();
+									rc.getStateVariable("Volume")
+											.getTypeDetails().getAllowedValueRange();
 							maxVolume = (int) volumeRange.getMaximum();
 						}
 

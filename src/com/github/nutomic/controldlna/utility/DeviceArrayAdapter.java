@@ -5,13 +5,13 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
  * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+	  notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
  * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -27,16 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.utility;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Comparator;
-
-import org.teleal.cling.model.meta.Device;
-import org.teleal.cling.model.meta.LocalDevice;
-import org.teleal.cling.model.meta.RemoteDevice;
-import org.teleal.cling.registry.Registry;
-import org.teleal.cling.registry.RegistryListener;
-
 import android.app.Activity;
 import android.content.Context;
 import android.util.Log;
@@ -47,6 +37,16 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
 import com.github.nutomic.controldlna.R;
+
+import org.teleal.cling.model.meta.Device;
+import org.teleal.cling.model.meta.LocalDevice;
+import org.teleal.cling.model.meta.RemoteDevice;
+import org.teleal.cling.registry.Registry;
+import org.teleal.cling.registry.RegistryListener;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Comparator;
 
 /**
  * Displays the devices that are inserted through the RegistryListener (either
@@ -59,8 +59,6 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 		implements RegistryListener {
 
 	private static final String TAG = "DeviceArrayAdapter";
-
-	public static final String RENDERER = "MediaRenderer";
 
 	public static final String SERVER = "MediaServer";
 
@@ -91,15 +89,16 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 
 		if (getItem(position).hasIcons()) {
 			URI uri = getItem(position).getIcons()[0].getUri();
-			if (getItem(position) instanceof RemoteDevice)
+			if (getItem(position) instanceof RemoteDevice) {
 				try {
 					RemoteDevice device = (RemoteDevice) getItem(position);
 					uri = device.normalizeURI(uri).toURI();
-				} catch (URISyntaxException e) {
+				}
+				catch (URISyntaxException e) {
 					Log.w(TAG, "Failed to get device icon URI", e);
 				}
-			RemoteImageView icon =
-					(RemoteImageView) convertView.findViewById(R.id.image);
+			}
+			RemoteImageView icon = (RemoteImageView) convertView.findViewById(R.id.image);
 			icon.setImageUri(uri);
 		}
 
@@ -110,9 +109,11 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 	 * Adds a new device to the list if its type equals mDeviceType.
 	 */
 	public void deviceAdded(final Device<?, ?, ?> device) {
-		for (int i = 0; i < getCount(); i++)
-			if (getItem(i).equals(device))
+		for (int i = 0; i < getCount(); i++) {
+			if (getItem(i).equals(device)) {
 				return;
+			}
+		}
 
 		mActivity.runOnUiThread(new Runnable() {
 
@@ -141,8 +142,9 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 
 			@Override
 			public void run() {
-				if (getPosition(device) != -1)
+				if (getPosition(device) != -1) {
 					remove(device);
+				}
 			}
 		});
 	}

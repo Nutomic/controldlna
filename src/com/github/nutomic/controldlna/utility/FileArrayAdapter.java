@@ -5,13 +5,13 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
  * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+	  notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
  * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.github.nutomic.controldlna.utility;
 
 import java.net.URI;
-import java.util.List; 
+import java.util.List;
 
 import org.teleal.cling.support.model.DIDLObject;
 import org.teleal.cling.support.model.item.AudioItem;
@@ -78,32 +78,38 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 			MusicTrack track = (MusicTrack) item;
 			String trackNumber = (track.getOriginalTrackNumber() != null)
 					? Integer.toString(track.getOriginalTrackNumber()) + ". "
-							: "";
+					: "";
 			title.setText(trackNumber + item.getTitle());
-			if (track.getArtists().length > 0)
+			if (track.getArtists().length > 0) {
 				artist.setText(track.getArtists()[0].getName());
+			}
 		}
-		else
+		else {
 			title.setText(item.getTitle());
+		}
 
 		RemoteImageView image = (RemoteImageView) convertView.findViewById(R.id.image);
-		URI icon = item.getFirstPropertyValue(
-				DIDLObject.Property.UPNP.ALBUM_ART_URI.class);
+		URI icon = item.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class);
 		if (icon != null) {
 			image.setImageUri(icon);
 		}
 		else {
 			int resId;
-			if (item instanceof AudioItem)
+			if (item instanceof AudioItem) {
 				resId = R.drawable.ic_doc_audio_am;
-			else if (item instanceof VideoItem)
+			}
+			else if (item instanceof VideoItem) {
 				resId = R.drawable.ic_doc_video_am;
-			else if (item instanceof ImageItem)
+			}
+			else if (item instanceof ImageItem) {
 				resId = R.drawable.ic_doc_image;
-			else if (item instanceof PlaylistItem)
+			}
+			else if (item instanceof PlaylistItem) {
 				resId = R.drawable.ic_doc_album;
-			else
+			}
+			else {
 				resId = R.drawable.ic_root_folder_am;
+			}
 			image.setImageResource(resId);
 		}
 
@@ -114,8 +120,9 @@ public class FileArrayAdapter extends ArrayAdapter<DIDLObject> {
 	 * Replacement for addAll, which is not implemented on lower API levels.
 	 */
 	public void add(List<Item> playlist) {
-		for (DIDLObject d : playlist)
+		for (DIDLObject d : playlist) {
 			add(d);
+		}
 	}
 
 }

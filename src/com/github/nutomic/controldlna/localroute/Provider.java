@@ -4,14 +4,14 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	* Redistributions of source code must retain the above copyright
+	  notice, this list of conditions and the following disclaimer.
+	* Redistributions in binary form must reproduce the above copyright
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
+	* Neither the name of the <organization> nor the
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -43,63 +43,64 @@ import android.support.v7.media.MediaRouter;
 import com.github.nutomic.controldlna.R;
 
 /**
- * MediaRouteProvider that details the local audio route with its 
- * controls to the system. 
- * 
+ * MediaRouteProvider that details the local audio route with its
+ * controls to the system.
+ *
  * @author felix
  *
  */
 final class Provider extends MediaRouteProvider {
 
-    private static final String ROUTE_ID = "local_route";
-    
-    AudioManager mAudio = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+	private static final String ROUTE_ID = "local_route";
 
-    private static final ArrayList<IntentFilter> CONTROL_FILTERS;
-    static {
-        IntentFilter f = new IntentFilter();
-        f.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
-        f.addAction(MediaControlIntent.ACTION_PLAY);
-        f.addAction(MediaControlIntent.ACTION_PAUSE);
-        f.addAction(MediaControlIntent.ACTION_SEEK);
-        f.addAction(MediaControlIntent.ACTION_STOP);
-        f.addDataScheme("http");
-        f.addDataScheme("https");
-        addDataTypeUnchecked(f, "audio/*");
+	AudioManager mAudio = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
 
-        CONTROL_FILTERS = new ArrayList<IntentFilter>();
-        CONTROL_FILTERS.add(f);
-    }
+	private static final ArrayList<IntentFilter> CONTROL_FILTERS;
+	static {
+		IntentFilter f = new IntentFilter();
+		f.addCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK);
+		f.addAction(MediaControlIntent.ACTION_PLAY);
+		f.addAction(MediaControlIntent.ACTION_PAUSE);
+		f.addAction(MediaControlIntent.ACTION_SEEK);
+		f.addAction(MediaControlIntent.ACTION_STOP);
+		f.addDataScheme("http");
+		f.addDataScheme("https");
+		addDataTypeUnchecked(f, "audio/*");
 
-    private static void addDataTypeUnchecked(IntentFilter filter, String type) {
-        try {
-            filter.addDataType(type);
-        } catch (MalformedMimeTypeException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
+		CONTROL_FILTERS = new ArrayList<IntentFilter>();
+		CONTROL_FILTERS.add(f);
+	}
 
-    public Provider(Context context) {
-        super(context);
+	private static void addDataTypeUnchecked(IntentFilter filter, String type) {
+		try {
+			filter.addDataType(type);
+		}
+		catch (MalformedMimeTypeException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
 
-        MediaRouteDescriptor routeDescriptor = new MediaRouteDescriptor.Builder(
-                ROUTE_ID, context.getResources().getString(R.string.local_device))
-                .addControlFilters(CONTROL_FILTERS)
-                .setPlaybackType(MediaRouter.RouteInfo.PLAYBACK_TYPE_REMOTE)
-                .setVolumeHandling(MediaRouter.RouteInfo.PLAYBACK_VOLUME_VARIABLE)
-                .setVolume(mAudio.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
-                .build();
-        
+	public Provider(Context context) {
+		super(context);
 
-        MediaRouteProviderDescriptor providerDescriptor =
-                new MediaRouteProviderDescriptor.Builder()
-                .addRoute(routeDescriptor)
-                .build();
-        setDescriptor(providerDescriptor);
-    }
+		MediaRouteDescriptor routeDescriptor = new MediaRouteDescriptor.Builder(
+				ROUTE_ID, context.getResources().getString(R.string.local_device))
+				.addControlFilters(CONTROL_FILTERS)
+				.setPlaybackType(MediaRouter.RouteInfo.PLAYBACK_TYPE_REMOTE)
+				.setVolumeHandling(MediaRouter.RouteInfo.PLAYBACK_VOLUME_VARIABLE)
+				.setVolume(mAudio.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
+				.build();
 
-    @Override
-    public RouteController onCreateRouteController(String routeId) {
-        return new Controller(routeId, getContext());
-    }
+
+		MediaRouteProviderDescriptor providerDescriptor =
+				new MediaRouteProviderDescriptor.Builder()
+				.addRoute(routeDescriptor)
+				.build();
+		setDescriptor(providerDescriptor);
+	}
+
+	@Override
+	public RouteController onCreateRouteController(String routeId) {
+		return new Controller(routeId, getContext());
+	}
 }

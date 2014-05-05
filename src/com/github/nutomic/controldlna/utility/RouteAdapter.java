@@ -41,7 +41,7 @@ public class RouteAdapter extends ArrayAdapter<RouteInfo> {
 	public void add(List<RouteInfo> routes) {
 		for (RouteInfo r : routes) {
 			add(r);
-        }
+		}
 	}
 
 }

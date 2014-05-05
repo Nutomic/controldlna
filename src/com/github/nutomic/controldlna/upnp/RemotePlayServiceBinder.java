@@ -5,13 +5,13 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
  * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+	  notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
  * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -83,26 +83,27 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 	private RemotePlayService mRps;
 
 	private boolean mStartingPlayback = false;
+
 	public RemotePlayServiceBinder(RemotePlayService rps) {
 		mRps = rps;
 	}
 
 	@Override
-	public void startSearch(Messenger listener)
-			throws RemoteException {
+	public void startSearch(Messenger listener)	throws RemoteException {
 		mRps.mListener = listener;
 	}
 
 	@Override
 	public void selectRenderer(String id) throws RemoteException {
 		mCurrentRenderer = mRps.mDevices.get(id);
-		for (RemotePlayServiceBinder b : mRps.mBinders.keySet())
-			if (b != this && mCurrentRenderer.equals(b.mCurrentRenderer))
+		for (RemotePlayServiceBinder b : mRps.mBinders.keySet()) {
+			if (b != this && mCurrentRenderer.equals(b.mCurrentRenderer)) {
 				b.unselectRenderer("");
+			}
+		}
 
-		mSubscriptionCallback = new SubscriptionCallback(
-				mCurrentRenderer.findService(
-						new ServiceType("schemas-upnp-org", "AVTransport")), 600) {
+		mSubscriptionCallback = new SubscriptionCallback(mCurrentRenderer.findService(
+				new ServiceType("schemas-upnp-org", "AVTransport")), 600) {
 
 			@SuppressWarnings("rawtypes")
 			@Override
@@ -111,8 +112,7 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 
 			@SuppressWarnings("rawtypes")
 			@Override
-			protected void ended(GENASubscription sub, CancelReason reason,
-					UpnpResponse response) {
+			protected void ended(GENASubscription sub, CancelReason reason, UpnpResponse response) {
 			}
 
 			@SuppressWarnings("rawtypes")
@@ -121,16 +121,14 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 				@SuppressWarnings("unchecked")
 				Map<String, StateVariableValue> m = sub.getCurrentValues();
 				try {
-					LastChange lastChange = new LastChange(
-							new AVTransportLastChangeParser(),
+					LastChange lastChange = new LastChange(new AVTransportLastChangeParser(),
 							m.get("LastChange").toString());
 					if (mStartingPlayback || lastChange.getEventedValue(0,
 							AVTransportVariable.TransportState.class) == null)
 						return;
 
 					switch (lastChange.getEventedValue(0,
-							AVTransportVariable.TransportState.class)
-							.getValue()) {
+							AVTransportVariable.TransportState.class).getValue()) {
 							case PLAYING:
 								mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PLAYING;
 								break;
@@ -149,7 +147,8 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 							default:
 					}
 
-				} catch (Exception e) {
+				}
+				catch (Exception e) {
 					Log.w(TAG, "Failed to parse UPNP event", e);
 					mRps.sendError("Failed to parse UPNP event");
 				}
@@ -157,8 +156,7 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 
 			@SuppressWarnings("rawtypes")
 			@Override
-			protected void eventsMissed(GENASubscription sub,
-					int numberOfMissedEvents) {
+			protected void eventsMissed(GENASubscription sub, int numberOfMissedEvents) {
 			}
 
 			@SuppressWarnings("rawtypes")
@@ -177,10 +175,12 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 	 */
 	@Override
 	public void unselectRenderer(String sessionId) throws RemoteException {
-		if (mRps.mDevices.get(sessionId) != null)
+		if (mRps.mDevices.get(sessionId) != null) {
 			stop(sessionId);
-		if (mSubscriptionCallback != null)
+		}
+		if (mSubscriptionCallback != null) {
 			mSubscriptionCallback.end();
+		}
 		mCurrentRenderer = null;
 	}
 
@@ -246,19 +246,19 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 										new Play(mRps.getService(mCurrentRenderer,
 												"AVTransport")) {
 
-											@Override
-											public void success(ActionInvocation invocation) {
-												mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PLAYING;
-												mStartingPlayback = false;
-											}
+									@Override
+									public void success(ActionInvocation invocation) {
+										mPlaybackState = MediaItemStatus.PLAYBACK_STATE_PLAYING;
+										mStartingPlayback = false;
+									}
 
-											@Override
-											public void failure(ActionInvocation invocation,
-													UpnpResponse operation, String defaultMessage) {
-												Log.w(TAG, "Play failed: " + defaultMessage);
-												mRps.sendError("Play failed: " + defaultMessage);
-												mStartingPlayback = false;
-											}
+									@Override
+									public void failure(ActionInvocation invocation,
+											UpnpResponse operation, String defaultMessage) {
+										Log.w(TAG, "Play failed: " + defaultMessage);
+										mRps.sendError("Play failed: " + defaultMessage);
+										mStartingPlayback = false;
+									}
 								});
 							}
 						});
@@ -284,8 +284,10 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 						// Sometimes stop works even though pause does not.
 						try {
 							stop(sessionId);
-						} catch (RemoteException e) {
-							e.printStackTrace();
+						}
+						catch (RemoteException e) {
+							Log.w(TAG, "Calling stop failed", e);
+							mRps.sendError("Calling stop failed: " + e.toString());
 						}
 					}
 				});
@@ -372,6 +374,7 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 			public void failure(ActionInvocation invocation,
 					UpnpResponse operation, String defaultMessage) {
 				Log.w(TAG, "Get position failed: " + defaultMessage);
+				mRps.sendError("Get position failed: " + defaultMessage);
 			}
 
 			@SuppressWarnings("rawtypes")
@@ -381,17 +384,20 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 				Message msg = Message.obtain(null, Provider.MSG_STATUS_INFO, 0, 0);
 				Builder status = null;
 
-                status = new MediaItemStatus.Builder(mPlaybackState);
-				if (positionInfo.getTrackURI() != null && positionInfo.getTrackURI().equals(itemId)) {
-                    try {
-                        status.setContentPosition(positionInfo.getTrackElapsedSeconds() * 1000)
-                                .setContentDuration(positionInfo.getTrackDurationSeconds() * 1000)
-                                .setTimestamp(positionInfo.getAbsCount());
-                    }
-                    catch (NumberFormatException e) {
-                        Log.d(TAG, "Failed to read track position or duration", e);
-                    }
-                }
+				status = new MediaItemStatus.Builder(mPlaybackState);
+				if (positionInfo.getTrackURI() != null &&
+						positionInfo.getTrackURI().equals(itemId)) {
+					try {
+						status.setContentPosition(positionInfo.getTrackElapsedSeconds() * 1000)
+								.setContentDuration(positionInfo.getTrackDurationSeconds() * 1000)
+								.setTimestamp(positionInfo.getAbsCount());
+					}
+					catch (NumberFormatException e) {
+						Log.d(TAG, "Failed to read track position or duration", e);
+						mRps.sendError("Failed to read track position or duration: " +
+								e.toString());
+					}
+				}
 
 				msg.getData().putBundle("media_item_status", status.build().asBundle());
 				msg.getData().putInt("hash", requestHash);

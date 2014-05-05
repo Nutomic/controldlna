@@ -5,13 +5,13 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
  * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+	  notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
  * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -27,17 +27,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.gui;
 
-import java.util.List;
-
-import org.teleal.cling.support.model.item.Item;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -50,16 +43,15 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBar.TabListener;
 import android.support.v7.app.ActionBarActivity;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 
 import com.github.nutomic.controldlna.R;
+
+import org.teleal.cling.support.model.item.Item;
+
+import java.util.List;
 
 /**
  * Main activity, with tabs for media servers and media routes.
@@ -114,8 +106,7 @@ public class MainActivity extends ActionBarActivity {
 
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(mSectionsPagerAdapter);
-		mViewPager.setOnPageChangeListener(
-				new ViewPager.SimpleOnPageChangeListener() {
+		mViewPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
 					@Override
 					public void onPageSelected(int position) {
 						actionBar.setSelectedNavigationItem(position);
@@ -143,27 +134,27 @@ public class MainActivity extends ActionBarActivity {
 				.setText(R.string.title_route)
 				.setTabListener(tabListener));
 
-        final WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-        if (!wifi.isWifiEnabled()){
-            String value = PreferenceManager.getDefaultSharedPreferences(this)
-                    .getString(PreferencesActivity.KEY_ENABLE_WIFI_ON_START, "ask");
-            if (value.equals("yes")) {
-                wifi.setWifiEnabled(true);
-            }
-            else if (value.equals("ask")) {
-                new AlertDialog.Builder(this)
-                        .setMessage(R.string.enable_wifi_dialog)
-                        .setPositiveButton(android.R.string.yes,
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int i) {
-                                        wifi.setWifiEnabled(true);
-                                    }
-                                })
-                        .setNegativeButton(android.R.string.no, null)
-                        .show();
-            }
-        }
+		final WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		if (!wifi.isWifiEnabled()) {
+			String value = PreferenceManager.getDefaultSharedPreferences(this)
+					.getString(PreferencesActivity.KEY_ENABLE_WIFI_ON_START, "ask");
+			if (value.equals("yes")) {
+				wifi.setWifiEnabled(true);
+			}
+			else if (value.equals("ask")) {
+				new AlertDialog.Builder(this)
+						.setMessage(R.string.enable_wifi_dialog)
+						.setPositiveButton(android.R.string.yes,
+								new DialogInterface.OnClickListener() {
+									@Override
+									public void onClick(DialogInterface dialogInterface, int i) {
+										wifi.setWifiEnabled(true);
+									}
+								})
+						.setNegativeButton(android.R.string.no, null)
+						.show();
+			}
+		}
 
 
 		if (savedInstanceState != null) {
@@ -181,30 +172,30 @@ public class MainActivity extends ActionBarActivity {
 		onNewIntent(getIntent());
 	}
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu, menu);
-        return true;
-    }
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.menu, menu);
+		return true;
+	}
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.preferences:
-                Intent i = new Intent(this, PreferencesActivity.class);
-                startActivity(i);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.preferences:
+				Intent i = new Intent(this, PreferencesActivity.class);
+				startActivity(i);
+				return true;
+			default:
+				return super.onOptionsItemSelected(item);
+		}
+	}
 
-    /**
+	/**
 	 * Displays the RouteFragment immediately (instead of ServerFragment).
 	 */
 	@Override
 	protected void onNewIntent(Intent intent) {
-		if (intent.getAction().equals("showRouteFragment")) {
+		if (intent.getAction() != null && intent.getAction().equals("showRouteFragment")) {
 			mViewPager.setCurrentItem(1);
 			mRouteFragment.scrollToCurrent();
 		}
@@ -216,13 +207,13 @@ public class MainActivity extends ActionBarActivity {
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-        // Avoid crash if called during startup.
-        if (mServerFragment != null && mRouteFragment != null) {
-            FragmentManager fm = getSupportFragmentManager();
-            fm.putFragment(outState, ServerFragment.class.getName(), mServerFragment);
-            fm.putFragment(outState, RouteFragment.class.getName(), mRouteFragment);
-            outState.putInt("currentTab", mViewPager.getCurrentItem());
-        }
+		// Avoid crash if called during startup.
+		if (mServerFragment != null && mRouteFragment != null) {
+			FragmentManager fm = getSupportFragmentManager();
+			fm.putFragment(outState, ServerFragment.class.getName(), mServerFragment);
+			fm.putFragment(outState, RouteFragment.class.getName(), mRouteFragment);
+			outState.putInt("currentTab", mViewPager.getCurrentItem());
+		}
 	}
 
 	/**
@@ -233,8 +224,9 @@ public class MainActivity extends ActionBarActivity {
 	public void onBackPressed() {
 		OnBackPressedListener currentFragment = (OnBackPressedListener)
 				mSectionsPagerAdapter.getItem(mViewPager.getCurrentItem());
-		if (!currentFragment.onBackPressed())
+		if (!currentFragment.onBackPressed()) {
 			super.onBackPressed();
+		}
 	}
 
 	/**
@@ -244,12 +236,14 @@ public class MainActivity extends ActionBarActivity {
 	public boolean dispatchKeyEvent(KeyEvent event) {
 		switch (event.getKeyCode()) {
 		case KeyEvent.KEYCODE_VOLUME_UP:
-			if (event.getAction() == KeyEvent.ACTION_DOWN)
+			if (event.getAction() == KeyEvent.ACTION_DOWN) {
 				mRouteFragment.increaseVolume();
+			}
 			return true;
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
-			if (event.getAction() == KeyEvent.ACTION_DOWN)
+			if (event.getAction() == KeyEvent.ACTION_DOWN) {
 				mRouteFragment.decreaseVolume();
+			}
 			return true;
 		default:
 			return super.dispatchKeyEvent(event);

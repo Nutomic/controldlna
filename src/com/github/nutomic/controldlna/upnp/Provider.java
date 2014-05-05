@@ -5,13 +5,13 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
  * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
+	  notice, this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
  * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -26,12 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 package com.github.nutomic.controldlna.upnp;
-
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Random;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -54,9 +48,16 @@ import android.support.v7.media.MediaRouteProvider;
 import android.support.v7.media.MediaRouteProviderDescriptor.Builder;
 import android.support.v7.media.MediaRouter;
 import android.support.v7.media.MediaRouter.ControlRequestCallback;
+import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 import android.widget.Toast;
+
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Random;
 
 /**
  * Allows playing to a DLNA renderer from a remote app.
@@ -64,6 +65,8 @@ import android.widget.Toast;
  * @author Felix Ableitner
  */
 final class Provider extends MediaRouteProvider {
+
+	private static final String TAG = "Provider";
 
 	// Device has been added.
 	// param: Device device
@@ -93,8 +96,8 @@ final class Provider extends MediaRouteProvider {
 		public int volume;
 		public int volumeMax;
 
-		public static final Parcelable.Creator<Device> CREATOR
-		= new Parcelable.Creator<Device>() {
+		public static final Parcelable.Creator<Device> CREATOR =
+				new Parcelable.Creator<Device>() {
 			public Device createFromParcel(Parcel in) {
 				return new Device(in);
 			}
@@ -187,8 +190,9 @@ final class Provider extends MediaRouteProvider {
 
 		@Override
 		public void handleMessage(Message msg) {
-			if (mService.get() != null)
+			if (mService.get() != null) {
 				mService.get().handleMessage(msg);
+			}
 		}
 	}
 
@@ -196,11 +200,8 @@ final class Provider extends MediaRouteProvider {
 
 	public Provider(Context context) {
 		super(context);
-		context.bindService(
-				new Intent(context, RemotePlayService.class),
-				mConnection,
-				Context.BIND_AUTO_CREATE
-				);
+		context.bindService(new Intent(context, RemotePlayService.class),
+				mConnection, Context.BIND_AUTO_CREATE);
 	}
 
 	public void close() {
@@ -210,9 +211,11 @@ final class Provider extends MediaRouteProvider {
 	@Override
 	public void onDiscoveryRequestChanged(MediaRouteDiscoveryRequest request) {
 		try {
-			if (request != null && request.isActiveScan() && mIRemotePlayService != null)
+			if (request != null && request.isActiveScan() && mIRemotePlayService != null) {
 				mIRemotePlayService.startSearch(mListener);
-		} catch (RemoteException e) {
+			}
+		}
+		catch (RemoteException e) {
 			e.printStackTrace();
 		}
 	}
@@ -259,7 +262,8 @@ final class Provider extends MediaRouteProvider {
 		public void onSelect() {
 			try {
 				mIRemotePlayService.selectRenderer(mRouteId);
-			} catch (RemoteException e) {
+			}
+			catch (RemoteException e) {
 				e.printStackTrace();
 			}
 		}
@@ -268,7 +272,8 @@ final class Provider extends MediaRouteProvider {
 		public void onUnselect() {
 			try {
 				mIRemotePlayService.unselectRenderer(mRouteId);
-			} catch (RemoteException e) {
+			}
+			catch (RemoteException e) {
 				e.printStackTrace();
 			}
 		}
@@ -280,7 +285,8 @@ final class Provider extends MediaRouteProvider {
 
 			try {
 				mIRemotePlayService.setVolume(volume);
-			} catch (RemoteException e) {
+			}
+			catch (RemoteException e) {
 				e.printStackTrace();
 			}
 			mDevices.get(mRouteId).volume = volume;
@@ -301,13 +307,13 @@ final class Provider extends MediaRouteProvider {
 				if (intent.getAction().equals(MediaControlIntent.ACTION_PLAY)) {
 					String metadata = (intent.hasExtra(MediaControlIntent.EXTRA_ITEM_METADATA))
 							? intent.getExtras().getString(MediaControlIntent.EXTRA_ITEM_METADATA)
-									: null;
-							mIRemotePlayService.play(intent.getDataString(), metadata);
-							// Store in intent extras for later.
-							intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mRouteId);
-							intent.putExtra(MediaControlIntent.EXTRA_ITEM_ID, intent.getDataString());
-							getItemStatus(intent, callback);
-							return true;
+							: null;
+					mIRemotePlayService.play(intent.getDataString(), metadata);
+					// Store in intent extras for later.
+					intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mRouteId);
+					intent.putExtra(MediaControlIntent.EXTRA_ITEM_ID, intent.getDataString());
+					getItemStatus(intent, callback);
+					return true;
 				}
 				else if (intent.getAction().equals(MediaControlIntent.ACTION_PAUSE)) {
 					mIRemotePlayService.pause(mRouteId);
@@ -323,10 +329,8 @@ final class Provider extends MediaRouteProvider {
 				}
 				else if (intent.getAction().equals(MediaControlIntent.ACTION_SEEK)) {
 					mIRemotePlayService.seek(mRouteId,
-							intent.getStringExtra(
-									MediaControlIntent.EXTRA_ITEM_ID),
-									intent.getLongExtra(
-											MediaControlIntent.EXTRA_ITEM_CONTENT_POSITION, 0));
+							intent.getStringExtra(MediaControlIntent.EXTRA_ITEM_ID),
+							intent.getLongExtra(MediaControlIntent.EXTRA_ITEM_CONTENT_POSITION, 0));
 					getItemStatus(intent, callback);
 					return true;
 				}
@@ -334,8 +338,9 @@ final class Provider extends MediaRouteProvider {
 					getItemStatus(intent, callback);
 					return true;
 				}
-			} catch (RemoteException e) {
-				e.printStackTrace();
+			}
+			catch (RemoteException e) {
+				Log.w(TAG, "Failed to execute control request", e);
 			}
 			return false;
 		}
@@ -357,8 +362,7 @@ final class Provider extends MediaRouteProvider {
 		mRequests.put(r, pair);
 		mIRemotePlayService.getItemStatus(
 				intent.getStringExtra(MediaControlIntent.EXTRA_SESSION_ID),
-				intent.getStringExtra(MediaControlIntent.EXTRA_ITEM_ID),
-				r);
+				intent.getStringExtra(MediaControlIntent.EXTRA_ITEM_ID), r);
 	}
 
 	/**
@@ -382,12 +386,14 @@ final class Provider extends MediaRouteProvider {
 			mRequests.get(data.getInt("hash"));
 			Bundle status = data.getBundle("media_item_status");
 
-			if (pair.first.hasExtra(MediaControlIntent.EXTRA_SESSION_ID))
+			if (pair.first.hasExtra(MediaControlIntent.EXTRA_SESSION_ID)) {
 				status.putString(MediaControlIntent.EXTRA_SESSION_ID,
 						pair.first.getStringExtra(MediaControlIntent.EXTRA_SESSION_ID));
-			if (pair.first.hasExtra(MediaControlIntent.EXTRA_ITEM_ID))
+			}
+			if (pair.first.hasExtra(MediaControlIntent.EXTRA_ITEM_ID)) {
 				status.putString(MediaControlIntent.EXTRA_ITEM_ID,
 						pair.first.getStringExtra(MediaControlIntent.EXTRA_ITEM_ID));
+			}
 			pair.second.onResult(status);
 			break;
 		case MSG_ERROR:

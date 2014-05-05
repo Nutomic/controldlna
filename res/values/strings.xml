@@ -1,42 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">ControlDLNA</string>
-    
-    <!-- Server Fragment -->
-    <string name="title_server">Server</string>
-	<string name="folder_list_empty">Folder is empty</string>
-    <string name="device_list_empty">No UPNP devices found. 
-        \nNew devices will be added automatically when they are available.</string>
-    
-    <!-- Route Fragment -->
-    <string name="title_route">Route</string>
-	<string name="playlist_empty">Playlist is empty</string>
-    <string name="route_list_empty">No routes found. 
-        \nNew routes will be added automatically when they are available.</string>
-    
-    <!-- Playback controls -->
-    <string name="play">Play</string>
-    <string name="pause">Pause</string>
-    <string name="previous">Previous</string>
-    <string name="next">Next</string>
-    <string name="shuffle">Shuffle</string>
-    <string name="repeat">Repeat</string>
-    
-    <!-- Toasts/Dialogs -->
-    <string name="exit_renderer">Do you really want to exit the renderer? 
-        Playback will be stopped.</string>
-    <string name="select_route">Please select a route</string>
-    <string name="enable_wifi_dialog">Wifi needs to be connected for playback.
-        Do you want to enable it now?</string>
+	<string name="app_name">ControlDLNA</string>
 
-    <!-- Description for local playback device -->
-    <string name="local_device">Local Device</string>
-    
-    <!-- Image alt text -->
-    <string name="album_art">Album Art</string>
-    
-    <!-- MediaRouter strings -->
+	<!-- Server Fragment -->
+	<string name="title_server">Server</string>
+	<string name="folder_list_empty">Folder is empty</string>
+	<string name="device_list_empty">No UPNP devices found.
+		\nNew devices will be added automatically when they are available.</string>
+
+	<!-- Route Fragment -->
+	<string name="title_route">Route</string>
+	<string name="playlist_empty">Playlist is empty</string>
+	<string name="route_list_empty">No routes found.
+		\nNew routes will be added automatically when they are available.</string>
+
+	<!-- Playback controls -->
+	<string name="play">Play</string>
+	<string name="pause">Pause</string>
+	<string name="previous">Previous</string>
+	<string name="next">Next</string>
+	<string name="shuffle">Shuffle</string>
+	<string name="repeat">Repeat</string>
+
+	<!-- Toasts/Dialogs -->
+	<string name="exit_renderer">Do you really want to exit the renderer?
+		Playback will be stopped.</string>
+	<string name="select_route">Please select a route</string>
+	<string name="enable_wifi_dialog">Wifi needs to be connected for playback.
+		Do you want to enable it now?</string>
+
+	<!-- Description for local playback device -->
+	<string name="local_device">Local Device</string>
+
+	<!-- Image alt text -->
+	<string name="album_art">Album Art</string>
+
+	<!-- MediaRouter strings -->
 	<string name="upnp_route_provider_service">UPNP Route Provider Service</string>
 	
 	<!-- Developer contact mail with '@', '.' replaced -->
@@ -45,18 +45,18 @@
 	<!-- Title for the SettingsActivity -->
 	<string name="settings_title">Preferences</string>
 
-    <!-- Title for preference to enable wifi on start -->
-    <string name="enable_wifi_title">Automatically enable Wifi on start</string>
+	<!-- Title for preference to enable wifi on start -->
+	<string name="enable_wifi_title">Automatically enable Wifi on start</string>
 
-    <!-- Values for preference to auto-enable wifi on start -->
-    <string-array name="enable_wifi_value_titles">
-        <item>yes</item>
-        <item>no</item>
-        <item>ask</item>
-    </string-array>
+	<!-- Values for preference to auto-enable wifi on start -->
+	<string-array name="enable_wifi_value_titles">
+		<item>yes</item>
+		<item>no</item>
+		<item>ask</item>
+	</string-array>
 
-    <!-- Title for the pause playback on call preference -->
-    <string name="incoming_phone_call_pause">Pause playback on incoming phone call</string>
+	<!-- Title for the pause playback on call preference -->
+	<string name="incoming_phone_call_pause">Pause playback on incoming phone call</string>
 	
 	<!-- Title for the contact developer preference -->
 	<string name="contact_dev_title">Contact Developer</string>
