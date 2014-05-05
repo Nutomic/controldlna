@@ -33,13 +33,4 @@ android {
             packageNameSuffix ".debug"
         }
     }
-
-    sourceSets {
-        main {
-            manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = ['src']
-            aidl.srcDirs = ['src']
-            res.srcDirs = ['res']
-        }
-    }
 }
