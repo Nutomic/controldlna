@@ -106,7 +106,7 @@ public class PreferencesActivity extends PreferenceActivity
 	 * Updates summary of list preference (from current item).
 	 */
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-		if (key.equals(KEY_ENABLE_WIFI_ON_START)) {
+		if (key.equals(KEY_ENABLE_WIFI_ON_START) && mEnableWifiOnStart != null) {
 			mEnableWifiOnStart.setSummary(mEnableWifiOnStart.getEntry());
 		}
 	}
