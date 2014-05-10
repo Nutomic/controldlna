@@ -163,6 +163,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		mRouteAdapter = new RouteAdapter(getActivity());
 		mRouteAdapter.add(MediaRouter.getInstance(getActivity()).getRoutes());
 		mRouteAdapter.remove(MediaRouter.getInstance(getActivity()).getDefaultRoute());
+		mRouteAdapter.sort(RouteAdapter.COMPARATOR);
 		mPlaylistAdapter = new FileArrayAdapter(getActivity());
 
 		mListView = (ListView) getView().findViewById(R.id.listview);
@@ -246,6 +247,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 					}
 				}
 				mRouteAdapter.add(route);
+				mRouteAdapter.sort(RouteAdapter.COMPARATOR);
 
 				RouteInfo current = mMediaRouterPlayService.getCurrentRoute();
 				if (current != null && route.getId().equals(current.getId())) {
