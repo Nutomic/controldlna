@@ -4,11 +4,14 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.8.3'
+        classpath 'com.android.tools.build:gradle:0.9.0'
+        classpath 'com.android.tools.build:gradle:0.7.+'
+        classpath 'com.alexvasilkov:android_sign:0.2'
     }
 }
 
 apply plugin: 'android'
+apply plugin: 'android_sign'
 
 repositories {
     mavenCentral()
@@ -20,17 +23,32 @@ repositories {
 dependencies {
     compile 'com.android.support:appcompat-v7:18.0.+'
     compile 'com.android.support:mediarouter-v7:18.0.+'
-    compile 'org.teleal.cling:cling-core:1.0.5'
-    compile 'org.teleal.cling:cling-support:1.0.5'
+    compile 'org.teleal.cling:cling-core:1.0.5+'
+    compile 'org.teleal.cling:cling-support:1.0.5+'
 }
-
 android {
     compileSdkVersion 19
     buildToolsVersion "19.0.3"
+    signingConfigs {
+        release {
+            // Android Studio does not pass environment variables.
+            // This means you have to use the command line for release builds.
+            def ks = System.getenv("KEYSTORE")
+            def ka = System.getenv("KEY_ALIAS")
+            if (ks != null && ka != null) {
+                storeFile file(ks)
+                keyAlias ka
+            }
+        }
+    }
 
     buildTypes {
         debug {
             packageNameSuffix ".debug"
+            debuggable true
+        }
+        release {
+            signingConfig signingConfigs.release
         }
     }
 }
