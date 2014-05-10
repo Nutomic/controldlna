@@ -60,5 +60,8 @@
 	
 	<!-- Title for the contact developer preference -->
 	<string name="contact_dev_title">Contact Developer</string>
+
+    <!-- Appended to all routes provided by a debug build -->
+    <string name="debug">Debug</string>
 	
 </resources>

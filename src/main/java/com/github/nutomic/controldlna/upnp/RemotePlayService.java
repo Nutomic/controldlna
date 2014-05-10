@@ -27,24 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.upnp;
 
-import java.util.Map.Entry;
-import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.teleal.cling.android.AndroidUpnpService;
-import org.teleal.cling.android.AndroidUpnpServiceImpl;
-import org.teleal.cling.model.action.ActionInvocation;
-import org.teleal.cling.model.message.UpnpResponse;
-import org.teleal.cling.model.meta.Device;
-import org.teleal.cling.model.meta.LocalDevice;
-import org.teleal.cling.model.meta.RemoteDevice;
-import org.teleal.cling.model.meta.StateVariableAllowedValueRange;
-import org.teleal.cling.model.types.ServiceType;
-import org.teleal.cling.model.types.UDN;
-import org.teleal.cling.registry.Registry;
-import org.teleal.cling.registry.RegistryListener;
-import org.teleal.cling.support.renderingcontrol.callback.GetVolume;
-
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -60,6 +42,26 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+
+import com.github.nutomic.controldlna.R;
+
+import org.teleal.cling.android.AndroidUpnpService;
+import org.teleal.cling.android.AndroidUpnpServiceImpl;
+import org.teleal.cling.model.action.ActionInvocation;
+import org.teleal.cling.model.message.UpnpResponse;
+import org.teleal.cling.model.meta.Device;
+import org.teleal.cling.model.meta.LocalDevice;
+import org.teleal.cling.model.meta.RemoteDevice;
+import org.teleal.cling.model.meta.StateVariableAllowedValueRange;
+import org.teleal.cling.model.types.ServiceType;
+import org.teleal.cling.model.types.UDN;
+import org.teleal.cling.registry.Registry;
+import org.teleal.cling.registry.RegistryListener;
+import org.teleal.cling.support.renderingcontrol.callback.GetVolume;
+
+import java.util.Map.Entry;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Allows UPNP playback from different apps by providing a proxy interface.
@@ -246,9 +248,13 @@ public class RemotePlayService extends Service implements RegistryListener {
 
 						Message msg = Message.obtain(null, Provider.MSG_RENDERER_ADDED, 0, 0);
 
+						String routeName = device.getDetails().getFriendlyName();
+						if (getPackageName().endsWith(".debug")) {
+							routeName = routeName + " (" + getString(R.string.debug) + ")";
+						}
 						msg.getData().putParcelable("device", new Provider.Device(
 								device.getIdentity().getUdn().toString(),
-								device.getDetails().getFriendlyName(),
+								routeName,
 								device.getDisplayString(),
 								currentVolume,
 								maxVolume));

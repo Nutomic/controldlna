@@ -27,12 +27,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.localroute;
 
-import java.util.ArrayList;
-
 import android.content.Context;
 import android.content.IntentFilter;
 import android.content.IntentFilter.MalformedMimeTypeException;
-import android.content.res.Resources;
 import android.media.AudioManager;
 import android.support.v7.media.MediaControlIntent;
 import android.support.v7.media.MediaRouteDescriptor;
@@ -41,6 +38,8 @@ import android.support.v7.media.MediaRouteProviderDescriptor;
 import android.support.v7.media.MediaRouter;
 
 import com.github.nutomic.controldlna.R;
+
+import java.util.ArrayList;
 
 /**
  * MediaRouteProvider that details the local audio route with its
@@ -83,8 +82,12 @@ final class Provider extends MediaRouteProvider {
 	public Provider(Context context) {
 		super(context);
 
+		String routeName = context.getString(R.string.local_device);
+		if (context.getPackageName().endsWith(".debug")) {
+			routeName = routeName + " (" + context.getString(R.string.debug) + ")";
+		}
 		MediaRouteDescriptor routeDescriptor = new MediaRouteDescriptor.Builder(
-				ROUTE_ID, context.getResources().getString(R.string.local_device))
+				ROUTE_ID, routeName)
 				.addControlFilters(CONTROL_FILTERS)
 				.setPlaybackType(MediaRouter.RouteInfo.PLAYBACK_TYPE_REMOTE)
 				.setVolumeHandling(MediaRouter.RouteInfo.PLAYBACK_VOLUME_VARIABLE)
