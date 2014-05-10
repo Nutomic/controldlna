@@ -133,8 +133,10 @@ public class MediaRouterPlayService extends Service {
 		public void onRouteAdded(MediaRouter router, RouteInfo route) {
 			if (route.getId().equals(mCurrentRoute.getId())) {
 				selectRoute(route);
-				new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
-						.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+				if (mCurrentTrack >= 0 && mCurrentTrack < mPlaylist.size()) {
+					new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+							.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+				}
 			}
 		}
 	};
