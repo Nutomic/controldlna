@@ -116,7 +116,7 @@ public class MediaRouterPlayService extends Service {
 	 * Stops foreground mode and notification if the current route
 	 * has been removed. If the service is not bound, stops it.
 	 */
-	private MediaRouter.Callback mRouteRemovedCallback =
+	private MediaRouter.Callback mMediaRouterCallback =
 			new MediaRouter.Callback() {
 		@Override
 		public void onRouteRemoved(MediaRouter router, RouteInfo route) {
@@ -131,7 +131,7 @@ public class MediaRouterPlayService extends Service {
 
 		@Override
 		public void onRouteAdded(MediaRouter router, RouteInfo route) {
-			if (route.getId().equals(mCurrentRoute.getId())) {
+			if (mCurrentRoute != null && route.getId().equals(mCurrentRoute.getId())) {
 				selectRoute(route);
 				if (mCurrentTrack >= 0 && mCurrentTrack < mPlaylist.size()) {
 					new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
@@ -215,6 +215,18 @@ public class MediaRouterPlayService extends Service {
 		TelephonyManager telephonyManager =
 				(TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
 		telephonyManager.listen(phoneListener, PhoneStateListener.LISTEN_CALL_STATE);
+
+		MediaRouteSelector selector = new MediaRouteSelector.Builder()
+				.addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+				.build();
+		mMediaRouter.addCallback(selector, mMediaRouterCallback,
+				MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY);
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		mMediaRouter.removeCallback(mMediaRouterCallback);
 	}
 
 	@Override
@@ -241,13 +253,7 @@ public class MediaRouterPlayService extends Service {
 	}
 
 	public void selectRoute(RouteInfo route) {
-		mMediaRouter.removeCallback(mRouteRemovedCallback);
 		mMediaRouter.selectRoute(route);
-		MediaRouteSelector selector = new MediaRouteSelector.Builder()
-				.addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
-				.build();
-
-		mMediaRouter.addCallback(selector, mRouteRemovedCallback, 0);
 		mCurrentRoute = route;
 	}
 
@@ -442,6 +448,14 @@ public class MediaRouterPlayService extends Service {
 			i.putExtra(MediaControlIntent.EXTRA_ITEM_ID, mItemId);
 			mMediaRouter.getSelectedRoute().sendControlRequest(i,
 					new ControlRequestCallback() {
+
+				@Override
+				public void onError(String error, Bundle data) {
+					if (error != null) {
+						Log.w(TAG, "Failed to get status: " + error);
+					}
+				}
+
 				@Override
 				public void onResult(Bundle data) {
 					MediaItemStatus status = MediaItemStatus.fromBundle(data);
