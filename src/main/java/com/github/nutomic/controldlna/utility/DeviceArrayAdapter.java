@@ -126,7 +126,8 @@ public class DeviceArrayAdapter extends ArrayAdapter<Device<?, ?, ?>>
 						@Override
 						public int compare(Device<?, ?, ?> lhs,
 								Device<?, ?, ?> rhs) {
-							return lhs.getDisplayString().compareTo(rhs.getDisplayString());
+							return lhs.getDetails().getFriendlyName()
+									.compareTo(rhs.getDetails().getFriendlyName());
 						}
 					});
 				}
