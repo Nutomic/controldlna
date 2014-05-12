@@ -74,9 +74,9 @@ public class RemotePlayService extends Service implements RegistryListener {
 
 	private static final String TAG = "RemotePlayService";
 
-	Messenger mListener;
+	protected Messenger mListener;
 
-	ConcurrentHashMap<String, Device<?, ?, ?>> mDevices =
+	protected ConcurrentHashMap<String, Device<?, ?, ?>> mDevices =
 			new ConcurrentHashMap<String, Device<?, ?, ?>>();
 
 	protected AndroidUpnpService mUpnpService;
@@ -144,11 +144,15 @@ public class RemotePlayService extends Service implements RegistryListener {
 	 * Sends msg via Messenger to Provider.
 	 */
 	void sendMessage(Message msg) {
+		if (mListener == null) {
+			Log.w(TAG, "Listener is not initialized on send");
+		}
+
 		try {
 			mListener.send(msg);
 		}
 		catch (RemoteException e) {
-			e.printStackTrace();
+			Log.w(TAG, "Failed to send message", e);
 		}
 	}
 
