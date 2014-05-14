@@ -1,78 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.github.nutomic.controldlna"
-    android:versionCode="14"
-    android:versionName="1.0.2" >
-    
+		package="com.github.nutomic.controldlna"
+		android:versionCode="14"
+		android:versionName="1.0.2" >
+
 	<uses-permission android:name="android.permission.INTERNET"/>
 	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 	<uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
 	<uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+	<uses-permission android:name="android.permission.READ_PHONE_STATE"/>
 
-    <uses-sdk
-        android:minSdkVersion="8"
-        android:targetSdkVersion="19" />
+	<uses-sdk
+			android:minSdkVersion="8"
+			android:targetSdkVersion="19" />
 
-    <application
-        android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
-        android:label="@string/app_name"
-        android:theme="@style/Theme.AppCompat.Light" >
-        
-        <!--
+	<application
+			android:allowBackup="true"
+			android:icon="@drawable/ic_launcher"
+			android:label="@string/app_name"
+			android:theme="@style/Theme.AppCompat.Light" >
+
+		<!--
 			NOTE: configChanges is needed to avoid MediaRouterPlayService being
-			      killed on screen rotate. (why do you do this, Google???).
-			      This comes with some rendering issues on screen rotate (sometimes)
-			      on Android 4.4 (but that's not my error).
-         -->
-        <activity
-            android:name=".gui.MainActivity"
-            android:label="@string/app_name"
-			android:launchMode="singleTop"
-			android:configChanges="orientation|keyboardHidden|screenSize" >
-            
-            <intent-filter android:label="@string/app_name" >
-                
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-                
-            </intent-filter>
-            
-        </activity>
-        
-        <activity
-            android:name=".gui.PreferencesActivity"
-            android:label="@string/settings_title" >
+				  killed on screen rotate. (why do you do this, Google???).
+				  This comes with some rendering issues on screen rotate (sometimes)
+				  on Android 4.4 (but that's not my error).
+		 -->
+		<activity
+				android:name=".gui.MainActivity"
+				android:label="@string/app_name"
+				android:launchMode="singleTop"
+				android:configChanges="orientation|keyboardHidden|screenSize" >
+			<intent-filter android:label="@string/app_name" >
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
 
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value=".gui.MainActivity" />
+		<activity
+				android:name=".gui.PreferencesActivity"
+				android:label="@string/settings_title" >
+			<meta-data
+				android:name="android.support.PARENT_ACTIVITY"
+				android:value=".gui.MainActivity" />
+		</activity>
 
-        </activity>
-            
 		<service android:name="org.teleal.cling.android.AndroidUpnpServiceImpl" />
-  		
-  		<service android:name=".mediarouter.MediaRouterPlayService" />
-  		
-  		<service android:name=".upnp.RemotePlayService" />
 
-        <service android:name=".upnp.ProviderService"
-                android:label="@string/upnp_route_provider_service"
-                android:process=":mrp">
-            <intent-filter>
-                <action android:name="android.media.MediaRouteProviderService" />
-            </intent-filter>
-        </service>
+		<service android:name=".mediarouter.MediaRouterPlayService" />
 
-        <service android:name=".localroute.ProviderService"
-            android:process=":mrp">
-            <intent-filter>
-                <action android:name="android.media.MediaRouteProviderService" />
-            </intent-filter>
-        </service>
-        
-    </application>    
+		<service android:name=".upnp.RemotePlayService" />
+
+		<service android:name=".upnp.ProviderService"
+				android:label="@string/upnp_route_provider_service"
+				android:process=":mrp">
+			<intent-filter>
+				<action android:name="android.media.MediaRouteProviderService" />
+			</intent-filter>
+		</service>
+
+		<service android:name=".localroute.ProviderService"
+				android:process=":mrp">
+			<intent-filter>
+				<action android:name="android.media.MediaRouteProviderService" />
+			</intent-filter>
+		</service>
+
+	</application>
 
 </manifest>
