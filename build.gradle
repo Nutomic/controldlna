@@ -20,14 +20,21 @@ repositories {
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:18.0.+'
-    compile 'com.android.support:mediarouter-v7:18.0.+'
+    compile 'com.android.support:appcompat-v7:19.1.+'
+    compile 'com.android.support:mediarouter-v7:19.1.+'
     compile 'org.teleal.cling:cling-core:1.0.5+'
     compile 'org.teleal.cling:cling-support:1.0.5+'
 }
+
 android {
     compileSdkVersion 19
     buildToolsVersion "19.0.3"
+
+	// Caused by cling, because they apparently include APIs for other platforms.
+	lintOptions {
+		disable 'InvalidPackage'
+	}
+
     signingConfigs {
         release {
             // Android Studio does not pass environment variables.
@@ -50,4 +57,5 @@ android {
             signingConfig signingConfigs.release
         }
     }
+
 }

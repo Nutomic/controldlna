@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+		  xmlns:tools="http://schemas.android.com/tools"
 		package="com.github.nutomic.controldlna"
 		android:versionCode="14"
-		android:versionName="1.0.2" >
+		android:versionName="1.0.2"
+		tools:ignore="ExportedService" >
 
 	<uses-permission android:name="android.permission.INTERNET"/>
 	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
@@ -54,14 +56,15 @@
 
 		<service android:name=".upnp.ProviderService"
 				android:label="@string/upnp_route_provider_service"
-				android:process=":mrp">
+				android:process=":mrp" >
 			<intent-filter>
 				<action android:name="android.media.MediaRouteProviderService" />
 			</intent-filter>
 		</service>
 
 		<service android:name=".localroute.ProviderService"
-				android:process=":mrp">
+				android:label="@string/local_device"
+				android:process=":mrp" >
 			<intent-filter>
 				<action android:name="android.media.MediaRouteProviderService" />
 			</intent-filter>

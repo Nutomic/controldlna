@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.gui;
 
+import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -54,8 +55,11 @@ public class PreferencesActivity extends PreferenceActivity
 
 	/**
 	 * Initializes preferences from xml.
+	 *
+	 * Manual target API as we manually check if ActionBar is available (for ActionBar back button).
 	 */
 	@Override
+	@TargetApi(11)
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
