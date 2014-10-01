@@ -14,7 +14,8 @@ Permissions: READ_PHONE_STATE is required to pause playback on phone call. All o
 
 ## Building
 
-To build, install Gradle (make sure it has support for Android builds), and then simply run `gradle assembleDebug` or `gradle assembleRelease`.
+To build run `./gradlew assembleDebug` or `./gradlew assembleRelease`.
+Windows users can use `gradlew.bat` rather than `./gradlew`.
 
 ## Icons
 
