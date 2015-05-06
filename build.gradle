@@ -4,13 +4,13 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.0+'
+        classpath 'com.android.tools.build:gradle:1.2.2'
         classpath 'com.alexvasilkov:android_sign:0.2'
     }
 }
 
-apply plugin: 'android'
 apply plugin: 'android_sign'
+apply plugin: 'com.android.application'
 
 repositories {
     mavenCentral()
@@ -28,7 +28,7 @@ dependencies {
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.3"
+    buildToolsVersion "19.1.0"
 
 	// Caused by cling, because they apparently include APIs for other platforms.
 	lintOptions {
@@ -50,7 +50,7 @@ android {
 
     buildTypes {
         debug {
-            packageNameSuffix ".debug"
+            applicationIdSuffix ".debug"
             debuggable true
         }
         release {
