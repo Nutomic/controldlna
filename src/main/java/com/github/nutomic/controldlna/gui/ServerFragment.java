@@ -250,6 +250,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 		mCurrentServer = server;
 		getFiles(ROOT_DIRECTORY);
 		mEmptyView.setText(R.string.folder_list_empty);
+		getListView().setFastScrollEnabled(true);
 	}
 
 	/**
