@@ -1,3 +1,6 @@
+# Project is Unmaintained
+I don't have the time or interest to continue working on ControlDLNA. If you want to take over the project, please contact me (or just fork it).
+
 ## Description
 
 ControlDLNA is a DLNA and UPnP control point app for your phone.
