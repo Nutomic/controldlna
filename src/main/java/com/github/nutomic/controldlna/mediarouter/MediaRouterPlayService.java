@@ -500,6 +500,11 @@ public class MediaRouterPlayService extends Service {
 		return mPlaylist;
 	}
 
+	public void append(List<Item> list)
+	{
+		mPlaylist.addAll(list);
+	}
+
 	public void toggleShuffleEnabled() {
 		mShuffle = !mShuffle;
 	}

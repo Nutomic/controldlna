@@ -41,9 +41,13 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -233,6 +237,54 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 	}
 
 	/**
+	 * Create a suitable context menu for the currently selected item.
+	 */
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo info)
+	{
+		super.onCreateContextMenu(menu, v, info);
+
+		if (getListAdapter() != mFileAdapter)
+			return;
+
+		int position = ((AdapterContextMenuInfo)info).position;
+		if (mFileAdapter.getItem(position) instanceof Container)
+			return;
+
+		menu.add(Menu.NONE, 1, Menu.NONE, "Append track to playlist");
+		menu.add(Menu.NONE, 2, Menu.NONE, "Append folder playlist");
+	}
+
+	/**
+	 * Process a context menu item selection
+	 * @param item - the menu entry that was selected
+	 * @return - true if the entry was processed
+	 */
+	@Override
+	public boolean onContextItemSelected(MenuItem item)
+	{
+		MainActivity activity = (MainActivity) getActivity();
+		List<Item> playlist = new ArrayList<Item>();
+		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+
+		switch(item.getItemId())
+		{
+			case 1:
+				playlist.add((Item) mFileAdapter.getItem((info.position)));
+				activity.add(playlist);
+				return true;
+			case 2:
+				for (int i = 0; i < mFileAdapter.getCount(); i++)
+					if (mFileAdapter.getItem(i) instanceof Item)
+						playlist.add((Item) mFileAdapter.getItem(i));
+				activity.add(playlist);
+				return true;
+			default:
+				return super.onContextItemSelected(item);
+		}
+	}
+
+	/**
 	 * Displays available servers in the ListView.
 	 */
 	private void serverMode() {
@@ -251,6 +303,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 		getFiles(ROOT_DIRECTORY);
 		mEmptyView.setText(R.string.folder_list_empty);
 		getListView().setFastScrollEnabled(true);
+		registerForContextMenu(getListView());
 	}
 
 	/**

@@ -258,4 +258,13 @@ public class MainActivity extends ActionBarActivity {
 		mRouteFragment.play(playlist, start);
 	}
 
+	/**
+	 * Appends a list of tracks to the current playlist
+	 *
+	 * @param playlist - the list of items to add
+	 */
+	public void add(List<Item> playlist) {
+		mRouteFragment.append(playlist);
+	}
+
 }

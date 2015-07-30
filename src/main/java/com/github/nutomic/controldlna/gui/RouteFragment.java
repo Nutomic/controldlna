@@ -532,6 +532,14 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	}
 
 	/**
+	 * Appends the supplied playlist to the current playlist
+	 */
+	public void append(List<Item> playlist) {
+		mPlaylistAdapter.add(playlist);
+		mMediaRouterPlayService.append(playlist);
+	}
+
+	/**
 	 * Generates a time string in the format mm:ss from a time value in seconds.
 	 *
 	 * @param time Time value in seconds (non-negative).
