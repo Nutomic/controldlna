@@ -185,6 +185,9 @@ public class MainActivity extends ActionBarActivity {
 				Intent i = new Intent(this, PreferencesActivity.class);
 				startActivity(i);
 				return true;
+			case R.id.refreshdev:
+				mServerFragment.triggerSearch();
+				return true;
 			default:
 				return super.onOptionsItemSelected(item);
 		}

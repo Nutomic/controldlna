@@ -41,7 +41,10 @@
 	
 	<!-- Developer contact mail with '@', '.' replaced -->
 	<string name="contact_mail" translatable="false">controldlna%1$snutomic%2$scom</string>
-	
+
+	<!-- Title for the Refresh Devices Action-->
+	<string name="refresh_title">Refresh Devices</string>
+
 	<!-- Title for the SettingsActivity -->
 	<string name="settings_title">Preferences</string>
 

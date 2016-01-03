@@ -3,7 +3,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
 	<item
-			android:id="@+id/preferences"
-			android:title="@string/settings_title" />
+		android:id="@+id/preferences"
+		android:title="@string/settings_title" />
+	<item
+		android:id="@+id/refreshdev"
+		android:title="@string/refresh_title" />
 
 </menu>
