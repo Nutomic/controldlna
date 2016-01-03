@@ -91,7 +91,8 @@ final class Provider extends MediaRouteProvider {
 				.addControlFilters(CONTROL_FILTERS)
 				.setPlaybackType(MediaRouter.RouteInfo.PLAYBACK_TYPE_REMOTE)
 				.setVolumeHandling(MediaRouter.RouteInfo.PLAYBACK_VOLUME_VARIABLE)
-				.setVolume(mAudio.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
+				.setVolume(mAudio.getStreamVolume(AudioManager.STREAM_MUSIC))
+				.setVolumeMax(mAudio.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
 				.build();
 
 

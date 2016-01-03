@@ -29,6 +29,7 @@
 	<string name="select_route">Please select a route</string>
 	<string name="enable_wifi_dialog">Wifi needs to be connected for playback.
 		Do you want to enable it now?</string>
+	<string name="volume_text">Volume: %1$d/%2$d</string>
 
 	<!-- Description for local playback device -->
 	<string name="local_device">Local Device</string>

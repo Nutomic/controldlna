@@ -496,6 +496,13 @@ public class MediaRouterPlayService extends Service {
 		mMediaRouter.getSelectedRoute().requestUpdateVolume(-1);
 	}
 
+	public String getVolumeText()
+	{
+		return String.format(getResources().getString(R.string.volume_text),
+			mMediaRouter.getSelectedRoute().getVolume(),
+			mMediaRouter.getSelectedRoute().getVolumeMax());
+	}
+
 	public List<Item> getPlaylist() {
 		return mPlaylist;
 	}
@@ -523,6 +530,11 @@ public class MediaRouterPlayService extends Service {
 
 	public RouteInfo getCurrentRoute() {
 		return mCurrentRoute;
+	}
+
+	public boolean isLocal()
+	{
+		return mCurrentRoute.getName().startsWith(getResources().getString(R.string.local_device));
 	}
 
 }

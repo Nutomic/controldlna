@@ -92,13 +92,13 @@ public class Controller extends MediaRouteProvider.RouteController implements
 
 	@Override
 	public void onSetVolume(int volume) {
-		mAudio.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
+		mAudio.setStreamVolume(AudioManager.STREAM_MUSIC, volume, AudioManager.FLAG_SHOW_UI);
 	}
 
 	@Override
 	public void onUpdateVolume(int delta) {
 		int currentVolume = mAudio.getStreamVolume(AudioManager.STREAM_MUSIC);
-		mAudio.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume + delta, 0);
+		mAudio.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume + delta, AudioManager.FLAG_SHOW_UI);
 	}
 
 	@Override

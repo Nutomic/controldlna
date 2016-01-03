@@ -504,12 +504,29 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		enableTrackHighlight();
 	}
 
+	private Toast mVolumeToast;
+
+	private void updateVolumeToast(String text)
+	{
+		// The local provider doesn't report correct values so don't use our toast
+		// (local provider can use the SHOW_UI option on setVolume itself which
+		// does show correct values)
+		if (mMediaRouterPlayService.isLocal())
+			return;
+		if (mVolumeToast != null)
+			mVolumeToast.cancel();
+		mVolumeToast=Toast.makeText(getActivity(), text, Toast.LENGTH_SHORT);
+		mVolumeToast.show();
+	}
+
 	public void increaseVolume() {
 		mMediaRouterPlayService.increaseVolume();
+		updateVolumeToast(mMediaRouterPlayService.getVolumeText());
 	}
 
 	public void decreaseVolume() {
 		mMediaRouterPlayService.decreaseVolume();
+		updateVolumeToast(mMediaRouterPlayService.getVolumeText());
 	}
 
 	/**
