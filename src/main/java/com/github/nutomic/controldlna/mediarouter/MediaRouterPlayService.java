@@ -55,11 +55,11 @@ import com.github.nutomic.controldlna.gui.PreferencesActivity;
 import com.github.nutomic.controldlna.gui.RouteFragment;
 import com.github.nutomic.controldlna.utility.LoadImageTask;
 
-import org.teleal.cling.support.contentdirectory.DIDLParser;
-import org.teleal.cling.support.model.DIDLContent;
-import org.teleal.cling.support.model.DIDLObject;
-import org.teleal.cling.support.model.item.Item;
-import org.teleal.cling.support.model.item.MusicTrack;
+import org.fourthline.cling.support.contentdirectory.DIDLParser;
+import org.fourthline.cling.support.model.DIDLContent;
+import org.fourthline.cling.support.model.DIDLObject;
+import org.fourthline.cling.support.model.item.Item;
+import org.fourthline.cling.support.model.item.MusicTrack;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;

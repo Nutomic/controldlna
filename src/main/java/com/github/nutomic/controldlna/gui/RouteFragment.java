@@ -68,7 +68,7 @@ import com.github.nutomic.controldlna.mediarouter.MediaRouterPlayServiceBinder;
 import com.github.nutomic.controldlna.utility.FileArrayAdapter;
 import com.github.nutomic.controldlna.utility.RouteAdapter;
 
-import org.teleal.cling.support.model.item.Item;
+import org.fourthline.cling.support.model.item.Item;
 
 import java.util.List;
 

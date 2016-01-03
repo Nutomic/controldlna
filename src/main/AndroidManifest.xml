@@ -12,9 +12,10 @@
 	<uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 	<uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+	<uses-permission android:name="android.permission.WAKE_LOCK"/>
 
 	<uses-sdk
-			android:minSdkVersion="8"
+			android:minSdkVersion="15"
 			android:targetSdkVersion="19" />
 
 	<application
@@ -48,7 +49,7 @@
 				android:value=".gui.MainActivity" />
 		</activity>
 
-		<service android:name="org.teleal.cling.android.AndroidUpnpServiceImpl" />
+		<service android:name="org.fourthline.cling.android.AndroidUpnpServiceImpl" />
 
 		<service android:name=".mediarouter.MediaRouterPlayService" />
 

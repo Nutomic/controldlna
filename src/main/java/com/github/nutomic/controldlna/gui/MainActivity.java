@@ -49,7 +49,7 @@ import android.view.MenuItem;
 
 import com.github.nutomic.controldlna.R;
 
-import org.teleal.cling.support.model.item.Item;
+import org.fourthline.cling.support.model.item.Item;
 
 import java.util.List;
 

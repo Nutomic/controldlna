@@ -38,11 +38,11 @@ import android.widget.TextView;
 
 import com.github.nutomic.controldlna.R;
 
-import org.teleal.cling.model.meta.Device;
-import org.teleal.cling.model.meta.LocalDevice;
-import org.teleal.cling.model.meta.RemoteDevice;
-import org.teleal.cling.registry.Registry;
-import org.teleal.cling.registry.RegistryListener;
+import org.fourthline.cling.model.meta.Device;
+import org.fourthline.cling.model.meta.LocalDevice;
+import org.fourthline.cling.model.meta.RemoteDevice;
+import org.fourthline.cling.registry.Registry;
+import org.fourthline.cling.registry.RegistryListener;
 
 import java.net.URI;
 import java.net.URISyntaxException;

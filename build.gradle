@@ -22,8 +22,12 @@ repositories {
 dependencies {
     compile 'com.android.support:appcompat-v7:19.1.+'
     compile 'com.android.support:mediarouter-v7:19.1.+'
-    compile 'org.teleal.cling:cling-core:1.0.5+'
-    compile 'org.teleal.cling:cling-support:1.0.5+'
+    compile 'org.fourthline.cling:cling-core:2.1.0'
+    compile 'org.fourthline.cling:cling-support:2.1.0'
+    compile 'org.eclipse.jetty:jetty-server:8.1.8.v20121106'
+    compile 'org.eclipse.jetty:jetty-servlet:8.1.8.v20121106'
+    compile 'org.eclipse.jetty:jetty-client:8.1.8.v20121106'
+    compile 'org.slf4j:slf4j-jdk14:1.6.1'
 }
 
 android {
@@ -34,6 +38,11 @@ android {
 	lintOptions {
 		disable 'InvalidPackage'
 	}
+
+    packagingOptions {
+        exclude 'META-INF/beans.xml'
+        exclude 'about.html'
+    }
 
     signingConfigs {
         release {
