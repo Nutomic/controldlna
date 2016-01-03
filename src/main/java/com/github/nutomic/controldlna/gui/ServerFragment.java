@@ -431,7 +431,8 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 
 	public void triggerSearch()
 	{
-		mUpnpService.getControlPoint().search();
+		if (mUpnpService != null)
+			mUpnpService.getControlPoint().search();
 	}
 
 }
