@@ -46,6 +46,20 @@
 	<!-- Title for the Refresh Devices Action-->
 	<string name="refresh_title">Refresh Devices</string>
 
+	<!-- Title for the About Menu-->
+	<string name="about_title">About</string>
+
+	<!-- Title for the About Menu-->
+	<string name="about_text">ControlDLNA - a UPnP media control point
+		\nOriginal version:
+		\nCopyright (c) 2013, Felix Ableitner, All rights reserved.
+		\nModifications:
+		\nCopyright (c) 2016 Adam Baker, All rights reserved.
+		\n
+		\nBSD 3-Clause License
+		\n
+	</string>
+
 	<!-- Title for the SettingsActivity -->
 	<string name="settings_title">Preferences</string>
 

@@ -252,7 +252,7 @@ public class ServerFragment extends ListFragment implements OnBackPressedListene
 			return;
 
 		menu.add(Menu.NONE, 1, Menu.NONE, "Append track to playlist");
-		menu.add(Menu.NONE, 2, Menu.NONE, "Append folder playlist");
+		menu.add(Menu.NONE, 2, Menu.NONE, "Append folder to playlist");
 	}
 
 	/**

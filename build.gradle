@@ -44,6 +44,10 @@ android {
         exclude 'about.html'
     }
 
+    defaultConfig {
+        buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
+    }
+
     signingConfigs {
         release {
             // Android Studio does not pass environment variables.

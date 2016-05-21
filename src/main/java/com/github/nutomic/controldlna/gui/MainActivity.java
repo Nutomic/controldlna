@@ -182,11 +182,15 @@ public class MainActivity extends ActionBarActivity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.preferences:
-				Intent i = new Intent(this, PreferencesActivity.class);
-				startActivity(i);
+				Intent p = new Intent(this, PreferencesActivity.class);
+				startActivity(p);
 				return true;
 			case R.id.refreshdev:
 				mServerFragment.triggerSearch();
+				return true;
+			case R.id.about:
+				Intent a = new Intent(this, AboutActivity.class);
+				startActivity(a);
 				return true;
 			default:
 				return super.onOptionsItemSelected(item);
