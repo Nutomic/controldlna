@@ -369,10 +369,22 @@ public class MediaRouterPlayService extends Service {
 	 * @param playlist The media files in the playlist.
 	 */
 	public void setPlaylist(List<Item> playlist) {
-
-
-
 		mPlaylist = playlist;
+	}
+
+	public void append(List<Item> list)
+	{
+		mPlaylist.addAll(list);
+	}
+
+	public void remove(int index)
+	{
+		mPlaylist.remove(index);
+	}
+
+	public void insert(Item obj, int pos)
+	{
+		mPlaylist.add(pos,obj);
 	}
 
 	/**
@@ -505,11 +517,6 @@ public class MediaRouterPlayService extends Service {
 
 	public List<Item> getPlaylist() {
 		return mPlaylist;
-	}
-
-	public void append(List<Item> list)
-	{
-		mPlaylist.addAll(list);
 	}
 
 	public void toggleShuffleEnabled() {

@@ -45,7 +45,10 @@ import android.support.v7.media.MediaRouter;
 import android.support.v7.media.MediaRouter.Callback;
 import android.support.v7.media.MediaRouter.ProviderInfo;
 import android.support.v7.media.MediaRouter.RouteInfo;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewConfiguration;
@@ -53,6 +56,7 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -68,8 +72,10 @@ import com.github.nutomic.controldlna.mediarouter.MediaRouterPlayServiceBinder;
 import com.github.nutomic.controldlna.utility.FileArrayAdapter;
 import com.github.nutomic.controldlna.utility.RouteAdapter;
 
+import org.fourthline.cling.support.model.DIDLObject;
 import org.fourthline.cling.support.model.item.Item;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -173,6 +179,8 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 
 		mEmptyView = (TextView) getView().findViewById(android.R.id.empty);
 		mListView.setEmptyView(mEmptyView);
+
+		registerForContextMenu(mListView);
 
 		mControls = getView().findViewById(R.id.controls);
 		mProgressBar = (SeekBar) getView().findViewById(R.id.progressBar);
@@ -312,6 +320,66 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 		else {
 			mMediaRouterPlayService.play(position);
 			changePlayPauseState(true);
+		}
+	}
+
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo info)
+	{
+		super.onCreateContextMenu(menu, v, info);
+		if (mListView.getAdapter() == mRouteAdapter)
+			return;
+
+		int position = ((AdapterContextMenuInfo)info).position;
+
+		if (position != 0)
+			menu.add(Menu.NONE, 3, Menu.NONE, "Move Up");
+
+		menu.add(Menu.NONE, 4, Menu.NONE, "Remove from playlist");
+
+		if (position != mPlaylistAdapter.getCount()-1)
+			menu.add(Menu.NONE, 5, Menu.NONE, "Move Down");
+	}
+
+	/**
+	 * Process a context menu item selection
+	 * @param item - the menu entry that was selected
+	 * @return - true if the entry was processed
+	 */
+	@Override
+	public boolean onContextItemSelected(MenuItem item)
+	{
+		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+		DIDLObject i = mPlaylistAdapter.getItem(info.position);
+
+		switch(item.getItemId())
+		{
+			case 3:
+				mPlaylistAdapter.remove(i);
+				mMediaRouterPlayService.remove(info.position);
+				mPlaylistAdapter.insert(i, info.position - 1);
+				mMediaRouterPlayService.insert((Item) i, info.position - 1);
+				if ((mMediaRouterPlayService.getCurrentTrack() == info.position) ||
+						(mMediaRouterPlayService.getCurrentTrack() == info.position - 1))
+					mMediaRouterPlayService.play(mMediaRouterPlayService.getCurrentTrack());
+				return true;
+			case 4:
+				mPlaylistAdapter.remove(i);
+				mMediaRouterPlayService.remove(info.position);
+				if (mMediaRouterPlayService.getCurrentTrack() == info.position)
+					mMediaRouterPlayService.play(mMediaRouterPlayService.getCurrentTrack());
+				return true;
+			case 5:
+				mPlaylistAdapter.remove(i);
+				mMediaRouterPlayService.remove(info.position);
+				mPlaylistAdapter.insert(i, info.position + 1);
+				mMediaRouterPlayService.insert((Item) i, info.position + 1);
+				if ((mMediaRouterPlayService.getCurrentTrack() == info.position) ||
+						(mMediaRouterPlayService.getCurrentTrack() == info.position + 1))
+					mMediaRouterPlayService.play(mMediaRouterPlayService.getCurrentTrack());
+				return true;
+			default:
+				return super.onContextItemSelected(item);
 		}
 	}
 
