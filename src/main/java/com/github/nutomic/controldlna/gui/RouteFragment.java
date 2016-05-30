@@ -625,6 +625,17 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	}
 
 	/**
+	 * Deletes the current playlist and stops playback
+	 */
+	public void clearPlaylist()
+	{
+		mMediaRouterPlayService.stop();
+		changePlayPauseState(false);
+		mPlaylistAdapter.clear();
+		mMediaRouterPlayService.setPlaylist(new ArrayList<Item>());
+	}
+
+	/**
 	 * Generates a time string in the format mm:ss from a time value in seconds.
 	 *
 	 * @param time Time value in seconds (non-negative).

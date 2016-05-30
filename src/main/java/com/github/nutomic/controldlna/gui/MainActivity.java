@@ -188,6 +188,9 @@ public class MainActivity extends ActionBarActivity {
 			case R.id.refreshdev:
 				mServerFragment.triggerSearch();
 				return true;
+			case R.id.clearplaylist:
+				mRouteFragment.clearPlaylist();
+				return true;
 			case R.id.about:
 				Intent a = new Intent(this, AboutActivity.class);
 				startActivity(a);

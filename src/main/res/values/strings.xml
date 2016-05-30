@@ -46,10 +46,13 @@
 	<!-- Title for the Refresh Devices Action-->
 	<string name="refresh_title">Refresh Devices</string>
 
+	<!-- Title for the Clear Playlist Action-->
+	<string name="clear_list_title">Clear Playlist</string>
+
 	<!-- Title for the About Menu-->
 	<string name="about_title">About</string>
 
-	<!-- Title for the About Menu-->
+	<!-- Text for the About Box-->
 	<string name="about_text">ControlDLNA - a UPnP media control point
 		\nOriginal version:
 		\nCopyright (c) 2013, Felix Ableitner, All rights reserved.
