@@ -4,7 +4,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.2.2'
+        classpath 'com.android.tools.build:gradle:2.3.1'
         classpath 'com.alexvasilkov:android_sign:0.2'
     }
 }
@@ -22,8 +22,8 @@ repositories {
 dependencies {
     compile 'com.android.support:appcompat-v7:19.1.+'
     compile 'com.android.support:mediarouter-v7:19.1.+'
-    compile 'org.fourthline.cling:cling-core:2.1.0'
-    compile 'org.fourthline.cling:cling-support:2.1.0'
+    compile 'org.fourthline.cling:cling-core:2.1.1'
+    compile 'org.fourthline.cling:cling-support:2.1.1'
     compile 'org.eclipse.jetty:jetty-server:8.1.8.v20121106'
     compile 'org.eclipse.jetty:jetty-servlet:8.1.8.v20121106'
     compile 'org.eclipse.jetty:jetty-client:8.1.8.v20121106'
@@ -32,7 +32,7 @@ dependencies {
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.1.0"
+    buildToolsVersion '25.0.0'
 
 	// Caused by cling, because they apparently include APIs for other platforms.
 	lintOptions {

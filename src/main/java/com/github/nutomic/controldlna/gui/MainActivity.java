@@ -134,7 +134,7 @@ public class MainActivity extends ActionBarActivity {
 				.setText(R.string.title_route)
 				.setTabListener(tabListener));
 
-		final WifiManager wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		final WifiManager wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 		if (!wifi.isWifiEnabled()) {
 			String value = PreferenceManager.getDefaultSharedPreferences(this)
 					.getString(PreferencesActivity.KEY_ENABLE_WIFI_ON_START, "ask");
