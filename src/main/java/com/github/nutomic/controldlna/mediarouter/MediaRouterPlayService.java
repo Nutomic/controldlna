@@ -105,6 +105,8 @@ public class MediaRouterPlayService extends Service {
 
 	private boolean mPollingStatus = false;
 
+	private int mStartingTrack = 0;
+
 	private boolean mBound;
 
 	/**
@@ -270,6 +272,7 @@ public class MediaRouterPlayService extends Service {
 			return;
 
 		mCurrentTrack = trackNumber;
+		mStartingTrack = 3;
 		Item track = mPlaylist.get(trackNumber);
 		DIDLParser parser = new DIDLParser();
 		DIDLContent didl = new DIDLContent();
@@ -483,10 +486,13 @@ public class MediaRouterPlayService extends Service {
 						stopForeground(true);
 					}
 
-					if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED ||
-							status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_CANCELED) {
+					if ((status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED ||
+							status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_CANCELED) &&
+							(mStartingTrack == 0)) {
 						playNext();
 					}
+					if (mStartingTrack > 0)
+						mStartingTrack--;
 				}
 			});
 		}
