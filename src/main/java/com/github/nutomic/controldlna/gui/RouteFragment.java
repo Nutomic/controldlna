@@ -644,7 +644,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 	private String generateTimeString(int time) {
 		int seconds = time % 60;
 		int minutes = time / 60;
-		if (minutes > 99) {
+		if (minutes > 999) {
 			return "99:99";
 		}
 		else {
@@ -671,6 +671,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 
 		mProgressBar.setProgress(currentTime);
 		mProgressBar.setMax(totalTime);
+		mProgressBar.setKeyProgressIncrement(180);
 
 		if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PLAYING ||
 				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_BUFFERING ||
