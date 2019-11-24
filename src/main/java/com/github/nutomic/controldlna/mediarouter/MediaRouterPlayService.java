@@ -335,8 +335,10 @@ public class MediaRouterPlayService extends Service {
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
 		mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
 		mPollingStatus = true;
-		new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
-				.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+		if (mCurrentTrack >= 0 && mCurrentTrack < mPlaylist.size()) {
+			new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+					.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+		}
 	}
 
 	/**
