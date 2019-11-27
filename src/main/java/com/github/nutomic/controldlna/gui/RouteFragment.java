@@ -671,7 +671,7 @@ public class RouteFragment extends MediaRouteDiscoveryFragment implements
 
 		mProgressBar.setProgress(currentTime);
 		mProgressBar.setMax(totalTime);
-		mProgressBar.setKeyProgressIncrement(180);
+		mProgressBar.setKeyProgressIncrement(totalTime / 20); // skip in steps of 5% of song length
 
 		if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_PLAYING ||
 				status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_BUFFERING ||
