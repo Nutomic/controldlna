@@ -66,7 +66,8 @@ public class PreferencesActivity extends PreferenceActivity
 		// There is currently no way to get ActionBar in PreferenceActivity on pre-honeycomb with
 		// compatibility library, so we'll have to do a version check.
 		if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			getActionBar().setDisplayHomeAsUpEnabled(true);
+// crashes in Android 7.0:
+//			getActionBar().setDisplayHomeAsUpEnabled(true);
 		}
 
 		PreferenceManager.getDefaultSharedPreferences(this)
