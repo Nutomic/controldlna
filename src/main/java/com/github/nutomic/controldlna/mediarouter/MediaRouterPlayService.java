@@ -336,10 +336,11 @@ public class MediaRouterPlayService extends Service {
 		mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
 		mPollingStatus = true;
 		if (mCurrentTrack < 0 || mCurrentTrack >= mPlaylist.size()) {
-			mCurrentTrack = 0;
+			play(0);
+		} else {
+			new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+					.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
 		}
-		new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
-				.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
 	}
 
 	/**
