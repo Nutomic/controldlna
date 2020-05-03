@@ -58,9 +58,13 @@ android {
     signingConfigs {
         release {
             // Android Studio does not pass environment variables.
-            // This means you have to use the command line for release builds.
+            // This means you have to use the command line if you need to override
+            // keystore.properties for release builds.
             def ks = System.getenv("KEYSTORE")
             def ka = System.getenv("KEY_ALIAS")
+            def keyPropertiesFile = rootProject.file("keystore.properties");
+            def keyProperties = new Properties()
+            keyProperties.load(new FileInputStream(keyPropertiesFile))
             if (ks != null && ka != null) {
                 storeFile file(ks)
                 keyAlias ka
