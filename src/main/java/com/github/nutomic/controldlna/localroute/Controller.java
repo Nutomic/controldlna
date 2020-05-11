@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.github.nutomic.controldlna.localroute;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
@@ -38,6 +39,7 @@ import android.support.v7.media.MediaItemStatus;
 import android.support.v7.media.MediaRouteProvider;
 import android.support.v7.media.MediaRouter.ControlRequestCallback;
 import android.util.Log;
+import android.content.IntentFilter;
 
 import java.io.IOException;
 
@@ -66,23 +68,52 @@ public class Controller extends MediaRouteProvider.RouteController implements
 
 	private MediaPlayer mPlayer = new MediaPlayer();
 
+	private NoisyAudioReceiver mNoisyAudioReceiver;
+
+	class NoisyAudioReceiver extends BroadcastReceiver {
+		private Controller mController;
+
+		public void register(Controller controller, Context context) {
+			mController=controller;
+			IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+			context.registerReceiver( this, intentFilter );
+		}
+
+		public void unregister(Context context) {
+			context.unregisterReceiver(this);
+			mController=null;
+		}
+
+		@Override
+		public void onReceive(Context context, Intent intent) {
+		if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+			if (mController != null)
+				mController.pause();
+			}
+		}
+	}
+
 	public Controller(String routeId, Context context) {
 		mContext = context;
 		mRouteId = routeId;
 		mAudio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 		mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 		mPlayer.setOnPreparedListener(this);
+		mNoisyAudioReceiver = new NoisyAudioReceiver();
 	}
 
 	@Override
 	public void onRelease() {
+
 		mPlayer.release();
+		mNoisyAudioReceiver.unregister(mContext);
 	}
 
 	@Override
 	public void onSelect() {
 		mAudio.requestAudioFocus(mFocusListener, AudioManager.STREAM_MUSIC,
 				AudioManager.AUDIOFOCUS_GAIN);
+		mNoisyAudioReceiver.register(this, mContext);
 	}
 
 	@Override
@@ -92,13 +123,13 @@ public class Controller extends MediaRouteProvider.RouteController implements
 
 	@Override
 	public void onSetVolume(int volume) {
-		mAudio.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0);
+		mAudio.setStreamVolume(AudioManager.STREAM_MUSIC, volume, AudioManager.FLAG_SHOW_UI);
 	}
 
 	@Override
 	public void onUpdateVolume(int delta) {
 		int currentVolume = mAudio.getStreamVolume(AudioManager.STREAM_MUSIC);
-		mAudio.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume + delta, 0);
+		mAudio.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume + delta, AudioManager.FLAG_SHOW_UI);
 	}
 
 	@Override
@@ -125,8 +156,7 @@ public class Controller extends MediaRouteProvider.RouteController implements
 			}
 		}
 		else if (intent.getAction().equals(MediaControlIntent.ACTION_PAUSE)) {
-			mPlayer.pause();
-			mState = MediaItemStatus.PLAYBACK_STATE_PAUSED;
+			pause();
 			return true;
 		}
 		else if (intent.getAction().equals(MediaControlIntent.ACTION_RESUME)) {
@@ -197,5 +227,10 @@ public class Controller extends MediaRouteProvider.RouteController implements
 		mPlayer.start();
 		mState = MediaItemStatus.PLAYBACK_STATE_PLAYING;
 		mPlayer.setOnCompletionListener(this);
+	}
+
+	public void pause() {
+		mPlayer.pause();
+		mState = MediaItemStatus.PLAYBACK_STATE_PAUSED;
 	}
 }

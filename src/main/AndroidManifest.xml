@@ -3,7 +3,7 @@
 		  xmlns:tools="http://schemas.android.com/tools"
 		package="com.github.nutomic.controldlna"
 		android:versionCode="14"
-		android:versionName="1.0.2"
+		android:versionName="1.0.3"
 		tools:ignore="ExportedService" >
 
 	<uses-permission android:name="android.permission.INTERNET"/>
@@ -12,10 +12,11 @@
 	<uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 	<uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+	<uses-permission android:name="android.permission.WAKE_LOCK"/>
 
 	<uses-sdk
-			android:minSdkVersion="8"
-			android:targetSdkVersion="19" />
+			android:minSdkVersion="15"
+			android:targetSdkVersion="26" />
 
 	<application
 			android:allowBackup="true"
@@ -41,14 +42,22 @@
 		</activity>
 
 		<activity
-				android:name=".gui.PreferencesActivity"
-				android:label="@string/settings_title" >
+			android:name=".gui.PreferencesActivity"
+			android:label="@string/settings_title" >
 			<meta-data
 				android:name="android.support.PARENT_ACTIVITY"
 				android:value=".gui.MainActivity" />
 		</activity>
 
-		<service android:name="org.teleal.cling.android.AndroidUpnpServiceImpl" />
+		<activity
+			android:name=".gui.AboutActivity"
+			android:label="@string/about_title" >
+			<meta-data
+				android:name="android.support.PARENT_ACTIVITY"
+				android:value=".gui.MainActivity" />
+		</activity>
+
+		<service android:name="org.fourthline.cling.android.AndroidUpnpServiceImpl" />
 
 		<service android:name=".mediarouter.MediaRouterPlayService" />
 

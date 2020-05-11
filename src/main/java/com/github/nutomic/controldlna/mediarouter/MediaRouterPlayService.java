@@ -55,11 +55,11 @@ import com.github.nutomic.controldlna.gui.PreferencesActivity;
 import com.github.nutomic.controldlna.gui.RouteFragment;
 import com.github.nutomic.controldlna.utility.LoadImageTask;
 
-import org.teleal.cling.support.contentdirectory.DIDLParser;
-import org.teleal.cling.support.model.DIDLContent;
-import org.teleal.cling.support.model.DIDLObject;
-import org.teleal.cling.support.model.item.Item;
-import org.teleal.cling.support.model.item.MusicTrack;
+import org.fourthline.cling.support.contentdirectory.DIDLParser;
+import org.fourthline.cling.support.model.DIDLContent;
+import org.fourthline.cling.support.model.DIDLObject;
+import org.fourthline.cling.support.model.item.Item;
+import org.fourthline.cling.support.model.item.MusicTrack;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -104,6 +104,8 @@ public class MediaRouterPlayService extends Service {
 			new WeakReference<RouteFragment>(null);
 
 	private boolean mPollingStatus = false;
+
+	private int mStartingTrack = 0;
 
 	private boolean mBound;
 
@@ -270,6 +272,7 @@ public class MediaRouterPlayService extends Service {
 			return;
 
 		mCurrentTrack = trackNumber;
+		mStartingTrack = 3;
 		Item track = mPlaylist.get(trackNumber);
 		DIDLParser parser = new DIDLParser();
 		DIDLContent didl = new DIDLContent();
@@ -332,8 +335,12 @@ public class MediaRouterPlayService extends Service {
 		intent.putExtra(MediaControlIntent.EXTRA_SESSION_ID, mSessionId);
 		mMediaRouter.getSelectedRoute().sendControlRequest(intent, null);
 		mPollingStatus = true;
-		new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
-				.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+		if (mCurrentTrack < 0 || mCurrentTrack >= mPlaylist.size()) {
+			play(0);
+		} else {
+			new CreateNotificationTask().execute(mPlaylist.get(mCurrentTrack)
+					.getFirstPropertyValue(DIDLObject.Property.UPNP.ALBUM_ART_URI.class));
+		}
 	}
 
 	/**
@@ -369,10 +376,22 @@ public class MediaRouterPlayService extends Service {
 	 * @param playlist The media files in the playlist.
 	 */
 	public void setPlaylist(List<Item> playlist) {
-
-
-
 		mPlaylist = playlist;
+	}
+
+	public void append(List<Item> list)
+	{
+		mPlaylist.addAll(list);
+	}
+
+	public void remove(int index)
+	{
+		mPlaylist.remove(index);
+	}
+
+	public void insert(Item obj, int pos)
+	{
+		mPlaylist.add(pos,obj);
 	}
 
 	/**
@@ -471,10 +490,13 @@ public class MediaRouterPlayService extends Service {
 						stopForeground(true);
 					}
 
-					if (status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED ||
-							status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_CANCELED) {
+					if ((status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_FINISHED ||
+							status.getPlaybackState() == MediaItemStatus.PLAYBACK_STATE_CANCELED) &&
+							(mStartingTrack == 0)) {
 						playNext();
 					}
+					if (mStartingTrack > 0)
+						mStartingTrack--;
 				}
 			});
 		}
@@ -494,6 +516,13 @@ public class MediaRouterPlayService extends Service {
 
 	public void decreaseVolume() {
 		mMediaRouter.getSelectedRoute().requestUpdateVolume(-1);
+	}
+
+	public String getVolumeText()
+	{
+		return String.format(getResources().getString(R.string.volume_text),
+			mMediaRouter.getSelectedRoute().getVolume(),
+			mMediaRouter.getSelectedRoute().getVolumeMax());
 	}
 
 	public List<Item> getPlaylist() {
@@ -518,6 +547,11 @@ public class MediaRouterPlayService extends Service {
 
 	public RouteInfo getCurrentRoute() {
 		return mCurrentRoute;
+	}
+
+	public boolean isLocal()
+	{
+		return mCurrentRoute.getName().startsWith(getResources().getString(R.string.local_device));
 	}
 
 }

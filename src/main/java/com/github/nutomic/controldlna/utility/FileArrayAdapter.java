@@ -30,13 +30,13 @@ package com.github.nutomic.controldlna.utility;
 import java.net.URI;
 import java.util.List;
 
-import org.teleal.cling.support.model.DIDLObject;
-import org.teleal.cling.support.model.item.AudioItem;
-import org.teleal.cling.support.model.item.ImageItem;
-import org.teleal.cling.support.model.item.Item;
-import org.teleal.cling.support.model.item.PlaylistItem;
-import org.teleal.cling.support.model.item.VideoItem;
-import org.teleal.cling.support.model.item.MusicTrack;
+import org.fourthline.cling.support.model.DIDLObject;
+import org.fourthline.cling.support.model.item.AudioItem;
+import org.fourthline.cling.support.model.item.ImageItem;
+import org.fourthline.cling.support.model.item.Item;
+import org.fourthline.cling.support.model.item.PlaylistItem;
+import org.fourthline.cling.support.model.item.VideoItem;
+import org.fourthline.cling.support.model.item.MusicTrack;
 
 import android.content.Context;
 import android.view.LayoutInflater;

@@ -29,6 +29,7 @@
 	<string name="select_route">Please select a route</string>
 	<string name="enable_wifi_dialog">Wifi needs to be connected for playback.
 		Do you want to enable it now?</string>
+	<string name="volume_text">Volume: %1$d/%2$d</string>
 
 	<!-- Description for local playback device -->
 	<string name="local_device">Local Device</string>
@@ -41,7 +42,27 @@
 	
 	<!-- Developer contact mail with '@', '.' replaced -->
 	<string name="contact_mail" translatable="false">controldlna%1$snutomic%2$scom</string>
-	
+
+	<!-- Title for the Refresh Devices Action-->
+	<string name="refresh_title">Refresh Devices</string>
+
+	<!-- Title for the Clear Playlist Action-->
+	<string name="clear_list_title">Clear Playlist</string>
+
+	<!-- Title for the About Menu-->
+	<string name="about_title">About</string>
+
+	<!-- Text for the About Box-->
+	<string name="about_text">ControlDLNA - a UPnP media control point
+		\nOriginal version:
+		\nCopyright (c) 2013, Felix Ableitner, All rights reserved.
+		\nModifications:
+		\nCopyright (c) 2016 Adam Baker, All rights reserved.
+		\n
+		\nBSD 3-Clause License
+		\n
+	</string>
+
 	<!-- Title for the SettingsActivity -->
 	<string name="settings_title">Preferences</string>
 

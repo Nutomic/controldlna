@@ -33,26 +33,26 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
 
-import org.teleal.cling.controlpoint.SubscriptionCallback;
-import org.teleal.cling.model.action.ActionInvocation;
-import org.teleal.cling.model.gena.CancelReason;
-import org.teleal.cling.model.gena.GENASubscription;
-import org.teleal.cling.model.message.UpnpResponse;
-import org.teleal.cling.model.meta.Device;
-import org.teleal.cling.model.state.StateVariableValue;
-import org.teleal.cling.model.types.ServiceType;
-import org.teleal.cling.support.avtransport.callback.GetPositionInfo;
-import org.teleal.cling.support.avtransport.callback.Pause;
-import org.teleal.cling.support.avtransport.callback.Play;
-import org.teleal.cling.support.avtransport.callback.Seek;
-import org.teleal.cling.support.avtransport.callback.SetAVTransportURI;
-import org.teleal.cling.support.avtransport.callback.Stop;
-import org.teleal.cling.support.avtransport.lastchange.AVTransportLastChangeParser;
-import org.teleal.cling.support.avtransport.lastchange.AVTransportVariable;
-import org.teleal.cling.support.lastchange.LastChange;
-import org.teleal.cling.support.model.PositionInfo;
-import org.teleal.cling.support.model.SeekMode;
-import org.teleal.cling.support.renderingcontrol.callback.SetVolume;
+import org.fourthline.cling.controlpoint.SubscriptionCallback;
+import org.fourthline.cling.model.action.ActionInvocation;
+import org.fourthline.cling.model.gena.CancelReason;
+import org.fourthline.cling.model.gena.GENASubscription;
+import org.fourthline.cling.model.message.UpnpResponse;
+import org.fourthline.cling.model.meta.Device;
+import org.fourthline.cling.model.state.StateVariableValue;
+import org.fourthline.cling.model.types.ServiceType;
+import org.fourthline.cling.support.avtransport.callback.GetPositionInfo;
+import org.fourthline.cling.support.avtransport.callback.Pause;
+import org.fourthline.cling.support.avtransport.callback.Play;
+import org.fourthline.cling.support.avtransport.callback.Seek;
+import org.fourthline.cling.support.avtransport.callback.SetAVTransportURI;
+import org.fourthline.cling.support.avtransport.callback.Stop;
+import org.fourthline.cling.support.avtransport.lastchange.AVTransportLastChangeParser;
+import org.fourthline.cling.support.avtransport.lastchange.AVTransportVariable;
+import org.fourthline.cling.support.lastchange.LastChange;
+import org.fourthline.cling.support.model.PositionInfo;
+import org.fourthline.cling.support.model.SeekMode;
+import org.fourthline.cling.support.renderingcontrol.callback.SetVolume;
 
 import android.annotation.SuppressLint;
 import android.os.Message;
@@ -218,7 +218,7 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 					@SuppressWarnings("rawtypes")
 					@Override
 					public void failure(ActionInvocation invocation,
-							org.teleal.cling.model.message.UpnpResponse operation,
+							org.fourthline.cling.model.message.UpnpResponse operation,
 							String defaultMessage) {
 						Log.w(TAG, "Stop failed: " + defaultMessage);
 						mRps.sendError("Stop failed: " + defaultMessage);
@@ -320,7 +320,7 @@ public class RemotePlayServiceBinder extends IRemotePlayService.Stub {
 					@SuppressWarnings("rawtypes")
 					@Override
 					public void failure(ActionInvocation invocation,
-							org.teleal.cling.model.message.UpnpResponse operation,
+							org.fourthline.cling.model.message.UpnpResponse operation,
 							String defaultMessage) {
 						Log.w(TAG, "Stop failed: " + defaultMessage);
 						mRps.sendError("Stop failed: " + defaultMessage);

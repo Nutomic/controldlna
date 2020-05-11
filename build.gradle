@@ -1,46 +1,74 @@
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
+        google()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.0+'
+        classpath 'com.android.tools.build:gradle:3.1.2'
         classpath 'com.alexvasilkov:android_sign:0.2'
     }
 }
 
-apply plugin: 'android'
 apply plugin: 'android_sign'
+apply plugin: 'com.android.application'
 
 repositories {
     mavenCentral()
+    jcenter()
     maven {
         url "http://4thline.org/m2"
+    }
+    maven {
+        url 'https://maven.google.com/'
+        name 'Google'
     }
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:19.1.+'
-    compile 'com.android.support:mediarouter-v7:19.1.+'
-    compile 'org.teleal.cling:cling-core:1.0.5+'
-    compile 'org.teleal.cling:cling-support:1.0.5+'
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support:mediarouter-v7:26.1.0'
+    implementation 'org.fourthline.cling:cling-core:2.1.1'
+    implementation 'org.fourthline.cling:cling-support:2.1.1'
+    implementation 'org.eclipse.jetty:jetty-server:8.1.8.v20121106'
+    implementation 'org.eclipse.jetty:jetty-servlet:8.1.8.v20121106'
+    implementation 'org.eclipse.jetty:jetty-client:8.1.8.v20121106'
+    implementation 'org.slf4j:slf4j-jdk14:1.6.1'
+    implementation 'org.jetbrains.trove4j:trove4j:20160824'
 }
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "19.0.3"
+    compileSdkVersion 26
 
 	// Caused by cling, because they apparently include APIs for other platforms.
 	lintOptions {
 		disable 'InvalidPackage'
 	}
 
+    packagingOptions {
+        exclude 'META-INF/beans.xml'
+        exclude 'about.html'
+    }
+
+    defaultConfig {
+        buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
+    }
+
     signingConfigs {
         release {
             // Android Studio does not pass environment variables.
-            // This means you have to use the command line for release builds.
+            // This means you have to use the command line if you need to override
+            // keystore.properties for release builds.
             def ks = System.getenv("KEYSTORE")
             def ka = System.getenv("KEY_ALIAS")
+            def keyPropertiesFile = rootProject.file("keystore.properties")
+            def keyProperties = new Properties()
+            keyProperties.load(new FileInputStream(keyPropertiesFile))
+            storeFile = file(keyProperties['storeFile'])
+            storePassword keyProperties['storePassword']
+            keyAlias keyProperties['keyAlias']
+            keyPassword keyProperties['keyPassword']
             if (ks != null && ka != null) {
                 storeFile file(ks)
                 keyAlias ka
@@ -50,7 +78,7 @@ android {
 
     buildTypes {
         debug {
-            packageNameSuffix ".debug"
+            applicationIdSuffix ".debug"
             debuggable true
         }
         release {
